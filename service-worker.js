@@ -1,7 +1,8 @@
-const CACHE_NAME = "mithril-mobile-m34-v2";
+const CACHE_NAME = "mithril-mobile-m35-test-v2";
 const APP_SHELL = [
   "./",
   "./index.html",
+  "./mithril_canvas_mobile_m35_test.html",
   "./manifest.webmanifest",
   "./icons/mithril-192.png",
   "./icons/mithril-512.png"
@@ -33,10 +34,13 @@ self.addEventListener("fetch", event => {
       fetch(event.request)
         .then(response => {
           const copy = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put("./index.html", copy));
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
           return response;
         })
-        .catch(() => caches.match("./index.html"))
+        .catch(() =>
+          caches.match(event.request)
+            .then(cached => cached || caches.match("./index.html"))
+        )
     );
     return;
   }
