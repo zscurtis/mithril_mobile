@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="theme-color" content="#171717" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="MITHRIL" />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="apple-touch-icon" href="icons/mithril-192.png" />
+<link rel="icon" type="image/png" sizes="192x192" href="icons/mithril-192.png" />
+<title>MITHRIL Shot Diagram</title>
+<style>
+  html, body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #242424;
+  }
+  #shotFrame {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    background: #242424;
+  }
+  #fallbackHome {
+    display: none;
+    position: fixed;
+    left: 8px;
+    top: 8px;
+    z-index: 1000;
+    min-height: 40px;
+    border: 1px solid #777;
+    border-radius: 8px;
+    background: #fff;
+    color: #111;
+    padding: 6px 10px;
+    font: 800 14px Arial, sans-serif;
+  }
+</style>
+</head>
+<body>
+<button id="fallbackHome" type="button">MITHRIL Home</button>
+<iframe id="shotFrame" src="./shot_diagram_m34.html" title="MITHRIL Shot Diagram"></iframe>
+<script>
+(() => {
+  "use strict";
+
+  const frame = document.getElementById("shotFrame");
+  const fallbackHome = document.getElementById("fallbackHome");
+
+  function homeURL() {
+    const base = "./index.html";
+    return base + "?refresh=" + Date.now();
+  }
+
+  function saveShotState() {
+    try {
+      const shotWindow = frame.contentWindow;
+      if (shotWindow && typeof shotWindow.saveData === "function") shotWindow.saveData();
+      if (shotWindow && typeof shotWindow.saveView === "function") shotWindow.saveView();
+    } catch (error) {
+      console.warn("MITHRIL could not call the shot save functions before returning Home.", error);
+    }
+  }
+
+  function goHome() {
+    saveShotState();
+    window.location.href = homeURL();
+  }
+
+  fallbackHome.addEventListener("click", goHome);
+
+  frame.addEventListener("load", () => {
+    try {
+      const doc = frame.contentDocument;
+      if (!doc) throw new Error("Shot Diagram document was unavailable.");
+
+      doc.title = "MITHRIL Shot Diagram m34";
+
+      const injectedStyle = doc.createElement("style");
+      injectedStyle.textContent = `
+        .brand.mithrilHomeLink {
+          cursor: pointer;
+          border: 0;
+          border-radius: 8px;
+          background: transparent;
+          padding: 0;
+          min-height: 36px;
+          user-select: none;
+        }
+        .brand.mithrilHomeLink:active { opacity: .72; }
+        .brand.mithrilHomeLink .mark {
+          display: block;
+          width: 34px;
+          height: 34px;
+          border-radius: 8px;
+          object-fit: cover;
+          background: none;
+          color: transparent;
+          flex: 0 0 auto;
+        }
+      `;
+      doc.head.appendChild(injectedStyle);
+
+      const brand = doc.querySelector(".brand");
+      if (!brand) throw new Error("Shot Diagram brand area was not found.");
+
+      const oldMark = brand.querySelector(".mark");
+      if (oldMark) {
+        const icon = doc.createElement("img");
+        icon.className = "mark";
+        icon.src = "./icons/mithril-192.png";
+        icon.alt = "MITHRIL";
+        icon.addEventListener("error", () => {
+          icon.src = "https://zscurtis.github.io/mithril_mobile/icons/mithril-192.png";
+        }, { once: true });
+        oldMark.replaceWith(icon);
+      }
+
+      const brandText = brand.querySelector(".brandText");
+      if (brandText) brandText.textContent = "SHOT DIAGRAM";
+
+      const version = brand.querySelector(".version");
+      if (version) version.textContent = "m34";
+
+      brand.classList.add("mithrilHomeLink");
+      brand.setAttribute("role", "button");
+      brand.setAttribute("tabindex", "0");
+      brand.setAttribute("aria-label", "Save Shot Diagram and return to MITHRIL Home");
+      brand.setAttribute("title", "MITHRIL Home / Choose Template");
+      brand.addEventListener("click", goHome);
+      brand.addEventListener("keydown", event => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          goHome();
+        }
+      });
+
+      const menuModal = doc.getElementById("menuModal");
+      const firstMenuGrid = menuModal ? menuModal.querySelector(".menuGrid") : null;
+      if (firstMenuGrid && !doc.getElementById("mithrilHomeMenuButton")) {
+        const homeButton = doc.createElement("button");
+        homeButton.id = "mithrilHomeMenuButton";
+        homeButton.type = "button";
+        homeButton.className = "wide";
+        homeButton.textContent = "Home / Choose Template";
+        homeButton.addEventListener("click", goHome);
+        firstMenuGrid.prepend(homeButton);
+      }
+
+      fallbackHome.style.display = "none";
+    } catch (error) {
+      console.error("MITHRIL Shot Diagram navigation setup failed.", error);
+      fallbackHome.style.display = "block";
+    }
+  });
+})();
+</script>
+</body>
+</html>

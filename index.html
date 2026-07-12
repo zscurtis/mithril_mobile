@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <meta name="theme-color" content="#171717" />
-<title>MITHRIL Canvas Mobile m37</title>
+<title>MITHRIL Canvas Mobile m38</title>
 <style>
 :root { --toolbar-h: 132px; }
 * { box-sizing: border-box; }
@@ -95,19 +95,19 @@ textarea { min-height:90px; }
 <div id="templateStart">
   <div class="startBox">
     <div class="startBrand">MITHRIL MOBILE</div>
-    <div class="startVersion">m37 finish &amp; send to blaster</div>
-    <div class="startIntro">Choose the document type. This test build leaves the stable production shot diagram unchanged while the new construction drill log is tested.</div>
+    <div class="startVersion">m38 unified home navigation</div>
+    <div class="startIntro">Choose the document type. Shot Diagram and Drill Log now share this MITHRIL home screen.</div>
     <div class="templateCards">
       <button class="templateCard" onclick="openStableShotDiagram()">
         <strong>Shot Diagram</strong>
-        <span>Open the current stable production shot-diagram app.</span>
+        <span>Open the stable shot-diagram app with consistent MITHRIL Home navigation.</span>
       </button>
       <button class="templateCard drill" onclick="openDrillLog()">
         <strong>Drill Log</strong>
         <span>16 x 34 construction template. Columns A-P, rows 1-34. Overburden above the divider and depth below it.</span>
       </button>
     </div>
-    <div class="startNote">When opened from GitHub Pages, Shot Diagram opens the stable index.html beside this test file. When opened directly from Android Downloads, it opens the live MITHRIL site instead. Use your browser Back button to return to this selector during testing.</div>
+    <div class="startNote">Tap the MITHRIL icon and document name inside either template to save your work, return Home, and check for published updates.</div>
   </div>
 </div>
 
@@ -300,7 +300,13 @@ function appHomeURL(forceRefresh=false){
   if (!forceRefresh) return base;
   return base + (base.includes("?") ? "&" : "?") + "refresh=" + Date.now();
 }
-function openStableShotDiagram() {   const href = String(window.location.href || "");   const openedFromDeviceStorage =     href.startsWith("content:") || href.startsWith("file:");    window.location.href = openedFromDeviceStorage     ? "https://zscurtis.github.io/mithril_mobile/shot_diagram_m34.html"     : "./shot_diagram_m34.html"; }
+function openStableShotDiagram(){
+  const href = String(window.location.href || "");
+  const openedFromDeviceStorage = href.startsWith("content:") || href.startsWith("file:");
+  window.location.href = openedFromDeviceStorage
+    ? "https://zscurtis.github.io/mithril_mobile/shot_diagram_m38.html"
+    : "./shot_diagram_m38.html";
+}
 function goToAppHome(){
   saveState();
   window.location.href = appHomeURL(true);
