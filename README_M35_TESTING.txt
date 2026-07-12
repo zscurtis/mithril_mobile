@@ -1,3 +1,11 @@
+MITHRIL MOBILE m35 FIX 2
+
+New in Fix 2:
+- The upper-left MITHRIL mark now uses the repository icon.
+- Tapping the icon or DRILL LOG 16x34 name saves drill-log state, opens index.html, and adds a refresh query so newly published app updates can be requested.
+- Direct Android file testing falls back to the live GitHub Pages index.
+- Service-worker cache version advanced to m35-test-v3.
+
 MITHRIL Canvas Mobile m35 Fix 1 - Dual Template Prototype
 ===================================================
 
