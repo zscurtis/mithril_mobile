@@ -1,4 +1,4 @@
-const CACHE_NAME = "mithril-mobile-m34-v1";
+const CACHE_NAME = "mithril-mobile-m34-v2";
 const APP_SHELL = [
   "./",
   "./index.html",

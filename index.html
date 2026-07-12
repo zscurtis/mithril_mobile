@@ -3160,22 +3160,7 @@ function getPrintableReportHTML() {
       <img class="overviewDiagram" src="${overviewDiagram}" />
     </section>
     ${individualPagesHTML}
-  
-<script>
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./service-worker.js")
-      .then(registration => {
-        registration.update();
-        console.log("MITHRIL offline service worker ready.");
-      })
-      .catch(error => {
-        console.error("MITHRIL service worker registration failed:", error);
-      });
-  });
-}
-</script>
-</body></html>`;
+  </body></html>`;
 }
 
 function exportPDFReport(skipQA = false) {
@@ -3368,6 +3353,15 @@ img.onload = () => {
 refreshPageSelect();
 resizeCanvas();
 updateSingleFillBar();
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./service-worker.js")
+      .then(registration => registration.update())
+      .then(() => console.log("MITHRIL offline service worker ready."))
+      .catch(error => console.error("MITHRIL service worker registration failed:", error));
+  });
+}
 </script>
 </body>
 </html>
