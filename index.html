@@ -300,7 +300,7 @@ function appHomeURL(forceRefresh=false){
   if (!forceRefresh) return base;
   return base + (base.includes("?") ? "&" : "?") + "refresh=" + Date.now();
 }
-function openStableShotDiagram(){ window.location.href = appHomeURL(false); }
+function openStableShotDiagram() {   const href = String(window.location.href || "");   const openedFromDeviceStorage =     href.startsWith("content:") || href.startsWith("file:");    window.location.href = openedFromDeviceStorage     ? "https://zscurtis.github.io/mithril_mobile/shot_diagram_m34.html"     : "./shot_diagram_m34.html"; }
 function goToAppHome(){
   saveState();
   window.location.href = appHomeURL(true);
