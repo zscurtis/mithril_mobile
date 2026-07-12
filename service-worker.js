@@ -1,8 +1,9 @@
-const CACHE_NAME = "mithril-mobile-m37-test-v1";
+const CACHE_NAME = "mithril-mobile-m37-prod-v2";
+
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./mithril_canvas_mobile_m37_test.html",
+  "./shot_diagram_m34.html",
   "./manifest.webmanifest",
   "./icons/mithril-192.png",
   "./icons/mithril-512.png"
