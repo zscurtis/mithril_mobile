@@ -1,4 +1,4 @@
-const CACHE_NAME = "mithril-mobile-m38-5-canvas-performance-v1";
+const CACHE_NAME = "mithril-mobile-m38-6-header-calibration-v1";
 const APP_SHELL = [
   "./",
   "./index.html",

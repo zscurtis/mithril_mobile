@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon-precomposed" sizes="192x192" href="./icons/mithril-192.png?v=38.2" />
 <link rel="icon" type="image/png" sizes="192x192" href="./icons/mithril-192.png?v=38.2" />
 <link rel="icon" type="image/png" sizes="512x512" href="./icons/mithril-512.png?v=38.2" />
-<title>MITHRIL Canvas Mobile m38.5</title>
+<title>MITHRIL Canvas Mobile m38.6</title>
 <style>
 :root { --toolbar-h: 132px; }
 * { box-sizing: border-box; }
@@ -76,6 +76,11 @@ textarea { min-height:90px; }
 #quickBar select, #quickBar input, #quickBar button { width:100%; min-height:42px; font-size:17px; font-weight:900; border-radius:8px; }
 #quickHint { grid-column:1 / -1; font-size:12px; font-weight:850; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 
+#headerCalibrationBar { display:none; position:fixed; left:8px; right:8px; bottom:8px; z-index:95; grid-template-columns:1fr auto auto; gap:8px; align-items:center; background:rgba(255,255,255,.98); border:2px solid #8a4fff; border-radius:12px; padding:8px; box-shadow:0 5px 18px rgba(0,0,0,.38); }
+#headerCalibrationBar.show { display:grid; }
+#headerCalibrationHint { min-width:0; font-size:13px; line-height:1.2; font-weight:900; color:#333; }
+#headerCalibrationBar button { min-height:42px; }
+
 #numberPad { display:none; position:fixed; left:8px; right:8px; bottom:8px; z-index:220; background:white; border:2px solid #222; border-radius:14px; padding:10px; box-shadow:0 8px 28px rgba(0,0,0,.4); }
 #numberPad.show { display:block; }
 .padTitle { font-size:13px; font-weight:950; color:#333; margin-bottom:6px; }
@@ -103,7 +108,7 @@ textarea { min-height:90px; }
 <div id="templateStart">
   <div class="startBox">
     <div class="startBrand">MITHRIL MOBILE</div>
-    <div class="startVersion">m38.5 legacy canvas performance optimization</div>
+    <div class="startVersion">m38.6 draggable header calibration</div>
     <div class="startIntro">Choose the document type. Shot Diagram and Drill Log now share this MITHRIL home screen.</div>
     <div class="templateCards">
       <button class="templateCard" onclick="openStableShotDiagram()">
@@ -124,7 +129,7 @@ textarea { min-height:90px; }
   <div class="topRow">
     <button type="button" class="brand brandHome" onclick="goToAppHome()" aria-label="Open MITHRIL home and check for updates">
       <img class="mark" src="./icons/mithril-192.png" alt="MITHRIL" onerror="this.src='https://zscurtis.github.io/mithril_mobile/icons/mithril-192.png'" />
-      <span class="brandText">DRILL LOG 16x34</span><span class="version">m38.5</span>
+      <span class="brandText">DRILL LOG 16x34</span><span class="version">m38.6</span>
     </button>
     <select id="pageSelect" onchange="switchPage(Number(this.value))"></select>
     <button onclick="openQuickModal()">Quick</button>
@@ -146,6 +151,12 @@ textarea { min-height:90px; }
   <input id="quickValue" readonly inputmode="none" placeholder="tap keypad" onclick="showPad('quickValue')" onfocus="showPad('quickValue')" oninput="saveQuickSettings()" />
   <button class="danger" onclick="turnQuickOff()">Off</button>
   <div id="quickHint">Quick fill is on. Tap a hole to apply the value.</div>
+</div>
+
+<div id="headerCalibrationBar" aria-hidden="true">
+  <div id="headerCalibrationHint">Drag the outlined Employee or Job text onto the printed lines.</div>
+  <button onclick="resetHeaderCalibration()">Reset</button>
+  <button class="primary" onclick="finishHeaderCalibration()">Done</button>
 </div>
 
 <div id="holeModal" class="modal">
@@ -201,6 +212,7 @@ textarea { min-height:90px; }
       <button onclick="closeMenu(); openQuickModal()">Quick Fill</button>
       <button onclick="fitView(); closeMenu()">Fit Current Page</button>
       <button onclick="fitAllPages(); closeMenu()">Fit All Pages</button>
+      <button class="wide" onclick="startHeaderCalibration()">Calibrate Employee / Job</button>
     </div>
     <div class="menuTitle">Add Page Beside Current</div>
     <div class="menuGrid">
@@ -237,7 +249,7 @@ textarea { min-height:90px; }
 </div>
 
 <script>
-const APP_VERSION = "m38.5";
+const APP_VERSION = "m38.6";
 const TEMPLATE_ID = "drill16x34";
 const TOUCH_CAPABLE = ("ontouchstart" in window) || Number(navigator.maxTouchPoints || 0) > 0;
 const BROWSER_UA = String(navigator.userAgent || "");
@@ -272,7 +284,8 @@ const KEYS = {
   view: "mithrilDrill16x34ViewM01",
   quick: "mithrilDrill16x34QuickM01",
   dirty: "mithrilDrill16x34DirtyM01",
-  lastShared: "mithrilDrill16x34LastSharedM01"
+  lastShared: "mithrilDrill16x34LastSharedM01",
+  headerCalibration: "mithrilDrill16x34HeaderCalibrationM01"
 };
 
 const canvas = document.getElementById("drillCanvas");
@@ -287,9 +300,13 @@ let lastInteractionUIUpdate = 0;
 const PAGE_CACHE_SCALE = LEGACY_PERFORMANCE_MODE ? 0.72 : 1;
 const MAX_PAGE_CACHE_ITEMS = LEGACY_PERFORMANCE_MODE ? 2 : 5;
 const pageRenderCache = new Map();
+const DEFAULT_HEADER_CALIBRATION = {employee:{x:485,y:1923},job:{x:770,y:1923}};
 let pagesData = readJSON(KEYS.pages, {"1":{}});
 let pageMeta = readJSON(KEYS.pageMeta, {"1":{gx:0,gy:0,name:"Page 1"}});
 let headerData = readJSON(KEYS.header, {});
+let headerCalibration = normalizeHeaderCalibration(readJSON(KEYS.headerCalibration, DEFAULT_HEADER_CALIBRATION));
+let calibrationMode = false;
+let calibrationDrag = {field:null,offsetX:0,offsetY:0};
 let currentPage = Number(localStorage.getItem(KEYS.page) || 1);
 if (!pagesData[String(currentPage)]) currentPage = 1;
 let view = readJSON(KEYS.view, {scale:1,x:0,y:0});
@@ -302,6 +319,15 @@ let gesture = {mode:null,moved:false,startX:0,startY:0,startVX:0,startVY:0,start
 function $(id){ return document.getElementById(id); }
 function readJSON(key,fallback){ try { const v=localStorage.getItem(key); return v?JSON.parse(v):fallback; } catch(e){ return fallback; } }
 function saveJSON(key,value){ localStorage.setItem(key,JSON.stringify(value)); }
+function normalizeHeaderCalibration(value){
+  const src=value||{};
+  function point(name,defaults){
+    const p=src[name]||{};
+    const x=Number(p.x),y=Number(p.y);
+    return {x:Number.isFinite(x)?x:defaults.x,y:Number.isFinite(y)?y:defaults.y};
+  }
+  return {employee:point("employee",DEFAULT_HEADER_CALIBRATION.employee),job:point("job",DEFAULT_HEADER_CALIBRATION.job)};
+}
 function colLetter(col){ return String.fromCharCode(65 + col); }
 function holeID(row,col){ return colLetter(col) + String(row + 1); }
 function parseHoleID(id){ const m=String(id).match(/^([A-P])(\d{1,2})$/); if(!m) return null; return {col:m[1].charCodeAt(0)-65,row:Number(m[2])-1}; }
@@ -315,7 +341,7 @@ function ensurePageMeta(){
 }
 ensurePageMeta();
 function markDirty(){ localStorage.setItem(KEYS.dirty,"true"); updateStatus(); }
-function saveState(){ saveJSON(KEYS.pages,pagesData); saveJSON(KEYS.pageMeta,pageMeta); saveJSON(KEYS.header,headerData); localStorage.setItem(KEYS.page,String(currentPage)); saveJSON(KEYS.view,view); saveJSON(KEYS.quick,quick); }
+function saveState(){ saveJSON(KEYS.pages,pagesData); saveJSON(KEYS.pageMeta,pageMeta); saveJSON(KEYS.header,headerData); saveJSON(KEYS.headerCalibration,headerCalibration); localStorage.setItem(KEYS.page,String(currentPage)); saveJSON(KEYS.view,view); saveJSON(KEYS.quick,quick); }
 
 function invalidatePageCache(pageNum=null){
   if(pageNum===null || pageNum===undefined){ pageRenderCache.clear(); return; }
@@ -339,7 +365,7 @@ function buildPageRenderCache(pageNum){
   x.setTransform(PAGE_CACHE_SCALE,0,0,PAGE_CACHE_SCALE,0,0);
   x.fillStyle="#fff";x.fillRect(0,0,IMG_W,IMG_H);
   if(templateImg.complete&&templateImg.naturalWidth)x.drawImage(templateImg,0,0,IMG_W,IMG_H);
-  drawHeader(x);
+  drawHeader(x,!calibrationMode);
   drawSavedHoles(pageNum,x);
   drawGridLabels(x);
   drawPageLabel(pageNum,x);
@@ -404,8 +430,8 @@ function activateHitAtPoint(p){
 
 function installCanvasInput(){
   if("PointerEvent" in window){
-    canvas.addEventListener("pointerdown",e=>{ e.preventDefault(); canvas.setPointerCapture(e.pointerId); const p=canvasPoint(e); pointers.set(e.pointerId,p); if(pointers.size===1){ gesture={mode:"pan",moved:false,startX:p.x,startY:p.y,startVX:view.x,startVY:view.y,startScale:view.scale,startDist:0,startCenter:null}; } else if(pointers.size===2){ gesture.mode="pinch";gesture.moved=true;gesture.startScale=view.scale;gesture.startDist=pointerDist();gesture.startCenter=pointerCenter();gesture.startVX=view.x;gesture.startVY=view.y; } });
-    canvas.addEventListener("pointermove",e=>{ if(!pointers.has(e.pointerId))return;e.preventDefault();const p=canvasPoint(e);pointers.set(e.pointerId,p);if(gesture.mode==="pan"&&pointers.size===1){const dx=p.x-gesture.startX,dy=p.y-gesture.startY;if(Math.abs(dx)>5||Math.abs(dy)>5)gesture.moved=true;view.x=gesture.startVX+dx;view.y=gesture.startVY+dy;draw();}else if(gesture.mode==="pinch"&&pointers.size>=2){const center=pointerCenter();const dist=pointerDist();const before={x:(gesture.startCenter.x-gesture.startVX)/gesture.startScale,y:(gesture.startCenter.y-gesture.startVY)/gesture.startScale};view.scale=Math.max(.08,Math.min(5,gesture.startScale*(dist/gesture.startDist)));view.x=center.x-before.x*view.scale;view.y=center.y-before.y*view.scale;draw();} });
+    canvas.addEventListener("pointerdown",e=>{ e.preventDefault(); canvas.setPointerCapture(e.pointerId); const p=canvasPoint(e); if(calibrationMode){beginCalibrationDrag(p);return;} pointers.set(e.pointerId,p); if(pointers.size===1){ gesture={mode:"pan",moved:false,startX:p.x,startY:p.y,startVX:view.x,startVY:view.y,startScale:view.scale,startDist:0,startCenter:null}; } else if(pointers.size===2){ gesture.mode="pinch";gesture.moved=true;gesture.startScale=view.scale;gesture.startDist=pointerDist();gesture.startCenter=pointerCenter();gesture.startVX=view.x;gesture.startVY=view.y; } });
+    canvas.addEventListener("pointermove",e=>{e.preventDefault();const p=canvasPoint(e);if(calibrationMode){moveCalibrationDrag(p);return;}if(!pointers.has(e.pointerId))return;pointers.set(e.pointerId,p);if(gesture.mode==="pan"&&pointers.size===1){const dx=p.x-gesture.startX,dy=p.y-gesture.startY;if(Math.abs(dx)>5||Math.abs(dy)>5)gesture.moved=true;view.x=gesture.startVX+dx;view.y=gesture.startVY+dy;draw();}else if(gesture.mode==="pinch"&&pointers.size>=2){const center=pointerCenter();const dist=pointerDist();const before={x:(gesture.startCenter.x-gesture.startVX)/gesture.startScale,y:(gesture.startCenter.y-gesture.startVY)/gesture.startScale};view.scale=Math.max(.08,Math.min(5,gesture.startScale*(dist/gesture.startDist)));view.x=center.x-before.x*view.scale;view.y=center.y-before.y*view.scale;draw();} });
     canvas.addEventListener("pointerup",endPointer);canvas.addEventListener("pointercancel",endPointer);
     return;
   }
@@ -417,6 +443,7 @@ function installCanvasInput(){
 
   canvas.addEventListener("touchstart",e=>{
     e.preventDefault();
+    if(calibrationMode){if(e.touches.length===1)beginCalibrationDrag(tp(e.touches[0]));return;}
     if(e.touches.length===1){
       const p=tp(e.touches[0]);
       gesture={mode:"pan",moved:false,startX:p.x,startY:p.y,startVX:view.x,startVY:view.y,startScale:view.scale,startDist:0,startCenter:null};
@@ -427,6 +454,7 @@ function installCanvasInput(){
 
   canvas.addEventListener("touchmove",e=>{
     e.preventDefault();
+    if(calibrationMode){if(e.touches.length===1)moveCalibrationDrag(tp(e.touches[0]));return;}
     if(gesture.mode==="pinch"&&e.touches.length>=2){
       const center=tc(e.touches[0],e.touches[1]);
       const dist=td(e.touches[0],e.touches[1]);
@@ -445,6 +473,7 @@ function installCanvasInput(){
 
   function endTouch(e){
     e.preventDefault();
+    if(calibrationMode){if(e.touches.length===0)endCalibrationDrag();return;}
     if(e.touches.length===0){
       saveJSON(KEYS.view,view);
       lastInteractionUIUpdate=0;
@@ -465,9 +494,9 @@ function installCanvasInput(){
   });
 }
 
-function endPointer(e){ const p=canvasPoint(e);pointers.delete(e.pointerId); if(pointers.size===0){saveJSON(KEYS.view,view);lastInteractionUIUpdate=0;if(!gesture.moved)activateHitAtPoint(p);gesture.mode=null;} else if(pointers.size===1){const r=[...pointers.values()][0];gesture={mode:"pan",moved:true,startX:r.x,startY:r.y,startVX:view.x,startVY:view.y,startScale:view.scale,startDist:0,startCenter:null};} }
+function endPointer(e){ const p=canvasPoint(e);if(calibrationMode){endCalibrationDrag();return;}pointers.delete(e.pointerId); if(pointers.size===0){saveJSON(KEYS.view,view);lastInteractionUIUpdate=0;if(!gesture.moved)activateHitAtPoint(p);gesture.mode=null;} else if(pointers.size===1){const r=[...pointers.values()][0];gesture={mode:"pan",moved:true,startX:r.x,startY:r.y,startVX:view.x,startVY:view.y,startScale:view.scale,startDist:0,startCenter:null};} }
 installCanvasInput();
-console.log("MITHRIL m38.5 canvas mode:",LEGACY_PERFORMANCE_MODE?"legacy performance":"standard","DPR",dpr);
+console.log("MITHRIL m38.6 canvas mode:",LEGACY_PERFORMANCE_MODE?"legacy performance":"standard","DPR",dpr);
 function draw(){
   if(drawPending)return;
   drawPending=true;
@@ -485,7 +514,10 @@ function drawNow(){
     const o=pageOrigin(p),cached=getPageRenderCache(p);
     ctx.save();ctx.translate(o.x,o.y);
     ctx.drawImage(cached,0,0,cached.width,cached.height,0,0,IMG_W,IMG_H);
-    if(p===currentPage){ctx.save();ctx.strokeStyle="rgba(31,111,235,.95)";ctx.lineWidth=10/view.scale;ctx.strokeRect(4,4,IMG_W-8,IMG_H-8);ctx.restore();}
+    if(p===currentPage){
+      ctx.save();ctx.strokeStyle="rgba(31,111,235,.95)";ctx.lineWidth=10/view.scale;ctx.strokeRect(4,4,IMG_W-8,IMG_H-8);ctx.restore();
+      if(calibrationMode)drawHeaderCalibrationOverlay(ctx);
+    }
     ctx.restore();
   });
   ctx.restore();
@@ -495,15 +527,84 @@ function drawNow(){
     $("zoomSlider").value=String(Math.round(view.scale*100));updateStatus();
   }
 }
-function drawHeader(targetCtx=ctx){
+function drawHeader(targetCtx=ctx,includeCalibratedFields=true){
   targetCtx.save();targetCtx.fillStyle="#111";targetCtx.strokeStyle="rgba(255,255,255,.95)";targetCtx.lineWidth=5;targetCtx.font="900 28px Arial";
   targetCtx.textBaseline="middle";
   drawOutlined(headerData.DrillLogNumber||"",1035,197,"left",targetCtx);
   drawOutlined(formatDate(headerData.Date)||"",925,286,"left",targetCtx);
-  targetCtx.textBaseline="alphabetic";
-  drawOutlined(headerData.Employee||"",485,1923,"left",targetCtx);
-  drawOutlined(headerData.Job||"",770,1923,"left",targetCtx);
+  if(includeCalibratedFields){
+    targetCtx.textBaseline="alphabetic";
+    drawOutlined(headerData.Employee||"",headerCalibration.employee.x,headerCalibration.employee.y,"left",targetCtx);
+    drawOutlined(headerData.Job||"",headerCalibration.job.x,headerCalibration.job.y,"left",targetCtx);
+  }
   targetCtx.restore();
+}
+function calibrationDisplayValue(field){
+  if(field==="employee")return String(headerData.Employee||"EMPLOYEE");
+  return String(headerData.Job||"JOB");
+}
+function calibrationFieldWidth(field,targetCtx=ctx){
+  targetCtx.save();targetCtx.font="900 28px Arial";
+  const width=Math.max(field==="employee"?210:300,targetCtx.measureText(calibrationDisplayValue(field)).width+28);
+  targetCtx.restore();return width;
+}
+function drawHeaderCalibrationOverlay(targetCtx=ctx){
+  ["employee","job"].forEach(field=>{
+    const pos=headerCalibration[field],value=calibrationDisplayValue(field),selected=calibrationDrag.field===field;
+    targetCtx.save();targetCtx.font="900 28px Arial";targetCtx.textBaseline="alphabetic";
+    const w=calibrationFieldWidth(field,targetCtx),h=48;
+    targetCtx.fillStyle=selected?"rgba(138,79,255,.20)":"rgba(31,111,235,.10)";targetCtx.fillRect(pos.x-10,pos.y-38,w,h);
+    targetCtx.strokeStyle=selected?"#8a4fff":"#1f6feb";targetCtx.lineWidth=selected?5:3;targetCtx.setLineDash([12,8]);targetCtx.strokeRect(pos.x-10,pos.y-38,w,h);targetCtx.setLineDash([]);
+    targetCtx.lineWidth=5;targetCtx.strokeStyle="rgba(255,255,255,.98)";targetCtx.fillStyle="#111";targetCtx.strokeText(value,pos.x,pos.y);targetCtx.fillText(value,pos.x,pos.y);
+    targetCtx.font="900 18px Arial";targetCtx.textBaseline="bottom";targetCtx.fillStyle=selected?"#6d2bd1":"#0b56a8";targetCtx.fillText(field==="employee"?"EMPLOYEE":"JOB",pos.x,pos.y-42);targetCtx.restore();
+  });
+}
+function calibrationLocalPoint(screenPoint){
+  const world=screenToWorld(screenPoint.x,screenPoint.y),origin=pageOrigin(currentPage);
+  return {x:world.x-origin.x,y:world.y-origin.y};
+}
+function calibrationHitField(screenPoint){
+  const p=calibrationLocalPoint(screenPoint);
+  for(const field of ["employee","job"]){
+    const pos=headerCalibration[field],w=calibrationFieldWidth(field);
+    if(p.x>=pos.x-24&&p.x<=pos.x+w+24&&p.y>=pos.y-62&&p.y<=pos.y+28)return field;
+  }
+  return null;
+}
+function beginCalibrationDrag(screenPoint){
+  const field=calibrationHitField(screenPoint);
+  if(!field)return false;
+  const p=calibrationLocalPoint(screenPoint),pos=headerCalibration[field];
+  calibrationDrag={field,offsetX:p.x-pos.x,offsetY:p.y-pos.y};draw();return true;
+}
+function moveCalibrationDrag(screenPoint){
+  const field=calibrationDrag.field;if(!field)return;
+  const p=calibrationLocalPoint(screenPoint),w=calibrationFieldWidth(field);
+  headerCalibration[field].x=Math.max(20,Math.min(IMG_W-w-20,p.x-calibrationDrag.offsetX));
+  headerCalibration[field].y=Math.max(50,Math.min(IMG_H-20,p.y-calibrationDrag.offsetY));
+  draw();
+}
+function endCalibrationDrag(){
+  if(!calibrationDrag.field)return;
+  calibrationDrag={field:null,offsetX:0,offsetY:0};saveJSON(KEYS.headerCalibration,headerCalibration);draw();
+}
+function focusHeaderCalibrationArea(){
+  const r=wrap.getBoundingClientRect(),origin=pageOrigin(currentPage);
+  const targetScale=Math.max(.65,Math.min(1.05,r.width/950));
+  const focusX=790,focusY=1910;
+  view.scale=targetScale;view.x=r.width/2-(origin.x+focusX)*view.scale;view.y=r.height*.52-(origin.y+focusY)*view.scale;
+  saveJSON(KEYS.view,view);
+}
+function startHeaderCalibration(){
+  closeMenu();hidePad();quick.enabled=false;updateQuickBar();calibrationMode=true;calibrationDrag={field:null,offsetX:0,offsetY:0};
+  invalidatePageCache();focusHeaderCalibrationArea();const bar=$("headerCalibrationBar");bar.classList.add("show");bar.setAttribute("aria-hidden","false");updateStatus();draw();
+}
+function finishHeaderCalibration(){
+  endCalibrationDrag();calibrationMode=false;saveJSON(KEYS.headerCalibration,headerCalibration);invalidatePageCache();
+  const bar=$("headerCalibrationBar");bar.classList.remove("show");bar.setAttribute("aria-hidden","true");updateStatus();draw();
+}
+function resetHeaderCalibration(){
+  headerCalibration=normalizeHeaderCalibration(DEFAULT_HEADER_CALIBRATION);saveJSON(KEYS.headerCalibration,headerCalibration);draw();
 }
 function drawGridLabels(targetCtx=ctx){ targetCtx.save();targetCtx.font="900 17px Arial";targetCtx.textAlign="center";targetCtx.textBaseline="middle";targetCtx.lineWidth=4;targetCtx.strokeStyle="rgba(255,255,255,.95)";targetCtx.fillStyle="#0b56a8";for(let c=0;c<COLS;c++)drawOutlined(colLetter(c),X0+DX*c,315,"center",targetCtx);targetCtx.textAlign="right";for(let r=0;r<ROWS;r++)drawOutlined(String(r+1),150,Y0+DY*r,"right",targetCtx);targetCtx.restore(); }
 function drawPageLabel(pageNum,targetCtx=ctx){targetCtx.save();targetCtx.font="900 26px Arial";targetCtx.textAlign="right";targetCtx.textBaseline="bottom";targetCtx.fillStyle="rgba(255,255,255,.9)";targetCtx.fillRect(IMG_W-175,IMG_H-70,145,42);targetCtx.fillStyle="#111";targetCtx.fillText("Page "+pageNum,IMG_W-40,IMG_H-35);targetCtx.restore();}
@@ -543,10 +644,10 @@ function closeMenu(){ $("menuModal").classList.remove("show"); }
 function holeHasSavedData(d){return !!(d&&(String(d.Overburden||"").trim()||String(d.Depth||"").trim()||String(d.Notes||"").trim()||d.Breakthrough===true||d.Breakthrough==="Yes"));}
 function getTotalSavedHoles(){let count=0;getPageNumbers().forEach(p=>{Object.values(pagesData[String(p)]||{}).forEach(d=>{if(holeHasSavedData(d))count++;});});return count;}
 function getBreakthroughCount(){let count=0;getPageNumbers().forEach(p=>{Object.values(pagesData[String(p)]||{}).forEach(d=>{if(d&&(d.Breakthrough===true||d.Breakthrough==="Yes"))count++;});});return count;}
-function updateStatus(){const count=Object.keys(currentData()).filter(k=>holeHasSavedData(currentData()[k])).length;const dirty=localStorage.getItem(KEYS.dirty)==="true"?" - unsent changes":"";const lastShared=localStorage.getItem(KEYS.lastShared)||"";const shared=(!dirty&&lastShared)?" - shared "+lastShared:"";$("status").textContent=`Drill Log 16x34 - Page ${currentPage} - ${count} saved holes - ${Math.round(view.scale*100)}%${dirty}${shared}`;}
+function updateStatus(){if(calibrationMode){$("status").textContent="HEADER CALIBRATION - drag Employee or Job, then tap Done";return;}const count=Object.keys(currentData()).filter(k=>holeHasSavedData(currentData()[k])).length;const dirty=localStorage.getItem(KEYS.dirty)==="true"?" - unsent changes":"";const lastShared=localStorage.getItem(KEYS.lastShared)||"";const shared=(!dirty&&lastShared)?" - shared "+lastShared:"";$("status").textContent=`Drill Log 16x34 - Page ${currentPage} - ${count} saved holes - ${Math.round(view.scale*100)}%${dirty}${shared}`;}
 function exportBaseName(){const parts=[headerData.Job||"Drill Log",headerData.DrillLogNumber||"16x34",headerData.Date||""];return parts.filter(Boolean).join(" - ").replace(/[\\/:*?\"<>|]/g,"-");}
 function downloadBlob(content,name,type){const blob=content instanceof Blob?content:new Blob([content],{type});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},800);}
-function buildBackupPayload(){saveState();return {version:APP_VERSION,templateId:TEMPLATE_ID,templateName:"Drill Log 16x34 Construction",headerData,currentPage,pagesData,pageMeta,view};}
+function buildBackupPayload(){saveState();return {version:APP_VERSION,templateId:TEMPLATE_ID,templateName:"Drill Log 16x34 Construction",headerData,headerCalibration,currentPage,pagesData,pageMeta,view};}
 function getJSONText(){return JSON.stringify(buildBackupPayload(),null,2);}
 function downloadJSON(){downloadBlob(getJSONText(),exportBaseName()+".json","application/json");updateStatus();}
 function exportCSV(){const rows=[["Page","HoleID","Column","Row","Overburden","Depth","Breakthrough","Notes","Timestamp"]];Object.keys(pagesData).map(Number).sort((a,b)=>a-b).forEach(p=>{Object.keys(pagesData[String(p)]).sort((a,b)=>{const pa=parseHoleID(a),pb=parseHoleID(b);return pa.row-pb.row||pa.col-pb.col;}).forEach(id=>{const d=pagesData[String(p)][id],pos=parseHoleID(id);rows.push([p,id,colLetter(pos.col),pos.row+1,d.Overburden||"",d.Depth||"",(d.Breakthrough===true||d.Breakthrough==="Yes")?"Yes":"No",d.Notes||"",d.Timestamp||""]);});});const csv=rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(",")).join("\n");downloadBlob(csv,exportBaseName()+".csv","text/csv");}
@@ -568,8 +669,8 @@ function renderDrillPageCanvas(pageNum){
   drawOutlinedOn(x,headerData.DrillLogNumber||"",1035,197,"left");
   drawOutlinedOn(x,formatDate(headerData.Date)||"",925,286,"left");
   x.textBaseline="alphabetic";
-  drawOutlinedOn(x,headerData.Employee||"",485,1923,"left");
-  drawOutlinedOn(x,headerData.Job||"",770,1923,"left");x.restore();
+  drawOutlinedOn(x,headerData.Employee||"",headerCalibration.employee.x,headerCalibration.employee.y,"left");
+  drawOutlinedOn(x,headerData.Job||"",headerCalibration.job.x,headerCalibration.job.y,"left");x.restore();
   x.save();x.font="900 17px Arial";x.textBaseline="middle";x.lineWidth=4;
   for(let col=0;col<COLS;col++)drawOutlinedOn(x,colLetter(col),X0+DX*col,315,"center","rgba(255,255,255,.95)","#0b56a8");
   for(let row=0;row<ROWS;row++)drawOutlinedOn(x,String(row+1),150,Y0+DY*row,"right","rgba(255,255,255,.95)","#0b56a8");x.restore();
@@ -648,8 +749,8 @@ async function finishAndSendToBlaster(){
   }catch(error){if(error&&error.name==="AbortError")return;console.error("MITHRIL share failed",error);alert("MITHRIL could not open the share menu.\n\n"+(error&&error.message?error.message:"Try again from the GitHub Pages app."));}
   finally{button.disabled=false;button.textContent=oldText;}
 }
-function loadJSON(event){const f=event.target.files&&event.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{try{const p=JSON.parse(rd.result);if(p.templateId!==TEMPLATE_ID||!p.pagesData)throw new Error("wrong template");if(!confirm("Load this drill-log backup and replace current drill data?"))return;headerData=p.headerData||{};pagesData=p.pagesData||{"1":{}};pageMeta=p.pageMeta||{};ensurePageMeta();currentPage=Number(p.currentPage||1);if(p.view)view=p.view;if(!pagesData[String(currentPage)])currentPage=1;invalidatePageCache();saveState();markDirty();refreshPageSelect();closeMenu();draw();alert("Backup loaded.");}catch(e){alert("This is not a valid 16x34 MITHRIL drill-log backup.");}finally{event.target.value="";}};rd.readAsText(f);}
-function clearAll(){if(!confirm("Clear all 16x34 drill-log data from this browser?"))return;pagesData={"1":{}};pageMeta={"1":{gx:0,gy:0,name:"Page 1"}};headerData={};currentPage=1;quick={enabled:false,field:"Overburden",value:""};invalidatePageCache();Object.values(KEYS).forEach(k=>localStorage.removeItem(k));saveState();refreshPageSelect();updateQuickBar();closeMenu();fitView();}
+function loadJSON(event){const f=event.target.files&&event.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{try{const p=JSON.parse(rd.result);if(p.templateId!==TEMPLATE_ID||!p.pagesData)throw new Error("wrong template");if(!confirm("Load this drill-log backup and replace current drill data?"))return;headerData=p.headerData||{};headerCalibration=normalizeHeaderCalibration(p.headerCalibration||headerCalibration);pagesData=p.pagesData||{"1":{}};pageMeta=p.pageMeta||{};ensurePageMeta();currentPage=Number(p.currentPage||1);if(p.view)view=p.view;if(!pagesData[String(currentPage)])currentPage=1;invalidatePageCache();saveState();markDirty();refreshPageSelect();closeMenu();draw();alert("Backup loaded.");}catch(e){alert("This is not a valid 16x34 MITHRIL drill-log backup.");}finally{event.target.value="";}};rd.readAsText(f);}
+function clearAll(){if(!confirm("Clear all 16x34 drill-log data from this browser?"))return;pagesData={"1":{}};pageMeta={"1":{gx:0,gy:0,name:"Page 1"}};headerData={};currentPage=1;quick={enabled:false,field:"Overburden",value:""};invalidatePageCache();Object.keys(KEYS).forEach(name=>{if(name!=="headerCalibration")localStorage.removeItem(KEYS[name]);});saveState();refreshPageSelect();updateQuickBar();closeMenu();fitView();}
 
 function inputLabel(id){return id==="overburden"?"Overburden":id==="depth"?"Depth":id==="quickValue"||id==="quickValueModal"?"Quick-fill value":"Value";}
 function showPad(id){activeInput=id;["overburden","depth","quickValue","quickValueModal"].forEach(x=>{const el=$(x);if(el)el.classList.toggle("activeInput",x===id);});$("numberPad").classList.add("show");$("numberPad").setAttribute("aria-hidden","false");$("padLabel").textContent=inputLabel(id);const box=$("holeBox");if(box&&$("holeModal").classList.contains("show"))box.classList.add("padOpen");updatePadPreview();}
@@ -663,7 +764,7 @@ $("numberPad").addEventListener("click",e=>{const b=e.target.closest("button");i
 
 templateImg.onload=()=>{invalidatePageCache();if($("appShell").style.display!=="none")draw();};
 window.addEventListener("resize",resizeCanvas);
-document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeHole();closeInfo();closeQuickModal();closeMenu();hidePad();}});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeHole();closeInfo();closeQuickModal();closeMenu();hidePad();if(calibrationMode)finishHeaderCalibration();}});
 refreshPageSelect();updateQuickBar();
 
 // Keep service-worker registration at the end of the main application script.
