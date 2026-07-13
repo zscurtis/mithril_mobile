@@ -8,11 +8,11 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="apple-mobile-web-app-title" content="MITHRIL" />
 <link rel="manifest" href="./manifest.webmanifest" />
-<link rel="apple-touch-icon" sizes="192x192" href="./icons/mithril-192.png?v=38.7" />
-<link rel="apple-touch-icon-precomposed" sizes="192x192" href="./icons/mithril-192.png?v=38.7" />
-<link rel="icon" type="image/png" sizes="192x192" href="./icons/mithril-192.png?v=38.7" />
-<link rel="icon" type="image/png" sizes="512x512" href="./icons/mithril-512.png?v=38.7" />
-<title>MITHRIL Shot Diagram m38.7</title>
+<link rel="apple-touch-icon" sizes="192x192" href="./icons/mithril-192.png?v=38.8" />
+<link rel="apple-touch-icon-precomposed" sizes="192x192" href="./icons/mithril-192.png?v=38.8" />
+<link rel="icon" type="image/png" sizes="192x192" href="./icons/mithril-192.png?v=38.8" />
+<link rel="icon" type="image/png" sizes="512x512" href="./icons/mithril-512.png?v=38.8" />
+<title>MITHRIL Shot Diagram m38.8</title>
 <style>
   html, body {
     margin: 0;
@@ -89,7 +89,7 @@
       const doc = frame.contentDocument;
       if (!doc) throw new Error("Shot Diagram document was unavailable.");
 
-      doc.title = "MITHRIL Shot Diagram m38.7";
+      doc.title = "MITHRIL Shot Diagram m38.8";
 
       const injectedStyle = doc.createElement("style");
       injectedStyle.textContent = `
@@ -137,10 +137,10 @@
       if (oldMark) {
         const icon = doc.createElement("img");
         icon.className = "mark";
-        icon.src = "./icons/mithril-192.png?v=38.7";
+        icon.src = "./icons/mithril-192.png?v=38.8";
         icon.alt = "MITHRIL";
         icon.addEventListener("error", () => {
-          icon.src = "https://zscurtis.github.io/mithril_mobile/icons/mithril-192.png?v=38.7";
+          icon.src = "https://zscurtis.github.io/mithril_mobile/icons/mithril-192.png?v=38.8";
         }, { once: true });
         oldMark.replaceWith(icon);
       }
@@ -149,7 +149,7 @@
       if (brandText) brandText.textContent = "SHOT DIAGRAM";
 
       const version = brand.querySelector(".version");
-      if (version) version.textContent = "m38.7";
+      if (version) version.textContent = "m38.8";
 
       brand.classList.add("mithrilHomeLink");
       brand.setAttribute("role", "button");
@@ -307,7 +307,7 @@
             window.addEventListener("orientationchange", function () { setTimeout(resizeCanvas, 60); });
           }
           window.addEventListener("pagehide", window.__mithrilFlushShotView);
-          console.log("MITHRIL m38.7 shot canvas mode:", performanceMode ? "legacy performance" : "standard");
+          console.log("MITHRIL m38.8 shot canvas mode:", performanceMode ? "legacy performance" : "standard");
         })();
       `;
       doc.body.appendChild(performanceScript);
@@ -487,7 +487,7 @@
 </script>
 <script>
 window.MITHRIL_UPDATE_CONFIG = {
-  currentVersion: "m38.7",
+  currentVersion: "m38.8",
   appName: "MITHRIL Mobile",
   templateName: "Shot Diagram",
   versionUrl: "./version.json",
@@ -498,6 +498,6 @@ window.MITHRIL_UPDATE_CONFIG = {
   }
 };
 </script>
-<script src="./mithril-update.js?v=38.7"></script>
+<script src="./mithril-update.js?v=38.8"></script>
 </body>
 </html>

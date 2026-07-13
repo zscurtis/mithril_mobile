@@ -1,4 +1,4 @@
-const CACHE_NAME = "mithril-mobile-m38-7-update-checker-v1";
+const CACHE_NAME = "mithril-mobile-m38-8-drill-conditions-summary-v1";
 const APP_SHELL = [
   "./",
   "./index.html",

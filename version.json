@@ -1,12 +1,13 @@
 {
-  "version": "m38.7",
-  "title": "User-Controlled Update Checker",
+  "version": "m38.8",
+  "title": "Drill-Hole Conditions and Summary",
   "released": "2026-07-13",
   "minimumOfflineVersion": "m38.7",
   "notes": [
-    "Check for updates from the MITHRIL home screen.",
-    "Check for updates from the Drill Log and Shot Diagram menus.",
-    "Shared update support is ready for future MITHRIL templates.",
-    "Saved field data and calibration settings remain on the device during updates."
+    "Drillers can mark breakthrough, dirt, bad, and wet hole conditions during hole entry.",
+    "Drill Log condition colors now match the Shot Diagram: yellow breakthrough, brown dirt, red bad, and blue wet outline.",
+    "The Drill Log PDF now begins with a summary sheet containing condition counts and footage totals.",
+    "CSV, JSON, notes pages, and share text preserve the new condition fields.",
+    "The shared update checker remains available to current and future MITHRIL templates."
   ]
 }

@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon-precomposed" sizes="192x192" href="./icons/mithril-192.png?v=38.2" />
 <link rel="icon" type="image/png" sizes="192x192" href="./icons/mithril-192.png?v=38.2" />
 <link rel="icon" type="image/png" sizes="512x512" href="./icons/mithril-512.png?v=38.2" />
-<title>MITHRIL Canvas Mobile m38.7</title>
+<title>MITHRIL Canvas Mobile m38.8</title>
 <style>
 :root { --toolbar-h: 132px; }
 * { box-sizing: border-box; }
@@ -72,8 +72,17 @@ textarea { min-height:90px; }
 .menuGrid button { min-height:48px; }
 .menuGrid .wide { grid-column:1 / -1; }
 .helper { margin:0 0 12px; font-size:13px; font-weight:750; line-height:1.35; color:#444; }
-.checkLabel { display:flex; align-items:center; gap:10px; min-height:50px; padding:9px 11px; border:1px solid #c9a500; border-radius:9px; background:#fffbe6; font-size:16px; font-weight:950; }
-.checkLabel input[type="checkbox"] { width:28px; height:28px; min-height:28px; padding:0; margin:0; accent-color:#e5b900; }
+.conditionGrid { grid-column:1 / -1; display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.checkLabel { display:flex; align-items:center; gap:10px; min-height:50px; padding:9px 11px; border:1px solid #aaa; border-radius:9px; background:#f7f7f7; font-size:16px; font-weight:950; }
+.checkLabel input[type="checkbox"] { width:28px; height:28px; min-height:28px; padding:0; margin:0; }
+.checkBreakthrough { border-color:#c9a500; background:#fff6b8; }
+.checkBreakthrough input[type="checkbox"] { accent-color:#d8aa00; }
+.checkDirt { border-color:#8a5a2b; background:#ead8c5; }
+.checkDirt input[type="checkbox"] { accent-color:#8a5a2b; }
+.checkBad { border-color:#c43b3b; background:#ffd6d6; }
+.checkBad input[type="checkbox"] { accent-color:#d83232; }
+.checkWet { border-color:#1769d2; background:#dbeaff; }
+.checkWet input[type="checkbox"] { accent-color:#1769d2; }
 
 
 #quickBar { display:none; position:fixed; left:8px; right:8px; bottom:8px; z-index:30; grid-template-columns:1fr 1fr auto; gap:6px; align-items:center; background:rgba(255,255,255,.97); border:2px solid #1f6feb; border-radius:12px; padding:8px; box-shadow:0 5px 18px rgba(0,0,0,.35); }
@@ -103,6 +112,7 @@ textarea { min-height:90px; }
   .templateCards { grid-template-columns:1fr; }
   .templateCard { min-height:125px; }
   .formGrid { grid-template-columns:1fr; }
+  .conditionGrid { grid-template-columns:1fr; }
   .brandText { font-size:15px; }
   .version { display:none; }
   .updateHomeRow { grid-template-columns:1fr; }
@@ -115,7 +125,7 @@ textarea { min-height:90px; }
 <div id="templateStart">
   <div class="startBox">
     <div class="startBrand">MITHRIL MOBILE</div>
-    <div class="startVersion">m38.7 user-controlled update checker</div>
+    <div class="startVersion">m38.8 drill-hole condition designators and summary</div>
     <div class="startIntro">Choose the document type. Shot Diagram and Drill Log now share this MITHRIL home screen.</div>
     <div class="templateCards">
       <button class="templateCard" onclick="openStableShotDiagram()">
@@ -130,7 +140,7 @@ textarea { min-height:90px; }
     <div class="updateHomeRow">
       <div class="updateHomeText">
         <div class="updateHomeTitle">MITHRIL Updates</div>
-        <div class="updateHomeVersion">Installed version: m38.7</div>
+        <div class="updateHomeVersion">Installed version: m38.8</div>
       </div>
       <button type="button" class="updateCheckButton" data-mithril-update-button>Check for Updates</button>
     </div>
@@ -143,7 +153,7 @@ textarea { min-height:90px; }
   <div class="topRow">
     <button type="button" class="brand brandHome" onclick="goToAppHome()" aria-label="Open MITHRIL home and check for updates">
       <img class="mark" src="./icons/mithril-192.png" alt="MITHRIL" onerror="this.src='https://zscurtis.github.io/mithril_mobile/icons/mithril-192.png'" />
-      <span class="brandText">DRILL LOG 16x34</span><span class="version">m38.7</span>
+      <span class="brandText">DRILL LOG 16x34</span><span class="version">m38.8</span>
     </button>
     <select id="pageSelect" onchange="switchPage(Number(this.value))"></select>
     <button onclick="openQuickModal()">Quick</button>
@@ -180,8 +190,13 @@ textarea { min-height:90px; }
     <div class="formGrid">
       <label>Overburden<input id="overburden" readonly inputmode="none" autocomplete="off" onclick="showPad('overburden')" onfocus="showPad('overburden')" /></label>
       <label>Depth<input id="depth" readonly inputmode="none" autocomplete="off" onclick="showPad('depth')" onfocus="showPad('depth')" /></label>
-      <label class="wide checkLabel"><input id="breakthrough" type="checkbox" /> Breakthrough / void / seam — color this hole yellow</label>
-      <label class="wide">Breakthrough details / Notes<textarea id="notes" placeholder="Example: 10-12 ft breakthrough; good rock below to 20 ft"></textarea></label>
+      <div class="conditionGrid">
+        <label class="checkLabel checkBreakthrough"><input id="breakthrough" type="checkbox" /> Breakthrough / void / seam</label>
+        <label class="checkLabel checkDirt"><input id="dirtHole" type="checkbox" /> Dirt hole</label>
+        <label class="checkLabel checkBad"><input id="badHole" type="checkbox" /> Bad hole</label>
+        <label class="checkLabel checkWet"><input id="wetHole" type="checkbox" /> Wet hole</label>
+      </div>
+      <label class="wide">Hole details / Notes<textarea id="notes" placeholder="Example: 10-12 ft breakthrough; good rock below to 20 ft"></textarea></label>
     </div>
     <div class="buttonGrid">
       <button class="primary" onclick="saveHole(false)">Save</button>
@@ -265,7 +280,7 @@ textarea { min-height:90px; }
 </div>
 
 <script>
-const APP_VERSION = "m38.7";
+const APP_VERSION = "m38.8";
 const TEMPLATE_ID = "drill16x34";
 const TOUCH_CAPABLE = ("ontouchstart" in window) || Number(navigator.maxTouchPoints || 0) > 0;
 const BROWSER_UA = String(navigator.userAgent || "");
@@ -632,15 +647,33 @@ function resetHeaderCalibration(){
 }
 function drawGridLabels(targetCtx=ctx){ targetCtx.save();targetCtx.font="900 17px Arial";targetCtx.textAlign="center";targetCtx.textBaseline="middle";targetCtx.lineWidth=4;targetCtx.strokeStyle="rgba(255,255,255,.95)";targetCtx.fillStyle="#0b56a8";for(let c=0;c<COLS;c++)drawOutlined(colLetter(c),X0+DX*c,315,"center",targetCtx);targetCtx.textAlign="right";for(let r=0;r<ROWS;r++)drawOutlined(String(r+1),150,Y0+DY*r,"right",targetCtx);targetCtx.restore(); }
 function drawPageLabel(pageNum,targetCtx=ctx){targetCtx.save();targetCtx.font="900 26px Arial";targetCtx.textAlign="right";targetCtx.textBaseline="bottom";targetCtx.fillStyle="rgba(255,255,255,.9)";targetCtx.fillRect(IMG_W-175,IMG_H-70,145,42);targetCtx.fillStyle="#111";targetCtx.fillText("Page "+pageNum,IMG_W-40,IMG_H-35);targetCtx.restore();}
-function drawSavedHoles(pageNum,targetCtx=ctx){ const data=pagesData[String(pageNum)]||{};targetCtx.save();for(let row=0;row<ROWS;row++){for(let col=0;col<COLS;col++){const id=holeID(row,col),d=data[id];if(!d)continue;const c=holeCenter(row,col);const has=String(d.Overburden||"").trim()||String(d.Depth||"").trim()||String(d.Notes||"").trim()||d.Breakthrough===true||d.Breakthrough==="Yes";if(!has)continue;targetCtx.beginPath();targetCtx.ellipse(c.x,c.y,22.5,20.5,0,0,Math.PI*2);targetCtx.fillStyle=(d.Breakthrough===true||d.Breakthrough==="Yes")?"rgba(255,210,0,.52)":"rgba(72,200,95,.25)";targetCtx.fill();targetCtx.font="900 14px Arial";targetCtx.textAlign="center";targetCtx.textBaseline="middle";targetCtx.lineWidth=3.5;targetCtx.strokeStyle="rgba(255,255,255,.95)";targetCtx.fillStyle="#111";drawOutlined(d.Overburden||"",c.x,c.y-9,"center",targetCtx);drawOutlined(d.Depth||"",c.x,c.y+9,"center",targetCtx);}}targetCtx.restore(); }
+function flagYes(value){return value===true||String(value||"").toLowerCase()==="yes"||String(value||"").toLowerCase()==="true";}
+function drawSavedHoles(pageNum,targetCtx=ctx){
+  const data=pagesData[String(pageNum)]||{};targetCtx.save();
+  for(let row=0;row<ROWS;row++){for(let col=0;col<COLS;col++){
+    const id=holeID(row,col),d=data[id];if(!d)continue;const c=holeCenter(row,col);
+    const breakthrough=flagYes(d.Breakthrough),dirt=flagYes(d.DirtHole),bad=flagYes(d.BadHole),wet=flagYes(d.Wet);
+    const has=String(d.Overburden||"").trim()||String(d.Depth||"").trim()||String(d.Notes||"").trim()||breakthrough||dirt||bad||wet;
+    if(!has)continue;
+    targetCtx.beginPath();targetCtx.ellipse(c.x,c.y,22.5,20.5,0,0,Math.PI*2);
+    if(bad)targetCtx.fillStyle="rgba(255,70,70,.38)";
+    else if(dirt)targetCtx.fillStyle="rgba(150,95,45,.40)";
+    else if(breakthrough)targetCtx.fillStyle="rgba(255,210,0,.62)";
+    else targetCtx.fillStyle="rgba(72,200,95,.30)";
+    targetCtx.fill();
+    if(wet){targetCtx.save();targetCtx.strokeStyle="rgba(0,90,255,.95)";targetCtx.lineWidth=4;targetCtx.stroke();targetCtx.restore();}
+    targetCtx.font="900 14px Arial";targetCtx.textAlign="center";targetCtx.textBaseline="middle";targetCtx.lineWidth=3.5;targetCtx.strokeStyle="rgba(255,255,255,.95)";targetCtx.fillStyle="#111";
+    drawOutlined(d.Overburden||"",c.x,c.y-9,"center",targetCtx);drawOutlined(d.Depth||"",c.x,c.y+9,"center",targetCtx);
+  }}targetCtx.restore();
+}
 function drawOutlined(value,x,y,align,targetCtx=ctx){ if(!String(value||"").trim())return;targetCtx.textAlign=align||"center";targetCtx.strokeText(String(value),x,y);targetCtx.fillText(String(value),x,y); }
 
-function openHole(id){ hidePad();currentHole=id;const d=currentData()[id]||{};$("holeTitle").textContent="Hole "+id;$("overburden").value=d.Overburden||"";$("depth").value=d.Depth||"";$("breakthrough").checked=d.Breakthrough===true||d.Breakthrough==="Yes";$("notes").value=d.Notes||"";$("holeModal").classList.add("show");setTimeout(()=>{showPad("overburden");},120); }
+function openHole(id){ hidePad();currentHole=id;const d=currentData()[id]||{};$("holeTitle").textContent="Hole "+id;$("overburden").value=d.Overburden||"";$("depth").value=d.Depth||"";$("breakthrough").checked=flagYes(d.Breakthrough);$("dirtHole").checked=flagYes(d.DirtHole);$("badHole").checked=flagYes(d.BadHole);$("wetHole").checked=flagYes(d.Wet);$("notes").value=d.Notes||"";$("holeModal").classList.add("show");setTimeout(()=>{showPad("overburden");},120); }
 function closeHole(){ hidePad();$("holeModal").classList.remove("show"); }
-function readHoleForm(){ return {HoleID:currentHole,Overburden:$("overburden").value,Depth:$("depth").value,Breakthrough:$("breakthrough").checked?"Yes":"No",Notes:$("notes").value,Timestamp:new Date().toLocaleString()}; }
+function readHoleForm(){ return {HoleID:currentHole,Overburden:$("overburden").value,Depth:$("depth").value,Breakthrough:$("breakthrough").checked?"Yes":"No",DirtHole:$("dirtHole").checked?"Yes":"No",BadHole:$("badHole").checked?"Yes":"No",Wet:$("wetHole").checked?"Yes":"No",Notes:$("notes").value,Timestamp:new Date().toLocaleString()}; }
 function saveHole(goNext){ currentData()[currentHole]=readHoleForm();invalidatePageCache(currentPage);saveState();markDirty();draw();if(goNext){const p=parseHoleID(currentHole);let col=p.col+1,row=p.row;if(col>=COLS){col=0;row++;}if(row>=ROWS){closeHole();alert("Reached the last hole on this page.");return;}openHole(holeID(row,col));}else closeHole(); }
 function previousHoleID(id){const p=parseHoleID(id);let col=p.col-1,row=p.row;if(col<0){col=COLS-1;row--;}return row>=0?holeID(row,col):null;}
-function copyPrevious(){const prev=previousHoleID(currentHole);if(!prev||!currentData()[prev]){alert("Previous hole has no saved data.");return;}const d=currentData()[prev];$("overburden").value=d.Overburden||"";$("depth").value=d.Depth||"";$("breakthrough").checked=d.Breakthrough===true||d.Breakthrough==="Yes";$("notes").value=d.Notes||"";updatePadPreview();}
+function copyPrevious(){const prev=previousHoleID(currentHole);if(!prev||!currentData()[prev]){alert("Previous hole has no saved data.");return;}const d=currentData()[prev];$("overburden").value=d.Overburden||"";$("depth").value=d.Depth||"";$("breakthrough").checked=flagYes(d.Breakthrough);$("dirtHole").checked=flagYes(d.DirtHole);$("badHole").checked=flagYes(d.BadHole);$("wetHole").checked=flagYes(d.Wet);$("notes").value=d.Notes||"";updatePadPreview();}
 function clearCurrentHole(){if(!confirm("Clear data for hole "+currentHole+"?"))return;delete currentData()[currentHole];invalidatePageCache(currentPage);saveState();markDirty();closeHole();draw();}
 
 function openInfo(){ $("fieldDate").value=toDateInput(headerData.Date);$("drillLogNumber").value=headerData.DrillLogNumber||"";$("employee").value=headerData.Employee||"";$("jobName").value=headerData.Job||"";$("infoModal").classList.add("show"); }
@@ -665,16 +698,20 @@ function applyQuick(id){if(!quick.enabled)return;const d=currentData()[id]||{Hol
 
 function openMenu(){ $("menuModal").classList.add("show"); }
 function closeMenu(){ $("menuModal").classList.remove("show"); }
-function holeHasSavedData(d){return !!(d&&(String(d.Overburden||"").trim()||String(d.Depth||"").trim()||String(d.Notes||"").trim()||d.Breakthrough===true||d.Breakthrough==="Yes"));}
+function holeHasSavedData(d){return !!(d&&(String(d.Overburden||"").trim()||String(d.Depth||"").trim()||String(d.Notes||"").trim()||flagYes(d.Breakthrough)||flagYes(d.DirtHole)||flagYes(d.BadHole)||flagYes(d.Wet)));}
 function getTotalSavedHoles(){let count=0;getPageNumbers().forEach(p=>{Object.values(pagesData[String(p)]||{}).forEach(d=>{if(holeHasSavedData(d))count++;});});return count;}
-function getBreakthroughCount(){let count=0;getPageNumbers().forEach(p=>{Object.values(pagesData[String(p)]||{}).forEach(d=>{if(d&&(d.Breakthrough===true||d.Breakthrough==="Yes"))count++;});});return count;}
+function countFlag(field){let count=0;getPageNumbers().forEach(p=>{Object.values(pagesData[String(p)]||{}).forEach(d=>{if(d&&flagYes(d[field]))count++;});});return count;}
+function getBreakthroughCount(){return countFlag("Breakthrough");}
+function getDirtHoleCount(){return countFlag("DirtHole");}
+function getBadHoleCount(){return countFlag("BadHole");}
+function getWetHoleCount(){return countFlag("Wet");}
 function updateStatus(){if(calibrationMode){$("status").textContent="HEADER CALIBRATION - drag Employee or Job, then tap Done";return;}const count=Object.keys(currentData()).filter(k=>holeHasSavedData(currentData()[k])).length;const dirty=localStorage.getItem(KEYS.dirty)==="true"?" - unsent changes":"";const lastShared=localStorage.getItem(KEYS.lastShared)||"";const shared=(!dirty&&lastShared)?" - shared "+lastShared:"";$("status").textContent=`Drill Log 16x34 - Page ${currentPage} - ${count} saved holes - ${Math.round(view.scale*100)}%${dirty}${shared}`;}
 function exportBaseName(){const parts=[headerData.Job||"Drill Log",headerData.DrillLogNumber||"16x34",headerData.Date||""];return parts.filter(Boolean).join(" - ").replace(/[\\/:*?\"<>|]/g,"-");}
 function downloadBlob(content,name,type){const blob=content instanceof Blob?content:new Blob([content],{type});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},800);}
 function buildBackupPayload(){saveState();return {version:APP_VERSION,templateId:TEMPLATE_ID,templateName:"Drill Log 16x34 Construction",headerData,headerCalibration,currentPage,pagesData,pageMeta,view};}
 function getJSONText(){return JSON.stringify(buildBackupPayload(),null,2);}
 function downloadJSON(){downloadBlob(getJSONText(),exportBaseName()+".json","application/json");updateStatus();}
-function exportCSV(){const rows=[["Page","HoleID","Column","Row","Overburden","Depth","Breakthrough","Notes","Timestamp"]];Object.keys(pagesData).map(Number).sort((a,b)=>a-b).forEach(p=>{Object.keys(pagesData[String(p)]).sort((a,b)=>{const pa=parseHoleID(a),pb=parseHoleID(b);return pa.row-pb.row||pa.col-pb.col;}).forEach(id=>{const d=pagesData[String(p)][id],pos=parseHoleID(id);rows.push([p,id,colLetter(pos.col),pos.row+1,d.Overburden||"",d.Depth||"",(d.Breakthrough===true||d.Breakthrough==="Yes")?"Yes":"No",d.Notes||"",d.Timestamp||""]);});});const csv=rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(",")).join("\n");downloadBlob(csv,exportBaseName()+".csv","text/csv");}
+function exportCSV(){const rows=[["Page","HoleID","Column","Row","Overburden","Depth","Breakthrough","DirtHole","BadHole","Wet","Notes","Timestamp"]];Object.keys(pagesData).map(Number).sort((a,b)=>a-b).forEach(p=>{Object.keys(pagesData[String(p)]).sort((a,b)=>{const pa=parseHoleID(a),pb=parseHoleID(b);return pa.row-pb.row||pa.col-pb.col;}).forEach(id=>{const d=pagesData[String(p)][id],pos=parseHoleID(id);rows.push([p,id,colLetter(pos.col),pos.row+1,d.Overburden||"",d.Depth||"",flagYes(d.Breakthrough)?"Yes":"No",flagYes(d.DirtHole)?"Yes":"No",flagYes(d.BadHole)?"Yes":"No",flagYes(d.Wet)?"Yes":"No",d.Notes||"",d.Timestamp||""]);});});const csv=rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(",")).join("\n");downloadBlob(csv,exportBaseName()+".csv","text/csv");}
 
 function drawOutlinedOn(targetCtx,value,x,y,align="center",stroke="rgba(255,255,255,.95)",fill="#111"){
   if(!String(value||"").trim())return;
@@ -702,7 +739,7 @@ function renderDrillPageCanvas(pageNum){
   for(let row=0;row<ROWS;row++){for(let col=0;col<COLS;col++){
     const id=holeID(row,col),d=data[id];if(!holeHasSavedData(d))continue;const center=holeCenter(row,col);
     x.beginPath();x.ellipse(center.x,center.y,22.5,20.5,0,0,Math.PI*2);
-    x.fillStyle=(d.Breakthrough===true||d.Breakthrough==="Yes")?"rgba(255,210,0,.62)":"rgba(72,200,95,.30)";x.fill();
+    const breakthrough=flagYes(d.Breakthrough),dirt=flagYes(d.DirtHole),bad=flagYes(d.BadHole),wet=flagYes(d.Wet);if(bad)x.fillStyle="rgba(255,70,70,.38)";else if(dirt)x.fillStyle="rgba(150,95,45,.40)";else if(breakthrough)x.fillStyle="rgba(255,210,0,.62)";else x.fillStyle="rgba(72,200,95,.30)";x.fill();if(wet){x.save();x.strokeStyle="rgba(0,90,255,.95)";x.lineWidth=4;x.stroke();x.restore();}
     x.font="900 14px Arial";x.textBaseline="middle";x.lineWidth=3.5;
     drawOutlinedOn(x,d.Overburden||"",center.x,center.y-9,"center");
     drawOutlinedOn(x,d.Depth||"",center.x,center.y+9,"center");
@@ -714,7 +751,8 @@ function wrapCanvasText(targetCtx,text,maxWidth){
   const words=String(text||"").replace(/\s+/g," ").trim().split(" ").filter(Boolean);if(!words.length)return [""];
   const lines=[];let line="";for(const word of words){const test=line?line+" "+word:word;if(targetCtx.measureText(test).width<=maxWidth||!line)line=test;else{lines.push(line);line=word;}}if(line)lines.push(line);return lines;
 }
-function collectNoteEntries(){const entries=[];getPageNumbers().forEach(p=>{Object.keys(pagesData[String(p)]||{}).sort((a,b)=>{const pa=parseHoleID(a),pb=parseHoleID(b);return pa.row-pb.row||pa.col-pb.col;}).forEach(id=>{const d=pagesData[String(p)][id];const bt=d&&(d.Breakthrough===true||d.Breakthrough==="Yes");const note=String(d&&d.Notes||"").trim();if(bt||note)entries.push({page:p,hole:id,breakthrough:bt,note:note||(bt?"Breakthrough marked; no details entered.":"")});});});return entries;}
+function conditionLabels(d){const labels=[];if(flagYes(d&&d.Breakthrough))labels.push("BREAKTHROUGH");if(flagYes(d&&d.DirtHole))labels.push("DIRT");if(flagYes(d&&d.BadHole))labels.push("BAD");if(flagYes(d&&d.Wet))labels.push("WET");return labels;}
+function collectNoteEntries(){const entries=[];getPageNumbers().forEach(p=>{Object.keys(pagesData[String(p)]||{}).sort((a,b)=>{const pa=parseHoleID(a),pb=parseHoleID(b);return pa.row-pb.row||pa.col-pb.col;}).forEach(id=>{const d=pagesData[String(p)][id]||{};const conditions=conditionLabels(d);const note=String(d.Notes||"").trim();if(conditions.length||note)entries.push({page:p,hole:id,conditions,note:note||(conditions.length?"Condition marked; no details entered.":"")});});});return entries;}
 function newNotesCanvas(pageIndex){
   const c=document.createElement("canvas");c.width=IMG_W;c.height=IMG_H;const x=c.getContext("2d");
   x.fillStyle="#fff";x.fillRect(0,0,IMG_W,IMG_H);x.fillStyle="#111";x.textBaseline="top";
@@ -728,14 +766,72 @@ function renderNotesCanvases(){
   const entries=collectNoteEntries();if(!entries.length)return [];
   const result=[];let pageIndex=1,c=newNotesCanvas(pageIndex),x=c.getContext("2d"),y=275;
   for(const entry of entries){
-    x.font="950 29px Arial";const heading=`Page ${entry.page}  •  Hole ${entry.hole}${entry.breakthrough?"  •  BREAKTHROUGH":""}`;
+    x.font="950 29px Arial";const heading=`Page ${entry.page}  •  Hole ${entry.hole}${entry.conditions.length?"  •  "+entry.conditions.join(" / "):""}`;
     x.font="700 27px Arial";const lines=wrapCanvasText(x,entry.note,IMG_W-170);const needed=42+lines.length*36+24;
     if(y+needed>IMG_H-90){result.push(c);pageIndex++;c=newNotesCanvas(pageIndex);x=c.getContext("2d");y=275;}
-    x.font="950 29px Arial";x.fillStyle=entry.breakthrough?"#8a6400":"#111";x.fillText(heading,85,y);y+=40;
+    x.font="950 29px Arial";x.fillStyle=entry.conditions.includes("BAD")?"#a00000":entry.conditions.includes("DIRT")?"#704214":entry.conditions.includes("BREAKTHROUGH")?"#8a6400":entry.conditions.includes("WET")?"#0b56a8":"#111";x.fillText(heading,85,y);y+=40;
     x.font="700 27px Arial";x.fillStyle="#222";for(const line of lines){x.fillText(line,105,y);y+=36;}
     x.strokeStyle="#ccc";x.lineWidth=2;x.beginPath();x.moveTo(85,y+8);x.lineTo(IMG_W-85,y+8);x.stroke();y+=28;
   }
   result.push(c);return result;
+}
+function parseDrillNumber(value){const m=String(value||"").match(/-?\d+(?:\.\d+)?/);if(!m)return null;const n=Number(m[0]);return Number.isFinite(n)?n:null;}
+function getDrillSummary(){
+  const s={pages:getPageNumbers().length,saved:0,complete:0,incomplete:0,invalid:0,breakthrough:0,dirt:0,bad:0,wet:0,notes:0,totalDepth:0,totalOverburden:0,totalRock:0,depthCount:0,overburdenCount:0,rockCount:0};
+  getPageNumbers().forEach(p=>{Object.values(pagesData[String(p)]||{}).forEach(d=>{
+    if(!holeHasSavedData(d))return;s.saved++;
+    if(flagYes(d.Breakthrough))s.breakthrough++;if(flagYes(d.DirtHole))s.dirt++;if(flagYes(d.BadHole))s.bad++;if(flagYes(d.Wet))s.wet++;if(String(d.Notes||"").trim())s.notes++;
+    const depth=parseDrillNumber(d.Depth),ob=parseDrillNumber(d.Overburden);
+    if(depth!==null){s.totalDepth+=depth;s.depthCount++;}
+    if(ob!==null){s.totalOverburden+=ob;s.overburdenCount++;}
+    if(depth===null||ob===null)s.incomplete++;
+    else if(ob>depth){s.invalid++;}
+    else{s.complete++;s.totalRock+=Math.max(depth-ob,0);s.rockCount++;}
+  });});
+  s.avgDepth=s.depthCount?s.totalDepth/s.depthCount:0;s.avgOverburden=s.overburdenCount?s.totalOverburden/s.overburdenCount:0;s.avgRock=s.rockCount?s.totalRock/s.rockCount:0;return s;
+}
+function fmtSummaryNumber(value){return (Math.round(Number(value||0)*10)/10).toLocaleString(undefined,{maximumFractionDigits:1});}
+function drawSummaryBox(x,left,top,width,height,label,value,sub=""){
+  x.fillStyle="#f5f7fa";x.strokeStyle="#b8c0ca";x.lineWidth=2;x.fillRect(left,top,width,height);x.strokeRect(left,top,width,height);
+  x.fillStyle="#555";x.font="800 22px Arial";x.fillText(label,left+18,top+15);
+  x.fillStyle="#111";x.font="950 42px Arial";x.fillText(String(value),left+18,top+50);
+  if(sub){x.fillStyle="#666";x.font="700 18px Arial";x.fillText(sub,left+18,top+101);}
+}
+function drawConditionLegend(x,left,top,width,label,count,fill,stroke=null){
+  x.fillStyle="#fff";x.strokeStyle="#bbb";x.lineWidth=2;x.fillRect(left,top,width,78);x.strokeRect(left,top,width,78);
+  x.beginPath();x.ellipse(left+40,top+39,21,19,0,0,Math.PI*2);x.fillStyle=fill;x.fill();if(stroke){x.strokeStyle=stroke;x.lineWidth=4;x.stroke();}
+  x.fillStyle="#222";x.font="900 23px Arial";x.fillText(label,left+75,top+14);x.font="950 29px Arial";x.fillText(String(count),left+75,top+42);
+}
+function renderDrillSummaryCanvas(){
+  const s=getDrillSummary(),c=document.createElement("canvas");c.width=IMG_W;c.height=IMG_H;const x=c.getContext("2d");
+  x.fillStyle="#fff";x.fillRect(0,0,IMG_W,IMG_H);x.textBaseline="top";x.fillStyle="#111";
+  x.font="950 54px Arial";x.fillText("MITHRIL DRILL LOG SUMMARY",70,62);
+  x.font="800 27px Arial";x.fillText(`Job: ${headerData.Job||""}`,70,145);x.fillText(`Drill Log: ${headerData.DrillLogNumber||""}`,70,187);x.fillText(`Employee: ${headerData.Employee||""}`,720,145);x.fillText(`Date: ${headerData.Date||""}`,720,187);
+  x.strokeStyle="#333";x.lineWidth=3;x.beginPath();x.moveTo(70,245);x.lineTo(IMG_W-70,245);x.stroke();
+  drawSummaryBox(x,70,290,285,150,"Pages",s.pages);
+  drawSummaryBox(x,385,290,285,150,"Holes entered",s.saved);
+  drawSummaryBox(x,700,290,285,150,"Complete",s.complete);
+  drawSummaryBox(x,1015,290,280,150,"Needs review",s.incomplete+s.invalid,`${s.incomplete} incomplete / ${s.invalid} invalid`);
+  x.fillStyle="#111";x.font="950 35px Arial";x.fillText("Footage",70,505);
+  drawSummaryBox(x,70,560,370,160,"Total depth",fmtSummaryNumber(s.totalDepth),`Average ${fmtSummaryNumber(s.avgDepth)} ft`);
+  drawSummaryBox(x,475,560,370,160,"Total overburden",fmtSummaryNumber(s.totalOverburden),`Average ${fmtSummaryNumber(s.avgOverburden)} ft`);
+  drawSummaryBox(x,880,560,415,160,"Total rock",fmtSummaryNumber(s.totalRock),`Average ${fmtSummaryNumber(s.avgRock)} ft`);
+  x.fillStyle="#111";x.font="950 35px Arial";x.fillText("Hole conditions",70,790);
+  drawConditionLegend(x,70,850,285,"Breakthrough",s.breakthrough,"rgba(255,210,0,.62)");
+  drawConditionLegend(x,385,850,285,"Dirt",s.dirt,"rgba(150,95,45,.40)");
+  drawConditionLegend(x,700,850,285,"Bad",s.bad,"rgba(255,70,70,.38)");
+  drawConditionLegend(x,1015,850,280,"Wet",s.wet,"rgba(72,200,95,.30)","rgba(0,90,255,.95)");
+  x.font="950 35px Arial";x.fillStyle="#111";x.fillText("Field review",70,1025);
+  x.font="800 27px Arial";x.fillStyle=s.invalid?"#a00000":"#222";x.fillText(`Invalid holes (overburden greater than depth): ${s.invalid}`,90,1090);
+  x.fillStyle=s.incomplete?"#7a5200":"#222";x.fillText(`Incomplete holes (missing depth or overburden): ${s.incomplete}`,90,1140);
+  x.fillStyle="#222";x.fillText(`Holes with notes: ${s.notes}`,90,1190);
+  x.font="700 22px Arial";x.fillStyle="#555";x.fillText("Condition colors match the MITHRIL Shot Diagram. Wet holes use a blue outline and may also carry another condition color.",70,1290);
+  x.fillStyle="#f7f7f7";x.strokeStyle="#ccc";x.lineWidth=2;x.fillRect(70,1370,IMG_W-140,520);x.strokeRect(70,1370,IMG_W-140,520);
+  x.fillStyle="#111";x.font="950 31px Arial";x.fillText("Summary rules",95,1400);
+  x.font="700 24px Arial";const rules=["Rock footage = depth minus overburden.","A blank depth or overburden is incomplete and is excluded from finalized rock footage.","Overburden greater than depth is invalid and is excluded from finalized rock footage.","Condition counts are independent; one hole may appear in more than one condition count."];
+  let y=1460;for(const rule of rules){x.fillText("• "+rule,105,y);y+=62;}
+  x.font="700 20px Arial";x.fillStyle="#666";x.fillText(`Generated by MITHRIL Mobile ${APP_VERSION}`,70,IMG_H-80);
+  return c;
 }
 function dataURLToBytes(dataURL){const base64=String(dataURL).split(",")[1]||"";const bin=atob(base64);const bytes=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);return bytes;}
 function asciiBytes(value){return new TextEncoder().encode(String(value));}
@@ -756,7 +852,7 @@ function buildPDFBytes(canvases){
   for(let n=1;n<=objectCount;n++){offsets[n]=length;const start=asciiBytes(`${n} 0 obj\n`),end=asciiBytes("\nendobj\n");chunks.push(start);length+=start.length;for(const part of objects[n]){chunks.push(part);length+=part.length;}chunks.push(end);length+=end.length;}
   const xrefOffset=length;let xref=`xref\n0 ${objectCount+1}\n0000000000 65535 f \n`;for(let n=1;n<=objectCount;n++)xref+=String(offsets[n]).padStart(10,"0")+" 00000 n \n";xref+=`trailer\n<< /Size ${objectCount+1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF\n`;chunks.push(asciiBytes(xref));return concatBytes(chunks);
 }
-function buildPDFBlob(){if(!templateImg.complete||!templateImg.naturalWidth)throw new Error("The drill-log template is still loading.");const canvases=getPageNumbers().map(renderDrillPageCanvas).concat(renderNotesCanvases());return new Blob([buildPDFBytes(canvases)],{type:"application/pdf"});}
+function buildPDFBlob(){if(!templateImg.complete||!templateImg.naturalWidth)throw new Error("The drill-log template is still loading.");const canvases=[renderDrillSummaryCanvas()].concat(getPageNumbers().map(renderDrillPageCanvas),renderNotesCanvases());return new Blob([buildPDFBytes(canvases)],{type:"application/pdf"});}
 function downloadPDF(){try{const blob=buildPDFBlob();downloadBlob(blob,exportBaseName()+".pdf","application/pdf");}catch(error){alert(error&&error.message?error.message:"Could not create the PDF.");}}
 function missingSendInfo(){const missing=[];if(!String(headerData.Date||"").trim())missing.push("Date");if(!String(headerData.DrillLogNumber||"").trim())missing.push("Drill Log #");if(!String(headerData.Employee||"").trim())missing.push("Employee");if(!String(headerData.Job||"").trim())missing.push("Job");return missing;}
 async function finishAndSendToBlaster(){
@@ -766,7 +862,7 @@ async function finishAndSendToBlaster(){
   try{
     const base=exportBaseName();const pdfBlob=buildPDFBlob();const jsonText=getJSONText();
     const pdfFile=new File([pdfBlob],base+".pdf",{type:"application/pdf"});const jsonFile=new File([jsonText],base+".json",{type:"application/json"});const files=[pdfFile,jsonFile];
-    const shareData={files,title:"MITHRIL Drill Log - "+(headerData.Job||headerData.DrillLogNumber),text:["MITHRIL Drill Log",`Job: ${headerData.Job}`,`Drill Log: ${headerData.DrillLogNumber}`,`Employee: ${headerData.Employee}`,`Date: ${headerData.Date}`,`Pages: ${getPageNumbers().length}`,`Saved holes: ${total}`,`Breakthrough holes: ${getBreakthroughCount()}`].join("\n")};
+    const summary=getDrillSummary();const shareData={files,title:"MITHRIL Drill Log - "+(headerData.Job||headerData.DrillLogNumber),text:["MITHRIL Drill Log",`Job: ${headerData.Job}`,`Drill Log: ${headerData.DrillLogNumber}`,`Employee: ${headerData.Employee}`,`Date: ${headerData.Date}`,`Pages: ${getPageNumbers().length}`,`Saved holes: ${total}`,`Breakthrough holes: ${summary.breakthrough}`,`Dirt holes: ${summary.dirt}`,`Bad holes: ${summary.bad}`,`Wet holes: ${summary.wet}`].join("\n")};
     let canShare=false;try{canShare=!!(navigator.share&&navigator.canShare&&navigator.canShare({files}));}catch(e){canShare=false;}
     if(!canShare){downloadBlob(pdfBlob,base+".pdf","application/pdf");setTimeout(()=>downloadBlob(jsonText,base+".json","application/json"),700);alert("This browser could not attach both files to the share menu. The PDF and JSON were downloaded as a fallback.\n\nFor direct Outlook sharing, open the GitHub Pages version in Chrome, Edge, or Safari.");return;}
     button.textContent="Open Outlook / Share...";await navigator.share(shareData);const sharedAt=new Date().toLocaleString();localStorage.setItem(KEYS.dirty,"false");localStorage.setItem(KEYS.lastShared,sharedAt);updateStatus();alert("The PDF and JSON were handed to the selected app.\n\nIn Outlook, verify the recipient and tap Send.");
@@ -796,14 +892,14 @@ if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("./service-worker.js")
       .then(registration => registration.update())
-      .then(() => console.log("MITHRIL m38.7 service worker ready."))
+      .then(() => console.log("MITHRIL m38.8 service worker ready."))
       .catch(error => console.error("MITHRIL service worker registration failed:", error));
   });
 }
 </script>
 <script>
 window.MITHRIL_UPDATE_CONFIG = {
-  currentVersion: "m38.7",
+  currentVersion: "m38.8",
   appName: "MITHRIL Mobile",
   templateName: "Drill Log 16x34",
   versionUrl: "./version.json",
@@ -814,6 +910,6 @@ window.MITHRIL_UPDATE_CONFIG = {
   }
 };
 </script>
-<script src="./mithril-update.js?v=38.7"></script>
+<script src="./mithril-update.js?v=38.8"></script>
 </body>
 </html>
