@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon-precomposed" sizes="192x192" href="./icons/mithril-192.png?v=38.2" />
 <link rel="icon" type="image/png" sizes="192x192" href="./icons/mithril-192.png?v=38.2" />
 <link rel="icon" type="image/png" sizes="512x512" href="./icons/mithril-512.png?v=38.2" />
-<title>MITHRIL Canvas Mobile m38.3</title>
+<title>MITHRIL Canvas Mobile m38.5</title>
 <style>
 :root { --toolbar-h: 132px; }
 * { box-sizing: border-box; }
@@ -103,7 +103,7 @@ textarea { min-height:90px; }
 <div id="templateStart">
   <div class="startBox">
     <div class="startBrand">MITHRIL MOBILE</div>
-    <div class="startVersion">m38.3 employee and job line calibration</div>
+    <div class="startVersion">m38.5 legacy canvas performance optimization</div>
     <div class="startIntro">Choose the document type. Shot Diagram and Drill Log now share this MITHRIL home screen.</div>
     <div class="templateCards">
       <button class="templateCard" onclick="openStableShotDiagram()">
@@ -124,7 +124,7 @@ textarea { min-height:90px; }
   <div class="topRow">
     <button type="button" class="brand brandHome" onclick="goToAppHome()" aria-label="Open MITHRIL home and check for updates">
       <img class="mark" src="./icons/mithril-192.png" alt="MITHRIL" onerror="this.src='https://zscurtis.github.io/mithril_mobile/icons/mithril-192.png'" />
-      <span class="brandText">DRILL LOG 16x34</span><span class="version">m38.3</span>
+      <span class="brandText">DRILL LOG 16x34</span><span class="version">m38.5</span>
     </button>
     <select id="pageSelect" onchange="switchPage(Number(this.value))"></select>
     <button onclick="openQuickModal()">Quick</button>
@@ -237,8 +237,21 @@ textarea { min-height:90px; }
 </div>
 
 <script>
-const APP_VERSION = "m38.3";
+const APP_VERSION = "m38.5";
 const TEMPLATE_ID = "drill16x34";
+const TOUCH_CAPABLE = ("ontouchstart" in window) || Number(navigator.maxTouchPoints || 0) > 0;
+const BROWSER_UA = String(navigator.userAgent || "");
+const IOS_VERSION_MATCH = BROWSER_UA.match(/(?:CPU (?:iPhone )?OS|OS) (\d+)[_\.]/i);
+const SAFARI_VERSION_MATCH = BROWSER_UA.match(/Version\/(\d+)/i);
+const IOS_MAJOR_VERSION = IOS_VERSION_MATCH ? Number(IOS_VERSION_MATCH[1]) : null;
+const SAFARI_MAJOR_VERSION = SAFARI_VERSION_MATCH ? Number(SAFARI_VERSION_MATCH[1]) : null;
+const LEGACY_PERFORMANCE_MODE = TOUCH_CAPABLE && (
+  !("PointerEvent" in window) ||
+  (IOS_MAJOR_VERSION !== null && IOS_MAJOR_VERSION <= 15) ||
+  (SAFARI_MAJOR_VERSION !== null && SAFARI_MAJOR_VERSION <= 15) ||
+  (Number(navigator.hardwareConcurrency || 4) <= 3)
+);
+const MAX_RENDER_DPR = LEGACY_PERFORMANCE_MODE ? 1 : Math.min(Number(window.devicePixelRatio || 1), 2);
 const IMG_W = 1365;
 const IMG_H = 2243;
 const COLS = 16;
@@ -268,7 +281,12 @@ const wrap = document.getElementById("canvasWrap");
 const templateImg = new Image();
 templateImg.src = TEMPLATE_SRC;
 
-let dpr = window.devicePixelRatio || 1;
+let dpr = MAX_RENDER_DPR;
+let drawPending = false;
+let lastInteractionUIUpdate = 0;
+const PAGE_CACHE_SCALE = LEGACY_PERFORMANCE_MODE ? 0.72 : 1;
+const MAX_PAGE_CACHE_ITEMS = LEGACY_PERFORMANCE_MODE ? 2 : 5;
+const pageRenderCache = new Map();
 let pagesData = readJSON(KEYS.pages, {"1":{}});
 let pageMeta = readJSON(KEYS.pageMeta, {"1":{gx:0,gy:0,name:"Page 1"}});
 let headerData = readJSON(KEYS.header, {});
@@ -299,6 +317,46 @@ ensurePageMeta();
 function markDirty(){ localStorage.setItem(KEYS.dirty,"true"); updateStatus(); }
 function saveState(){ saveJSON(KEYS.pages,pagesData); saveJSON(KEYS.pageMeta,pageMeta); saveJSON(KEYS.header,headerData); localStorage.setItem(KEYS.page,String(currentPage)); saveJSON(KEYS.view,view); saveJSON(KEYS.quick,quick); }
 
+function invalidatePageCache(pageNum=null){
+  if(pageNum===null || pageNum===undefined){ pageRenderCache.clear(); return; }
+  pageRenderCache.delete(String(pageNum));
+}
+function trimPageCache(){
+  while(pageRenderCache.size>MAX_PAGE_CACHE_ITEMS){
+    const oldestKey=pageRenderCache.keys().next().value;
+    pageRenderCache.delete(oldestKey);
+  }
+}
+function pageIsVisible(pageNum,viewport){
+  const o=pageOrigin(pageNum),pad=120;
+  return o.x+IMG_W>=viewport.left-pad && o.x<=viewport.right+pad && o.y+IMG_H>=viewport.top-pad && o.y<=viewport.bottom+pad;
+}
+function buildPageRenderCache(pageNum){
+  const c=document.createElement("canvas");
+  c.width=Math.max(1,Math.round(IMG_W*PAGE_CACHE_SCALE));
+  c.height=Math.max(1,Math.round(IMG_H*PAGE_CACHE_SCALE));
+  const x=c.getContext("2d",{alpha:false});
+  x.setTransform(PAGE_CACHE_SCALE,0,0,PAGE_CACHE_SCALE,0,0);
+  x.fillStyle="#fff";x.fillRect(0,0,IMG_W,IMG_H);
+  if(templateImg.complete&&templateImg.naturalWidth)x.drawImage(templateImg,0,0,IMG_W,IMG_H);
+  drawHeader(x);
+  drawSavedHoles(pageNum,x);
+  drawGridLabels(x);
+  drawPageLabel(pageNum,x);
+  pageRenderCache.set(String(pageNum),c);
+  trimPageCache();
+  return c;
+}
+function getPageRenderCache(pageNum){
+  const key=String(pageNum);
+  if(pageRenderCache.has(key)){
+    const cached=pageRenderCache.get(key);
+    pageRenderCache.delete(key);pageRenderCache.set(key,cached);
+    return cached;
+  }
+  return buildPageRenderCache(pageNum);
+}
+
 function appHomeURL(forceRefresh=false){
   const href = String(window.location.href || "");
   const openedFromDeviceStorage = href.startsWith("content:") || href.startsWith("file:");
@@ -322,7 +380,7 @@ function goToAppHome(){
 function openDrillLog(){ $("templateStart").style.display="none"; $("appShell").style.display="block"; refreshPageSelect(); updateQuickBar(); resizeCanvas(); setTimeout(()=>{ if(!localStorage.getItem(KEYS.view)) fitView(); else draw(); },30); }
 function returnToSelector(){ closeMenu(); hidePad(); $("appShell").style.display="none"; $("templateStart").style.display="flex"; }
 
-function resizeCanvas(){ if($("appShell").style.display==="none") return; dpr=window.devicePixelRatio||1; const r=wrap.getBoundingClientRect(); canvas.width=Math.max(1,Math.floor(r.width*dpr)); canvas.height=Math.max(1,Math.floor(r.height*dpr)); canvas.style.width=r.width+"px"; canvas.style.height=r.height+"px"; ctx.setTransform(dpr,0,0,dpr,0,0); draw(); }
+function resizeCanvas(){ if($("appShell").style.display==="none") return; dpr=MAX_RENDER_DPR; const r=wrap.getBoundingClientRect(); canvas.width=Math.max(1,Math.floor(r.width*dpr)); canvas.height=Math.max(1,Math.floor(r.height*dpr)); canvas.style.width=r.width+"px"; canvas.style.height=r.height+"px"; ctx.setTransform(dpr,0,0,dpr,0,0); draw(); }
 const PAGE_GAP = 90;
 function pageOrigin(pageNum){ const m=pageMeta[String(pageNum)]||{gx:0,gy:0}; return {x:m.gx*(IMG_W+PAGE_GAP),y:m.gy*(IMG_H+PAGE_GAP)}; }
 function pageAtWorldPoint(wx,wy){ for(const p of getPageNumbers()){ const o=pageOrigin(p); if(wx>=o.x&&wx<=o.x+IMG_W&&wy>=o.y&&wy<=o.y+IMG_H)return p; } return null; }
@@ -389,6 +447,7 @@ function installCanvasInput(){
     e.preventDefault();
     if(e.touches.length===0){
       saveJSON(KEYS.view,view);
+      lastInteractionUIUpdate=0;
       const t=e.changedTouches&&e.changedTouches[0];
       if(t&&!gesture.moved)activateHitAtPoint(tp(t));
       gesture.mode=null;
@@ -406,35 +465,62 @@ function installCanvasInput(){
   });
 }
 
-function endPointer(e){ const p=canvasPoint(e);pointers.delete(e.pointerId); if(pointers.size===0){saveJSON(KEYS.view,view);if(!gesture.moved)activateHitAtPoint(p);gesture.mode=null;} else if(pointers.size===1){const r=[...pointers.values()][0];gesture={mode:"pan",moved:true,startX:r.x,startY:r.y,startVX:view.x,startVY:view.y,startScale:view.scale,startDist:0,startCenter:null};} }
+function endPointer(e){ const p=canvasPoint(e);pointers.delete(e.pointerId); if(pointers.size===0){saveJSON(KEYS.view,view);lastInteractionUIUpdate=0;if(!gesture.moved)activateHitAtPoint(p);gesture.mode=null;} else if(pointers.size===1){const r=[...pointers.values()][0];gesture={mode:"pan",moved:true,startX:r.x,startY:r.y,startVX:view.x,startVY:view.y,startScale:view.scale,startDist:0,startCenter:null};} }
 installCanvasInput();
-function draw(){ if(!ctx||$("appShell").style.display==="none")return;const r=wrap.getBoundingClientRect();ctx.clearRect(0,0,r.width,r.height);ctx.fillStyle="#2e2e2e";ctx.fillRect(0,0,r.width,r.height);ctx.save();ctx.translate(view.x,view.y);ctx.scale(view.scale,view.scale);getPageNumbers().forEach(p=>{const o=pageOrigin(p);ctx.save();ctx.translate(o.x,o.y);if(templateImg.complete&&templateImg.naturalWidth)ctx.drawImage(templateImg,0,0,IMG_W,IMG_H);if(p===currentPage){ctx.save();ctx.strokeStyle="rgba(31,111,235,.95)";ctx.lineWidth=10/view.scale;ctx.strokeRect(4,4,IMG_W-8,IMG_H-8);ctx.restore();}drawHeader();drawSavedHoles(p);drawGridLabels();drawPageLabel(p);ctx.restore();});ctx.restore();$("zoomSlider").value=String(Math.round(view.scale*100));updateStatus(); }
-function drawHeader(){
-  ctx.save();ctx.fillStyle="#111";ctx.strokeStyle="rgba(255,255,255,.95)";ctx.lineWidth=5;ctx.font="900 28px Arial";
-  ctx.textBaseline="middle";
-  drawOutlined(headerData.DrillLogNumber||"",1035,197,"left");
-  drawOutlined(formatDate(headerData.Date)||"",925,286,"left");
-  ctx.textBaseline="alphabetic";
-  drawOutlined(headerData.Employee||"",485,1923,"left");
-  drawOutlined(headerData.Job||"",770,1923,"left");
-  ctx.restore();
+console.log("MITHRIL m38.5 canvas mode:",LEGACY_PERFORMANCE_MODE?"legacy performance":"standard","DPR",dpr);
+function draw(){
+  if(drawPending)return;
+  drawPending=true;
+  (window.requestAnimationFrame||function(cb){return setTimeout(cb,16);})(()=>{drawPending=false;drawNow();});
 }
-function drawGridLabels(){ ctx.save();ctx.font="900 17px Arial";ctx.textAlign="center";ctx.textBaseline="middle";ctx.lineWidth=4;ctx.strokeStyle="rgba(255,255,255,.95)";ctx.fillStyle="#0b56a8";for(let c=0;c<COLS;c++)drawOutlined(colLetter(c),X0+DX*c,315,"center");ctx.textAlign="right";for(let r=0;r<ROWS;r++)drawOutlined(String(r+1),150,Y0+DY*r,"right");ctx.restore(); }
-function drawPageLabel(pageNum){ctx.save();ctx.font="900 26px Arial";ctx.textAlign="right";ctx.textBaseline="bottom";ctx.fillStyle="rgba(255,255,255,.9)";ctx.fillRect(IMG_W-175,IMG_H-70,145,42);ctx.fillStyle="#111";ctx.fillText("Page "+pageNum,IMG_W-40,IMG_H-35);ctx.restore();}
-function drawSavedHoles(pageNum){ const data=pagesData[String(pageNum)]||{};ctx.save();for(let row=0;row<ROWS;row++){for(let col=0;col<COLS;col++){const id=holeID(row,col),d=data[id];if(!d)continue;const c=holeCenter(row,col);const has=String(d.Overburden||"").trim()||String(d.Depth||"").trim()||String(d.Notes||"").trim()||d.Breakthrough===true||d.Breakthrough==="Yes";if(!has)continue;ctx.beginPath();ctx.ellipse(c.x,c.y,22.5,20.5,0,0,Math.PI*2);ctx.fillStyle=(d.Breakthrough===true||d.Breakthrough==="Yes")?"rgba(255,210,0,.52)":"rgba(72,200,95,.25)";ctx.fill();ctx.font="900 14px Arial";ctx.textAlign="center";ctx.textBaseline="middle";ctx.lineWidth=3.5;ctx.strokeStyle="rgba(255,255,255,.95)";ctx.fillStyle="#111";drawOutlined(d.Overburden||"",c.x,c.y-9,"center");drawOutlined(d.Depth||"",c.x,c.y+9,"center");}}ctx.restore(); }
-function drawOutlined(value,x,y,align){ if(!String(value||"").trim())return;ctx.textAlign=align||"center";ctx.strokeText(String(value),x,y);ctx.fillText(String(value),x,y); }
+function drawNow(){
+  if(!ctx||$("appShell").style.display==="none")return;
+  const r=wrap.getBoundingClientRect();
+  ctx.clearRect(0,0,r.width,r.height);ctx.fillStyle="#2e2e2e";ctx.fillRect(0,0,r.width,r.height);
+  const safeScale=Math.max(view.scale,.0001);
+  const viewport={left:(-view.x)/safeScale,top:(-view.y)/safeScale,right:(r.width-view.x)/safeScale,bottom:(r.height-view.y)/safeScale};
+  ctx.save();ctx.translate(view.x,view.y);ctx.scale(view.scale,view.scale);
+  getPageNumbers().forEach(p=>{
+    if(!pageIsVisible(p,viewport))return;
+    const o=pageOrigin(p),cached=getPageRenderCache(p);
+    ctx.save();ctx.translate(o.x,o.y);
+    ctx.drawImage(cached,0,0,cached.width,cached.height,0,0,IMG_W,IMG_H);
+    if(p===currentPage){ctx.save();ctx.strokeStyle="rgba(31,111,235,.95)";ctx.lineWidth=10/view.scale;ctx.strokeRect(4,4,IMG_W-8,IMG_H-8);ctx.restore();}
+    ctx.restore();
+  });
+  ctx.restore();
+  const now=Date.now();
+  if(!gesture.mode||now-lastInteractionUIUpdate>=100){
+    lastInteractionUIUpdate=now;
+    $("zoomSlider").value=String(Math.round(view.scale*100));updateStatus();
+  }
+}
+function drawHeader(targetCtx=ctx){
+  targetCtx.save();targetCtx.fillStyle="#111";targetCtx.strokeStyle="rgba(255,255,255,.95)";targetCtx.lineWidth=5;targetCtx.font="900 28px Arial";
+  targetCtx.textBaseline="middle";
+  drawOutlined(headerData.DrillLogNumber||"",1035,197,"left",targetCtx);
+  drawOutlined(formatDate(headerData.Date)||"",925,286,"left",targetCtx);
+  targetCtx.textBaseline="alphabetic";
+  drawOutlined(headerData.Employee||"",485,1923,"left",targetCtx);
+  drawOutlined(headerData.Job||"",770,1923,"left",targetCtx);
+  targetCtx.restore();
+}
+function drawGridLabels(targetCtx=ctx){ targetCtx.save();targetCtx.font="900 17px Arial";targetCtx.textAlign="center";targetCtx.textBaseline="middle";targetCtx.lineWidth=4;targetCtx.strokeStyle="rgba(255,255,255,.95)";targetCtx.fillStyle="#0b56a8";for(let c=0;c<COLS;c++)drawOutlined(colLetter(c),X0+DX*c,315,"center",targetCtx);targetCtx.textAlign="right";for(let r=0;r<ROWS;r++)drawOutlined(String(r+1),150,Y0+DY*r,"right",targetCtx);targetCtx.restore(); }
+function drawPageLabel(pageNum,targetCtx=ctx){targetCtx.save();targetCtx.font="900 26px Arial";targetCtx.textAlign="right";targetCtx.textBaseline="bottom";targetCtx.fillStyle="rgba(255,255,255,.9)";targetCtx.fillRect(IMG_W-175,IMG_H-70,145,42);targetCtx.fillStyle="#111";targetCtx.fillText("Page "+pageNum,IMG_W-40,IMG_H-35);targetCtx.restore();}
+function drawSavedHoles(pageNum,targetCtx=ctx){ const data=pagesData[String(pageNum)]||{};targetCtx.save();for(let row=0;row<ROWS;row++){for(let col=0;col<COLS;col++){const id=holeID(row,col),d=data[id];if(!d)continue;const c=holeCenter(row,col);const has=String(d.Overburden||"").trim()||String(d.Depth||"").trim()||String(d.Notes||"").trim()||d.Breakthrough===true||d.Breakthrough==="Yes";if(!has)continue;targetCtx.beginPath();targetCtx.ellipse(c.x,c.y,22.5,20.5,0,0,Math.PI*2);targetCtx.fillStyle=(d.Breakthrough===true||d.Breakthrough==="Yes")?"rgba(255,210,0,.52)":"rgba(72,200,95,.25)";targetCtx.fill();targetCtx.font="900 14px Arial";targetCtx.textAlign="center";targetCtx.textBaseline="middle";targetCtx.lineWidth=3.5;targetCtx.strokeStyle="rgba(255,255,255,.95)";targetCtx.fillStyle="#111";drawOutlined(d.Overburden||"",c.x,c.y-9,"center",targetCtx);drawOutlined(d.Depth||"",c.x,c.y+9,"center",targetCtx);}}targetCtx.restore(); }
+function drawOutlined(value,x,y,align,targetCtx=ctx){ if(!String(value||"").trim())return;targetCtx.textAlign=align||"center";targetCtx.strokeText(String(value),x,y);targetCtx.fillText(String(value),x,y); }
 
 function openHole(id){ hidePad();currentHole=id;const d=currentData()[id]||{};$("holeTitle").textContent="Hole "+id;$("overburden").value=d.Overburden||"";$("depth").value=d.Depth||"";$("breakthrough").checked=d.Breakthrough===true||d.Breakthrough==="Yes";$("notes").value=d.Notes||"";$("holeModal").classList.add("show");setTimeout(()=>{showPad("overburden");},120); }
 function closeHole(){ hidePad();$("holeModal").classList.remove("show"); }
 function readHoleForm(){ return {HoleID:currentHole,Overburden:$("overburden").value,Depth:$("depth").value,Breakthrough:$("breakthrough").checked?"Yes":"No",Notes:$("notes").value,Timestamp:new Date().toLocaleString()}; }
-function saveHole(goNext){ currentData()[currentHole]=readHoleForm();saveState();markDirty();draw();if(goNext){const p=parseHoleID(currentHole);let col=p.col+1,row=p.row;if(col>=COLS){col=0;row++;}if(row>=ROWS){closeHole();alert("Reached the last hole on this page.");return;}openHole(holeID(row,col));}else closeHole(); }
+function saveHole(goNext){ currentData()[currentHole]=readHoleForm();invalidatePageCache(currentPage);saveState();markDirty();draw();if(goNext){const p=parseHoleID(currentHole);let col=p.col+1,row=p.row;if(col>=COLS){col=0;row++;}if(row>=ROWS){closeHole();alert("Reached the last hole on this page.");return;}openHole(holeID(row,col));}else closeHole(); }
 function previousHoleID(id){const p=parseHoleID(id);let col=p.col-1,row=p.row;if(col<0){col=COLS-1;row--;}return row>=0?holeID(row,col):null;}
 function copyPrevious(){const prev=previousHoleID(currentHole);if(!prev||!currentData()[prev]){alert("Previous hole has no saved data.");return;}const d=currentData()[prev];$("overburden").value=d.Overburden||"";$("depth").value=d.Depth||"";$("breakthrough").checked=d.Breakthrough===true||d.Breakthrough==="Yes";$("notes").value=d.Notes||"";updatePadPreview();}
-function clearCurrentHole(){if(!confirm("Clear data for hole "+currentHole+"?"))return;delete currentData()[currentHole];saveState();markDirty();closeHole();draw();}
+function clearCurrentHole(){if(!confirm("Clear data for hole "+currentHole+"?"))return;delete currentData()[currentHole];invalidatePageCache(currentPage);saveState();markDirty();closeHole();draw();}
 
 function openInfo(){ $("fieldDate").value=toDateInput(headerData.Date);$("drillLogNumber").value=headerData.DrillLogNumber||"";$("employee").value=headerData.Employee||"";$("jobName").value=headerData.Job||"";$("infoModal").classList.add("show"); }
 function closeInfo(){ $("infoModal").classList.remove("show"); }
-function saveInfo(){headerData={Date:formatDate($("fieldDate").value),DrillLogNumber:$("drillLogNumber").value,Employee:$("employee").value,Job:$("jobName").value};saveState();markDirty();closeInfo();draw();}
+function saveInfo(){headerData={Date:formatDate($("fieldDate").value),DrillLogNumber:$("drillLogNumber").value,Employee:$("employee").value,Job:$("jobName").value};invalidatePageCache();saveState();markDirty();closeInfo();draw();}
 function toDateInput(v){const m=String(v||"").match(/^(\d{2})\/(\d{2})\/(\d{4})$/);return m?`${m[3]}-${m[1]}-${m[2]}`:String(v||"");}
 function formatDate(v){const m=String(v||"").match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?`${m[2]}/${m[3]}/${m[1]}`:String(v||"");}
 
@@ -442,7 +528,7 @@ function refreshPageSelect(){const s=$("pageSelect");s.innerHTML="";getPageNumbe
 function switchPage(p,snap=true){currentPage=Number(p);if(!pagesData[String(currentPage)])pagesData[String(currentPage)]={};saveState();refreshPageSelect();if(snap)fitView();else draw();}
 function gridPositionOccupied(gx,gy){return getPageNumbers().find(p=>{const m=pageMeta[String(p)];return m&&m.gx===gx&&m.gy===gy;})||null;}
 function addPageAtDirection(direction){const cm=pageMeta[String(currentPage)]||{gx:0,gy:0};let gx=cm.gx,gy=cm.gy;if(direction==="left")gx--;if(direction==="right")gx++;if(direction==="up")gy--;if(direction==="down")gy++;const occupied=gridPositionOccupied(gx,gy);if(occupied){if(confirm("That position already contains Page "+occupied+". Jump to it?")){switchPage(occupied,true);closeMenu();}return;}const nums=getPageNumbers(),n=nums.length?Math.max(...nums)+1:1;pagesData[String(n)]={};pageMeta[String(n)]={gx,gy,name:"Page "+n};currentPage=n;saveState();markDirty();refreshPageSelect();fitView();closeMenu();}
-function deletePage(){const nums=getPageNumbers();if(nums.length===1){if(!confirm("Clear Page 1?"))return;pagesData={"1":{}};pageMeta={"1":{gx:0,gy:0,name:"Page 1"}};currentPage=1;}else{if(!confirm("Delete Page "+currentPage+"?"))return;delete pagesData[String(currentPage)];delete pageMeta[String(currentPage)];currentPage=getPageNumbers()[0];}saveState();markDirty();refreshPageSelect();closeMenu();fitView();}
+function deletePage(){const nums=getPageNumbers();if(nums.length===1){if(!confirm("Clear Page 1?"))return;pagesData={"1":{}};pageMeta={"1":{gx:0,gy:0,name:"Page 1"}};currentPage=1;}else{if(!confirm("Delete Page "+currentPage+"?"))return;delete pagesData[String(currentPage)];delete pageMeta[String(currentPage)];currentPage=getPageNumbers()[0];}invalidatePageCache();saveState();markDirty();refreshPageSelect();closeMenu();fitView();}
 
 function openQuickModal(){ $("quickFieldModal").value=quick.field||"Overburden";$("quickValueModal").value=quick.value||"";$("quickModal").classList.add("show"); }
 function closeQuickModal(){ hidePad();$("quickModal").classList.remove("show"); }
@@ -450,7 +536,7 @@ function enableQuickFill(){quick={enabled:true,field:$("quickFieldModal").value,
 function saveQuickSettings(){quick.field=$("quickField").value;quick.value=$("quickValue").value;quick.enabled=true;saveState();updateQuickBar();}
 function turnQuickOff(){quick.enabled=false;saveState();updateQuickBar();draw();}
 function updateQuickBar(){const b=$("quickBar");b.classList.toggle("show",!!quick.enabled);$("quickField").value=quick.field||"Overburden";$("quickValue").value=quick.value||"";$("quickHint").textContent=`Quick fill: ${quick.field} = ${quick.value||"blank"}. Tap a hole to apply.`;}
-function applyQuick(id){if(!quick.enabled)return;const d=currentData()[id]||{HoleID:id,Overburden:"",Depth:"",Notes:""};d[quick.field]=quick.value||"";d.Timestamp=new Date().toLocaleString();currentData()[id]=d;saveState();markDirty();draw();$("quickHint").textContent=`Updated ${id}: ${quick.field} = ${quick.value||"blank"}.`;}
+function applyQuick(id){if(!quick.enabled)return;const d=currentData()[id]||{HoleID:id,Overburden:"",Depth:"",Notes:""};d[quick.field]=quick.value||"";d.Timestamp=new Date().toLocaleString();currentData()[id]=d;invalidatePageCache(currentPage);saveState();markDirty();draw();$("quickHint").textContent=`Updated ${id}: ${quick.field} = ${quick.value||"blank"}.`;}
 
 function openMenu(){ $("menuModal").classList.add("show"); }
 function closeMenu(){ $("menuModal").classList.remove("show"); }
@@ -562,8 +648,8 @@ async function finishAndSendToBlaster(){
   }catch(error){if(error&&error.name==="AbortError")return;console.error("MITHRIL share failed",error);alert("MITHRIL could not open the share menu.\n\n"+(error&&error.message?error.message:"Try again from the GitHub Pages app."));}
   finally{button.disabled=false;button.textContent=oldText;}
 }
-function loadJSON(event){const f=event.target.files&&event.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{try{const p=JSON.parse(rd.result);if(p.templateId!==TEMPLATE_ID||!p.pagesData)throw new Error("wrong template");if(!confirm("Load this drill-log backup and replace current drill data?"))return;headerData=p.headerData||{};pagesData=p.pagesData||{"1":{}};pageMeta=p.pageMeta||{};ensurePageMeta();currentPage=Number(p.currentPage||1);if(p.view)view=p.view;if(!pagesData[String(currentPage)])currentPage=1;saveState();markDirty();refreshPageSelect();closeMenu();draw();alert("Backup loaded.");}catch(e){alert("This is not a valid 16x34 MITHRIL drill-log backup.");}finally{event.target.value="";}};rd.readAsText(f);}
-function clearAll(){if(!confirm("Clear all 16x34 drill-log data from this browser?"))return;pagesData={"1":{}};pageMeta={"1":{gx:0,gy:0,name:"Page 1"}};headerData={};currentPage=1;quick={enabled:false,field:"Overburden",value:""};Object.values(KEYS).forEach(k=>localStorage.removeItem(k));saveState();refreshPageSelect();updateQuickBar();closeMenu();fitView();}
+function loadJSON(event){const f=event.target.files&&event.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{try{const p=JSON.parse(rd.result);if(p.templateId!==TEMPLATE_ID||!p.pagesData)throw new Error("wrong template");if(!confirm("Load this drill-log backup and replace current drill data?"))return;headerData=p.headerData||{};pagesData=p.pagesData||{"1":{}};pageMeta=p.pageMeta||{};ensurePageMeta();currentPage=Number(p.currentPage||1);if(p.view)view=p.view;if(!pagesData[String(currentPage)])currentPage=1;invalidatePageCache();saveState();markDirty();refreshPageSelect();closeMenu();draw();alert("Backup loaded.");}catch(e){alert("This is not a valid 16x34 MITHRIL drill-log backup.");}finally{event.target.value="";}};rd.readAsText(f);}
+function clearAll(){if(!confirm("Clear all 16x34 drill-log data from this browser?"))return;pagesData={"1":{}};pageMeta={"1":{gx:0,gy:0,name:"Page 1"}};headerData={};currentPage=1;quick={enabled:false,field:"Overburden",value:""};invalidatePageCache();Object.values(KEYS).forEach(k=>localStorage.removeItem(k));saveState();refreshPageSelect();updateQuickBar();closeMenu();fitView();}
 
 function inputLabel(id){return id==="overburden"?"Overburden":id==="depth"?"Depth":id==="quickValue"||id==="quickValueModal"?"Quick-fill value":"Value";}
 function showPad(id){activeInput=id;["overburden","depth","quickValue","quickValueModal"].forEach(x=>{const el=$(x);if(el)el.classList.toggle("activeInput",x===id);});$("numberPad").classList.add("show");$("numberPad").setAttribute("aria-hidden","false");$("padLabel").textContent=inputLabel(id);const box=$("holeBox");if(box&&$("holeModal").classList.contains("show"))box.classList.add("padOpen");updatePadPreview();}
@@ -575,7 +661,7 @@ function nextInput(){if(activeInput==="overburden")showPad("depth");else hidePad
 $("numberPad").addEventListener("pointerdown",e=>e.preventDefault());
 $("numberPad").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;e.preventDefault();const k=b.dataset.key,a=b.dataset.action;if(k!==undefined)insertKey(k);if(a==="back")backspace();if(a==="clear"){const el=$(activeInput);if(el){el.value="";el.dispatchEvent(new Event("input",{bubbles:true}));updatePadPreview();}}if(a==="next")nextInput();if(a==="done")hidePad();});
 
-templateImg.onload=()=>{if($("appShell").style.display!=="none")draw();};
+templateImg.onload=()=>{invalidatePageCache();if($("appShell").style.display!=="none")draw();};
 window.addEventListener("resize",resizeCanvas);
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeHole();closeInfo();closeQuickModal();closeMenu();hidePad();}});
 refreshPageSelect();updateQuickBar();
@@ -585,7 +671,7 @@ if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("./service-worker.js")
       .then(registration => registration.update())
-      .then(() => console.log("MITHRIL m38.3 service worker ready."))
+      .then(() => console.log("MITHRIL m38.5 service worker ready."))
       .catch(error => console.error("MITHRIL service worker registration failed:", error));
   });
 }

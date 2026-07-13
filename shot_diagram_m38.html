@@ -8,11 +8,11 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="apple-mobile-web-app-title" content="MITHRIL" />
 <link rel="manifest" href="./manifest.webmanifest" />
-<link rel="apple-touch-icon" sizes="192x192" href="./icons/mithril-192.png?v=38.4" />
-<link rel="apple-touch-icon-precomposed" sizes="192x192" href="./icons/mithril-192.png?v=38.4" />
-<link rel="icon" type="image/png" sizes="192x192" href="./icons/mithril-192.png?v=38.4" />
-<link rel="icon" type="image/png" sizes="512x512" href="./icons/mithril-512.png?v=38.4" />
-<title>MITHRIL Shot Diagram m38.4</title>
+<link rel="apple-touch-icon" sizes="192x192" href="./icons/mithril-192.png?v=38.5" />
+<link rel="apple-touch-icon-precomposed" sizes="192x192" href="./icons/mithril-192.png?v=38.5" />
+<link rel="icon" type="image/png" sizes="192x192" href="./icons/mithril-192.png?v=38.5" />
+<link rel="icon" type="image/png" sizes="512x512" href="./icons/mithril-512.png?v=38.5" />
+<title>MITHRIL Shot Diagram m38.5</title>
 <style>
   html, body {
     margin: 0;
@@ -80,7 +80,7 @@
       const doc = frame.contentDocument;
       if (!doc) throw new Error("Shot Diagram document was unavailable.");
 
-      doc.title = "MITHRIL Shot Diagram m38.4";
+      doc.title = "MITHRIL Shot Diagram m38.5";
 
       const injectedStyle = doc.createElement("style");
       injectedStyle.textContent = `
@@ -128,10 +128,10 @@
       if (oldMark) {
         const icon = doc.createElement("img");
         icon.className = "mark";
-        icon.src = "./icons/mithril-192.png?v=38.4";
+        icon.src = "./icons/mithril-192.png?v=38.5";
         icon.alt = "MITHRIL";
         icon.addEventListener("error", () => {
-          icon.src = "https://zscurtis.github.io/mithril_mobile/icons/mithril-192.png?v=38.4";
+          icon.src = "https://zscurtis.github.io/mithril_mobile/icons/mithril-192.png?v=38.5";
         }, { once: true });
         oldMark.replaceWith(icon);
       }
@@ -140,7 +140,7 @@
       if (brandText) brandText.textContent = "SHOT DIAGRAM";
 
       const version = brand.querySelector(".version");
-      if (version) version.textContent = "m38.4";
+      if (version) version.textContent = "m38.5";
 
       brand.classList.add("mithrilHomeLink");
       brand.setAttribute("role", "button");
@@ -166,6 +166,129 @@
         homeButton.addEventListener("click", goHome);
         firstMenuGrid.prepend(homeButton);
       }
+
+      const performanceScript = doc.createElement("script");
+      performanceScript.textContent = `
+        (function () {
+          if (window.__mithrilShotPerformanceInstalled) return;
+          window.__mithrilShotPerformanceInstalled = true;
+
+          var ua = String(navigator.userAgent || "");
+          var iosMatch = ua.match(/(?:CPU (?:iPhone )?OS|OS) (\\d+)[_\\.]/i);
+          var safariMatch = ua.match(/Version\\/(\\d+)/i);
+          var iosMajor = iosMatch ? Number(iosMatch[1]) : null;
+          var safariMajor = safariMatch ? Number(safariMatch[1]) : null;
+          var touchCapable = ("ontouchstart" in window) || Number(navigator.maxTouchPoints || 0) > 0;
+          var performanceMode = touchCapable && (
+            !("PointerEvent" in window) ||
+            (iosMajor !== null && iosMajor <= 15) ||
+            (safariMajor !== null && safariMajor <= 15) ||
+            Number(navigator.hardwareConcurrency || 4) <= 3
+          );
+          window.__mithrilShotLegacyPerformanceMode = performanceMode;
+
+          var originalResizeCanvas = resizeCanvas;
+          resizeCanvas = function () {
+            if (!performanceMode) return originalResizeCanvas();
+            dpr = 1;
+            var rect = wrap.getBoundingClientRect();
+            canvas.width = Math.max(1, Math.floor(rect.width));
+            canvas.height = Math.max(1, Math.floor(rect.height));
+            canvas.style.width = rect.width + "px";
+            canvas.style.height = rect.height + "px";
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            draw();
+          };
+
+          var originalDraw = draw;
+          var lastUiUpdate = 0;
+          function drawVisiblePagesOnly() {
+            var rect = wrap.getBoundingClientRect();
+            ctx.clearRect(0, 0, rect.width, rect.height);
+            ctx.fillStyle = "#2e2e2e";
+            ctx.fillRect(0, 0, rect.width, rect.height);
+
+            var safeScale = Math.max(view.scale, 0.0001);
+            var viewport = {
+              left: (-view.x) / safeScale,
+              top: (-view.y) / safeScale,
+              right: (rect.width - view.x) / safeScale,
+              bottom: (rect.height - view.y) / safeScale
+            };
+            var pad = 120;
+
+            ctx.save();
+            ctx.translate(view.x, view.y);
+            ctx.scale(view.scale, view.scale);
+
+            getPageNumbers().forEach(function (pageNum) {
+              var origin = pageOrigin(pageNum);
+              if (origin.x + IMG_W < viewport.left - pad || origin.x > viewport.right + pad ||
+                  origin.y + IMG_H < viewport.top - pad || origin.y > viewport.bottom + pad) return;
+
+              ctx.save();
+              ctx.translate(origin.x, origin.y);
+              if (img.complete) ctx.drawImage(img, 0, 0, IMG_W, IMG_H);
+              if (pageNum === currentPage) {
+                ctx.save();
+                ctx.strokeStyle = "rgba(31,111,235,.95)";
+                ctx.lineWidth = 10 / view.scale;
+                ctx.strokeRect(4, 4, IMG_W - 8, IMG_H - 8);
+                ctx.restore();
+              }
+              drawPageLabel(pageNum);
+              drawHoleHighlights(pageNum);
+              drawHeaderText(pageNum);
+              drawHoleText(pageNum);
+              ctx.restore();
+            });
+
+            ctx.restore();
+            var now = Date.now();
+            if (now - lastUiUpdate >= 100) {
+              lastUiUpdate = now;
+              syncZoomSlider();
+              updateStatus();
+            }
+          }
+
+          var renderNow = performanceMode ? drawVisiblePagesOnly : originalDraw;
+          var drawQueued = false;
+          draw = function () {
+            if (drawQueued) return;
+            drawQueued = true;
+            (window.requestAnimationFrame || function (cb) { return setTimeout(cb, 16); })(function () {
+              drawQueued = false;
+              renderNow();
+            });
+          };
+
+          var immediateSaveView = saveView;
+          var saveViewTimer = 0;
+          saveView = function () {
+            if (saveViewTimer) clearTimeout(saveViewTimer);
+            saveViewTimer = setTimeout(function () {
+              saveViewTimer = 0;
+              immediateSaveView();
+            }, performanceMode ? 180 : 80);
+          };
+          window.__mithrilFlushShotView = function () {
+            if (saveViewTimer) { clearTimeout(saveViewTimer); saveViewTimer = 0; }
+            immediateSaveView();
+            lastUiUpdate = 0;
+            draw();
+          };
+
+          if (performanceMode) {
+            resizeCanvas();
+            window.addEventListener("resize", function () { setTimeout(resizeCanvas, 0); });
+            window.addEventListener("orientationchange", function () { setTimeout(resizeCanvas, 60); });
+          }
+          window.addEventListener("pagehide", window.__mithrilFlushShotView);
+          console.log("MITHRIL m38.5 shot canvas mode:", performanceMode ? "legacy performance" : "standard");
+        })();
+      `;
+      doc.body.appendChild(performanceScript);
 
       const legacyTouchScript = doc.createElement("script");
       legacyTouchScript.textContent = `
@@ -270,7 +393,6 @@
               view.scale = newScale;
               view.x = center.x - before.x * view.scale;
               view.y = center.y - before.y * view.scale;
-              saveView();
               draw();
               return;
             }
@@ -284,7 +406,6 @@
 
               view.x = touchState.startViewX + dx;
               view.y = touchState.startViewY + dy;
-              saveView();
               draw();
             }
           }
@@ -312,14 +433,16 @@
               }
             }
 
-            saveView();
+            if (window.__mithrilFlushShotView) window.__mithrilFlushShotView();
+            else saveView();
             touchState.mode = null;
             touchState.moved = false;
           }
 
           function onTouchCancel(event) {
             event.preventDefault();
-            saveView();
+            if (window.__mithrilFlushShotView) window.__mithrilFlushShotView();
+            else saveView();
             touchState.mode = null;
             touchState.moved = false;
           }
