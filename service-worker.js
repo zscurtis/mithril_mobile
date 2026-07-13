@@ -1,4 +1,4 @@
-const CACHE_NAME = "mithril-mobile-m38-2-legacy-layout-pwa-v1";
+const CACHE_NAME = "mithril-mobile-m38-3-header-line-calibration-v1";
 const APP_SHELL = [
   "./",
   "./index.html",

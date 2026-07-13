@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon-precomposed" sizes="192x192" href="./icons/mithril-192.png?v=38.2" />
 <link rel="icon" type="image/png" sizes="192x192" href="./icons/mithril-192.png?v=38.2" />
 <link rel="icon" type="image/png" sizes="512x512" href="./icons/mithril-512.png?v=38.2" />
-<title>MITHRIL Canvas Mobile m38.2</title>
+<title>MITHRIL Canvas Mobile m38.3</title>
 <style>
 :root { --toolbar-h: 132px; }
 * { box-sizing: border-box; }
@@ -103,7 +103,7 @@ textarea { min-height:90px; }
 <div id="templateStart">
   <div class="startBox">
     <div class="startBrand">MITHRIL MOBILE</div>
-    <div class="startVersion">m38.2 legacy iPad layout and PWA icon</div>
+    <div class="startVersion">m38.3 employee and job line calibration</div>
     <div class="startIntro">Choose the document type. Shot Diagram and Drill Log now share this MITHRIL home screen.</div>
     <div class="templateCards">
       <button class="templateCard" onclick="openStableShotDiagram()">
@@ -124,7 +124,7 @@ textarea { min-height:90px; }
   <div class="topRow">
     <button type="button" class="brand brandHome" onclick="goToAppHome()" aria-label="Open MITHRIL home and check for updates">
       <img class="mark" src="./icons/mithril-192.png" alt="MITHRIL" onerror="this.src='https://zscurtis.github.io/mithril_mobile/icons/mithril-192.png'" />
-      <span class="brandText">DRILL LOG 16x34</span><span class="version">m38.2</span>
+      <span class="brandText">DRILL LOG 16x34</span><span class="version">m38.3</span>
     </button>
     <select id="pageSelect" onchange="switchPage(Number(this.value))"></select>
     <button onclick="openQuickModal()">Quick</button>
@@ -237,7 +237,7 @@ textarea { min-height:90px; }
 </div>
 
 <script>
-const APP_VERSION = "m38.2";
+const APP_VERSION = "m38.3";
 const TEMPLATE_ID = "drill16x34";
 const IMG_W = 1365;
 const IMG_H = 2243;
@@ -409,7 +409,16 @@ function installCanvasInput(){
 function endPointer(e){ const p=canvasPoint(e);pointers.delete(e.pointerId); if(pointers.size===0){saveJSON(KEYS.view,view);if(!gesture.moved)activateHitAtPoint(p);gesture.mode=null;} else if(pointers.size===1){const r=[...pointers.values()][0];gesture={mode:"pan",moved:true,startX:r.x,startY:r.y,startVX:view.x,startVY:view.y,startScale:view.scale,startDist:0,startCenter:null};} }
 installCanvasInput();
 function draw(){ if(!ctx||$("appShell").style.display==="none")return;const r=wrap.getBoundingClientRect();ctx.clearRect(0,0,r.width,r.height);ctx.fillStyle="#2e2e2e";ctx.fillRect(0,0,r.width,r.height);ctx.save();ctx.translate(view.x,view.y);ctx.scale(view.scale,view.scale);getPageNumbers().forEach(p=>{const o=pageOrigin(p);ctx.save();ctx.translate(o.x,o.y);if(templateImg.complete&&templateImg.naturalWidth)ctx.drawImage(templateImg,0,0,IMG_W,IMG_H);if(p===currentPage){ctx.save();ctx.strokeStyle="rgba(31,111,235,.95)";ctx.lineWidth=10/view.scale;ctx.strokeRect(4,4,IMG_W-8,IMG_H-8);ctx.restore();}drawHeader();drawSavedHoles(p);drawGridLabels();drawPageLabel(p);ctx.restore();});ctx.restore();$("zoomSlider").value=String(Math.round(view.scale*100));updateStatus(); }
-function drawHeader(){ ctx.save();ctx.fillStyle="#111";ctx.strokeStyle="rgba(255,255,255,.95)";ctx.lineWidth=5;ctx.font="900 28px Arial";ctx.textBaseline="middle";drawOutlined(headerData.DrillLogNumber||"",1035,197,"left");drawOutlined(formatDate(headerData.Date)||"",925,286,"left");drawOutlined(headerData.Employee||"",485,1941,"left");drawOutlined(headerData.Job||"",770,1941,"left");ctx.restore(); }
+function drawHeader(){
+  ctx.save();ctx.fillStyle="#111";ctx.strokeStyle="rgba(255,255,255,.95)";ctx.lineWidth=5;ctx.font="900 28px Arial";
+  ctx.textBaseline="middle";
+  drawOutlined(headerData.DrillLogNumber||"",1035,197,"left");
+  drawOutlined(formatDate(headerData.Date)||"",925,286,"left");
+  ctx.textBaseline="alphabetic";
+  drawOutlined(headerData.Employee||"",485,1923,"left");
+  drawOutlined(headerData.Job||"",770,1923,"left");
+  ctx.restore();
+}
 function drawGridLabels(){ ctx.save();ctx.font="900 17px Arial";ctx.textAlign="center";ctx.textBaseline="middle";ctx.lineWidth=4;ctx.strokeStyle="rgba(255,255,255,.95)";ctx.fillStyle="#0b56a8";for(let c=0;c<COLS;c++)drawOutlined(colLetter(c),X0+DX*c,315,"center");ctx.textAlign="right";for(let r=0;r<ROWS;r++)drawOutlined(String(r+1),150,Y0+DY*r,"right");ctx.restore(); }
 function drawPageLabel(pageNum){ctx.save();ctx.font="900 26px Arial";ctx.textAlign="right";ctx.textBaseline="bottom";ctx.fillStyle="rgba(255,255,255,.9)";ctx.fillRect(IMG_W-175,IMG_H-70,145,42);ctx.fillStyle="#111";ctx.fillText("Page "+pageNum,IMG_W-40,IMG_H-35);ctx.restore();}
 function drawSavedHoles(pageNum){ const data=pagesData[String(pageNum)]||{};ctx.save();for(let row=0;row<ROWS;row++){for(let col=0;col<COLS;col++){const id=holeID(row,col),d=data[id];if(!d)continue;const c=holeCenter(row,col);const has=String(d.Overburden||"").trim()||String(d.Depth||"").trim()||String(d.Notes||"").trim()||d.Breakthrough===true||d.Breakthrough==="Yes";if(!has)continue;ctx.beginPath();ctx.ellipse(c.x,c.y,22.5,20.5,0,0,Math.PI*2);ctx.fillStyle=(d.Breakthrough===true||d.Breakthrough==="Yes")?"rgba(255,210,0,.52)":"rgba(72,200,95,.25)";ctx.fill();ctx.font="900 14px Arial";ctx.textAlign="center";ctx.textBaseline="middle";ctx.lineWidth=3.5;ctx.strokeStyle="rgba(255,255,255,.95)";ctx.fillStyle="#111";drawOutlined(d.Overburden||"",c.x,c.y-9,"center");drawOutlined(d.Depth||"",c.x,c.y+9,"center");}}ctx.restore(); }
@@ -468,11 +477,13 @@ function renderDrillPageCanvas(pageNum){
   const c=document.createElement("canvas");c.width=IMG_W;c.height=IMG_H;
   const x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,IMG_W,IMG_H);
   if(templateImg.complete&&templateImg.naturalWidth)x.drawImage(templateImg,0,0,IMG_W,IMG_H);
-  x.save();x.font="900 28px Arial";x.textBaseline="middle";x.lineWidth=5;
+  x.save();x.font="900 28px Arial";x.lineWidth=5;
+  x.textBaseline="middle";
   drawOutlinedOn(x,headerData.DrillLogNumber||"",1035,197,"left");
   drawOutlinedOn(x,formatDate(headerData.Date)||"",925,286,"left");
-  drawOutlinedOn(x,headerData.Employee||"",485,1941,"left");
-  drawOutlinedOn(x,headerData.Job||"",770,1941,"left");x.restore();
+  x.textBaseline="alphabetic";
+  drawOutlinedOn(x,headerData.Employee||"",485,1923,"left");
+  drawOutlinedOn(x,headerData.Job||"",770,1923,"left");x.restore();
   x.save();x.font="900 17px Arial";x.textBaseline="middle";x.lineWidth=4;
   for(let col=0;col<COLS;col++)drawOutlinedOn(x,colLetter(col),X0+DX*col,315,"center","rgba(255,255,255,.95)","#0b56a8");
   for(let row=0;row<ROWS;row++)drawOutlinedOn(x,String(row+1),150,Y0+DY*row,"right","rgba(255,255,255,.95)","#0b56a8");x.restore();
@@ -574,7 +585,7 @@ if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("./service-worker.js")
       .then(registration => registration.update())
-      .then(() => console.log("MITHRIL m38.2 service worker ready."))
+      .then(() => console.log("MITHRIL m38.3 service worker ready."))
       .catch(error => console.error("MITHRIL service worker registration failed:", error));
   });
 }
