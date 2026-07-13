@@ -4,7 +4,15 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <meta name="theme-color" content="#171717" />
-<title>MITHRIL Canvas Mobile m38.1</title>
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="MITHRIL" />
+<link rel="manifest" href="./manifest.webmanifest" />
+<link rel="apple-touch-icon" sizes="192x192" href="./icons/mithril-192.png?v=38.2" />
+<link rel="apple-touch-icon-precomposed" sizes="192x192" href="./icons/mithril-192.png?v=38.2" />
+<link rel="icon" type="image/png" sizes="192x192" href="./icons/mithril-192.png?v=38.2" />
+<link rel="icon" type="image/png" sizes="512x512" href="./icons/mithril-512.png?v=38.2" />
+<title>MITHRIL Canvas Mobile m38.2</title>
 <style>
 :root { --toolbar-h: 132px; }
 * { box-sizing: border-box; }
@@ -15,7 +23,7 @@ button.primary { background:#1f6feb; border-color:#1f6feb; color:white; }
 button.danger { background:#fff1f1; border-color:#c66; }
 button:disabled { opacity:.45; }
 
-#templateStart { position:fixed; inset:0; z-index:500; display:flex; align-items:center; justify-content:center; padding:18px; background:radial-gradient(circle at 50% 18%,#3b3b3b,#151515 70%); color:white; }
+#templateStart { position:fixed; top:0; right:0; bottom:0; left:0; z-index:500; display:flex; align-items:center; justify-content:center; padding:18px; background:radial-gradient(circle at 50% 18%,#3b3b3b,#151515 70%); color:white; }
 .startBox { width:min(700px,96vw); border:1px solid #555; border-radius:18px; background:rgba(15,15,15,.94); box-shadow:0 18px 60px rgba(0,0,0,.55); padding:22px; }
 .startBrand { font-size:30px; font-weight:950; letter-spacing:1px; }
 .startVersion { font-size:13px; color:#bbb; font-weight:800; margin-top:3px; }
@@ -28,7 +36,7 @@ button:disabled { opacity:.45; }
 .startNote { margin-top:16px; color:#aaa; font-size:12px; font-weight:700; line-height:1.35; }
 
 #appShell { display:none; }
-header { height:var(--toolbar-h); position:fixed; inset:0 0 auto 0; z-index:20; background:white; border-bottom:1px solid #aaa; padding:6px; display:grid; gap:6px; }
+header { height:var(--toolbar-h); position:fixed; top:0; right:0; left:0; z-index:20; background:white; border-bottom:1px solid #aaa; padding:6px; display:grid; gap:6px; }
 .topRow { display:grid; grid-template-columns:1fr auto auto auto; gap:6px; align-items:center; }
 .brand { display:flex; align-items:center; gap:7px; min-width:0; font-weight:950; }
 .brandHome { border:0; background:transparent; padding:0; min-height:38px; text-align:left; cursor:pointer; }
@@ -43,7 +51,7 @@ header { height:var(--toolbar-h); position:fixed; inset:0 0 auto 0; z-index:20; 
 #canvasWrap { position:fixed; left:0; right:0; top:var(--toolbar-h); bottom:0; overflow:hidden; touch-action:none; background:#2e2e2e; }
 #drillCanvas { display:block; width:100%; height:100%; touch-action:none; background:#2e2e2e; }
 
-.modal { display:none; position:fixed; inset:0; z-index:100; background:rgba(0,0,0,.58); padding:12px; align-items:center; justify-content:center; }
+.modal { display:none; position:fixed; top:0; right:0; bottom:0; left:0; z-index:100; background:rgba(0,0,0,.58); padding:12px; align-items:center; justify-content:center; }
 .modal.show { display:flex; }
 .box { width:min(560px,96vw); max-height:94vh; overflow:auto; background:white; border:2px solid #222; border-radius:14px; padding:14px; -webkit-overflow-scrolling:touch; }
 .boxHead { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:10px; font-size:20px; font-weight:950; }
@@ -95,7 +103,7 @@ textarea { min-height:90px; }
 <div id="templateStart">
   <div class="startBox">
     <div class="startBrand">MITHRIL MOBILE</div>
-    <div class="startVersion">m38.1 legacy iPad touch compatibility</div>
+    <div class="startVersion">m38.2 legacy iPad layout and PWA icon</div>
     <div class="startIntro">Choose the document type. Shot Diagram and Drill Log now share this MITHRIL home screen.</div>
     <div class="templateCards">
       <button class="templateCard" onclick="openStableShotDiagram()">
@@ -116,7 +124,7 @@ textarea { min-height:90px; }
   <div class="topRow">
     <button type="button" class="brand brandHome" onclick="goToAppHome()" aria-label="Open MITHRIL home and check for updates">
       <img class="mark" src="./icons/mithril-192.png" alt="MITHRIL" onerror="this.src='https://zscurtis.github.io/mithril_mobile/icons/mithril-192.png'" />
-      <span class="brandText">DRILL LOG 16x34</span><span class="version">m38.1</span>
+      <span class="brandText">DRILL LOG 16x34</span><span class="version">m38.2</span>
     </button>
     <select id="pageSelect" onchange="switchPage(Number(this.value))"></select>
     <button onclick="openQuickModal()">Quick</button>
@@ -229,7 +237,7 @@ textarea { min-height:90px; }
 </div>
 
 <script>
-const APP_VERSION = "m38.1";
+const APP_VERSION = "m38.2";
 const TEMPLATE_ID = "drill16x34";
 const IMG_W = 1365;
 const IMG_H = 2243;
@@ -566,7 +574,7 @@ if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("./service-worker.js")
       .then(registration => registration.update())
-      .then(() => console.log("MITHRIL m38.1 service worker ready."))
+      .then(() => console.log("MITHRIL m38.2 service worker ready."))
       .catch(error => console.error("MITHRIL service worker registration failed:", error));
   });
 }
