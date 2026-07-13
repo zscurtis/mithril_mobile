@@ -1,4 +1,4 @@
-const CACHE_NAME = "mithril-mobile-m38-nav-v1";
+const CACHE_NAME = "mithril-mobile-m38-1-legacy-touch-v1";
 const APP_SHELL = [
   "./",
   "./index.html",
