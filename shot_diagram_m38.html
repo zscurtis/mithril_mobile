@@ -7,10 +7,12 @@
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="apple-mobile-web-app-title" content="MITHRIL" />
-<link rel="manifest" href="manifest.webmanifest" />
-<link rel="apple-touch-icon" href="icons/mithril-192.png" />
-<link rel="icon" type="image/png" sizes="192x192" href="icons/mithril-192.png" />
-<title>MITHRIL Shot Diagram</title>
+<link rel="manifest" href="./manifest.webmanifest" />
+<link rel="apple-touch-icon" sizes="192x192" href="./icons/mithril-192.png?v=38.4" />
+<link rel="apple-touch-icon-precomposed" sizes="192x192" href="./icons/mithril-192.png?v=38.4" />
+<link rel="icon" type="image/png" sizes="192x192" href="./icons/mithril-192.png?v=38.4" />
+<link rel="icon" type="image/png" sizes="512x512" href="./icons/mithril-512.png?v=38.4" />
+<title>MITHRIL Shot Diagram m38.4</title>
 <style>
   html, body {
     margin: 0;
@@ -53,8 +55,7 @@
   const fallbackHome = document.getElementById("fallbackHome");
 
   function homeURL() {
-    const base = "./index.html";
-    return base + "?refresh=" + Date.now();
+    return "./index.html?refresh=" + Date.now();
   }
 
   function saveShotState() {
@@ -79,10 +80,24 @@
       const doc = frame.contentDocument;
       if (!doc) throw new Error("Shot Diagram document was unavailable.");
 
-      doc.title = "MITHRIL Shot Diagram m34";
+      doc.title = "MITHRIL Shot Diagram m38.4";
 
       const injectedStyle = doc.createElement("style");
       injectedStyle.textContent = `
+        html, body { width: 100% !important; }
+        header {
+          top: 0 !important;
+          right: 0 !important;
+          bottom: auto !important;
+          left: 0 !important;
+          width: 100% !important;
+        }
+        .modal {
+          top: 0 !important;
+          right: 0 !important;
+          bottom: 0 !important;
+          left: 0 !important;
+        }
         .brand.mithrilHomeLink {
           cursor: pointer;
           border: 0;
@@ -113,10 +128,10 @@
       if (oldMark) {
         const icon = doc.createElement("img");
         icon.className = "mark";
-        icon.src = "./icons/mithril-192.png";
+        icon.src = "./icons/mithril-192.png?v=38.4";
         icon.alt = "MITHRIL";
         icon.addEventListener("error", () => {
-          icon.src = "https://zscurtis.github.io/mithril_mobile/icons/mithril-192.png";
+          icon.src = "https://zscurtis.github.io/mithril_mobile/icons/mithril-192.png?v=38.4";
         }, { once: true });
         oldMark.replaceWith(icon);
       }
@@ -125,7 +140,7 @@
       if (brandText) brandText.textContent = "SHOT DIAGRAM";
 
       const version = brand.querySelector(".version");
-      if (version) version.textContent = "m34";
+      if (version) version.textContent = "m38.4";
 
       brand.classList.add("mithrilHomeLink");
       brand.setAttribute("role", "button");
@@ -152,9 +167,174 @@
         firstMenuGrid.prepend(homeButton);
       }
 
+      const legacyTouchScript = doc.createElement("script");
+      legacyTouchScript.textContent = `
+        (function () {
+          if (window.__mithrilShotLegacyTouchInstalled) return;
+          window.__mithrilShotLegacyTouchInstalled = true;
+
+          var touchCanvas = document.getElementById("shotCanvas");
+          if (!touchCanvas) return;
+
+          function stopSafariGesture(event) {
+            event.preventDefault();
+          }
+
+          touchCanvas.addEventListener("gesturestart", stopSafariGesture, { passive: false });
+          touchCanvas.addEventListener("gesturechange", stopSafariGesture, { passive: false });
+          touchCanvas.addEventListener("gestureend", stopSafariGesture, { passive: false });
+
+          if ("PointerEvent" in window) return;
+
+          var touchState = {
+            mode: null,
+            moved: false,
+            startX: 0,
+            startY: 0,
+            startViewX: 0,
+            startViewY: 0,
+            startScale: 1,
+            startDist: 0,
+            startCenter: null
+          };
+
+          function pointFromTouch(touch) {
+            var rect = touchCanvas.getBoundingClientRect();
+            return { x: touch.clientX - rect.left, y: touch.clientY - rect.top };
+          }
+
+          function touchDistance(first, second) {
+            var a = pointFromTouch(first);
+            var b = pointFromTouch(second);
+            var dx = a.x - b.x;
+            var dy = a.y - b.y;
+            return Math.sqrt(dx * dx + dy * dy);
+          }
+
+          function touchCenter(first, second) {
+            var a = pointFromTouch(first);
+            var b = pointFromTouch(second);
+            return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+          }
+
+          function beginPan(touch, alreadyMoved) {
+            var pt = pointFromTouch(touch);
+            touchState = {
+              mode: "pan",
+              moved: !!alreadyMoved,
+              startX: pt.x,
+              startY: pt.y,
+              startViewX: view.x,
+              startViewY: view.y,
+              startScale: view.scale,
+              startDist: 0,
+              startCenter: null
+            };
+          }
+
+          function beginPinch(touches) {
+            touchState = {
+              mode: "pinch",
+              moved: true,
+              startX: 0,
+              startY: 0,
+              startViewX: view.x,
+              startViewY: view.y,
+              startScale: view.scale,
+              startDist: touchDistance(touches[0], touches[1]),
+              startCenter: touchCenter(touches[0], touches[1])
+            };
+          }
+
+          function onTouchStart(event) {
+            event.preventDefault();
+            if (event.touches.length >= 2) beginPinch(event.touches);
+            else if (event.touches.length === 1) beginPan(event.touches[0], false);
+          }
+
+          function onTouchMove(event) {
+            event.preventDefault();
+
+            if (event.touches.length >= 2) {
+              if (touchState.mode !== "pinch") beginPinch(event.touches);
+
+              var dist = touchDistance(event.touches[0], event.touches[1]);
+              var center = touchCenter(event.touches[0], event.touches[1]);
+              var ratio = touchState.startDist > 0 ? dist / touchState.startDist : 1;
+              var newScale = Math.max(0.25, Math.min(4.0, touchState.startScale * ratio));
+              var before = {
+                x: (touchState.startCenter.x - touchState.startViewX) / touchState.startScale,
+                y: (touchState.startCenter.y - touchState.startViewY) / touchState.startScale
+              };
+
+              view.scale = newScale;
+              view.x = center.x - before.x * view.scale;
+              view.y = center.y - before.y * view.scale;
+              saveView();
+              draw();
+              return;
+            }
+
+            if (event.touches.length === 1) {
+              if (touchState.mode !== "pan") beginPan(event.touches[0], true);
+              var pt = pointFromTouch(event.touches[0]);
+              var dx = pt.x - touchState.startX;
+              var dy = pt.y - touchState.startY;
+              if (Math.abs(dx) > 5 || Math.abs(dy) > 5) touchState.moved = true;
+
+              view.x = touchState.startViewX + dx;
+              view.y = touchState.startViewY + dy;
+              saveView();
+              draw();
+            }
+          }
+
+          function onTouchEnd(event) {
+            event.preventDefault();
+
+            if (event.touches.length >= 2) {
+              beginPinch(event.touches);
+              return;
+            }
+
+            if (event.touches.length === 1) {
+              beginPan(event.touches[0], true);
+              return;
+            }
+
+            if (touchState.mode === "pan" && !touchState.moved && event.changedTouches.length) {
+              var pt = pointFromTouch(event.changedTouches[0]);
+              var worldPt = screenToWorld(pt.x, pt.y);
+              var hit = hitTestHole(worldPt.x, worldPt.y);
+              if (hit) {
+                switchToPage(hit.pageNum);
+                if (!applyQuickEntry(hit.pageNum, hit.holeId)) openHole(hit.holeId);
+              }
+            }
+
+            saveView();
+            touchState.mode = null;
+            touchState.moved = false;
+          }
+
+          function onTouchCancel(event) {
+            event.preventDefault();
+            saveView();
+            touchState.mode = null;
+            touchState.moved = false;
+          }
+
+          touchCanvas.addEventListener("touchstart", onTouchStart, { passive: false });
+          touchCanvas.addEventListener("touchmove", onTouchMove, { passive: false });
+          touchCanvas.addEventListener("touchend", onTouchEnd, { passive: false });
+          touchCanvas.addEventListener("touchcancel", onTouchCancel, { passive: false });
+        })();
+      `;
+      doc.body.appendChild(legacyTouchScript);
+
       fallbackHome.style.display = "none";
     } catch (error) {
-      console.error("MITHRIL Shot Diagram navigation setup failed.", error);
+      console.error("MITHRIL Shot Diagram compatibility setup failed.", error);
       fallbackHome.style.display = "block";
     }
   });
