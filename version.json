@@ -1,0 +1,12 @@
+{
+  "version": "m38.7",
+  "title": "User-Controlled Update Checker",
+  "released": "2026-07-13",
+  "minimumOfflineVersion": "m38.7",
+  "notes": [
+    "Check for updates from the MITHRIL home screen.",
+    "Check for updates from the Drill Log and Shot Diagram menus.",
+    "Shared update support is ready for future MITHRIL templates.",
+    "Saved field data and calibration settings remain on the device during updates."
+  ]
+}

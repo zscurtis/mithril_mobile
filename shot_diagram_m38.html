@@ -8,11 +8,11 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="apple-mobile-web-app-title" content="MITHRIL" />
 <link rel="manifest" href="./manifest.webmanifest" />
-<link rel="apple-touch-icon" sizes="192x192" href="./icons/mithril-192.png?v=38.5" />
-<link rel="apple-touch-icon-precomposed" sizes="192x192" href="./icons/mithril-192.png?v=38.5" />
-<link rel="icon" type="image/png" sizes="192x192" href="./icons/mithril-192.png?v=38.5" />
-<link rel="icon" type="image/png" sizes="512x512" href="./icons/mithril-512.png?v=38.5" />
-<title>MITHRIL Shot Diagram m38.5</title>
+<link rel="apple-touch-icon" sizes="192x192" href="./icons/mithril-192.png?v=38.7" />
+<link rel="apple-touch-icon-precomposed" sizes="192x192" href="./icons/mithril-192.png?v=38.7" />
+<link rel="icon" type="image/png" sizes="192x192" href="./icons/mithril-192.png?v=38.7" />
+<link rel="icon" type="image/png" sizes="512x512" href="./icons/mithril-512.png?v=38.7" />
+<title>MITHRIL Shot Diagram m38.7</title>
 <style>
   html, body {
     margin: 0;
@@ -73,6 +73,15 @@
     window.location.href = homeURL();
   }
 
+  window.__saveMithrilShotState = saveShotState;
+  window.checkShotDiagramForUpdates = function () {
+    saveShotState();
+    if (window.MithrilUpdate) {
+      return window.MithrilUpdate.check(window.MITHRIL_UPDATE_CONFIG || {});
+    }
+    alert("The MITHRIL update checker is still loading. Try again in a moment.");
+  };
+
   fallbackHome.addEventListener("click", goHome);
 
   frame.addEventListener("load", () => {
@@ -80,7 +89,7 @@
       const doc = frame.contentDocument;
       if (!doc) throw new Error("Shot Diagram document was unavailable.");
 
-      doc.title = "MITHRIL Shot Diagram m38.5";
+      doc.title = "MITHRIL Shot Diagram m38.7";
 
       const injectedStyle = doc.createElement("style");
       injectedStyle.textContent = `
@@ -128,10 +137,10 @@
       if (oldMark) {
         const icon = doc.createElement("img");
         icon.className = "mark";
-        icon.src = "./icons/mithril-192.png?v=38.5";
+        icon.src = "./icons/mithril-192.png?v=38.7";
         icon.alt = "MITHRIL";
         icon.addEventListener("error", () => {
-          icon.src = "https://zscurtis.github.io/mithril_mobile/icons/mithril-192.png?v=38.5";
+          icon.src = "https://zscurtis.github.io/mithril_mobile/icons/mithril-192.png?v=38.7";
         }, { once: true });
         oldMark.replaceWith(icon);
       }
@@ -140,7 +149,7 @@
       if (brandText) brandText.textContent = "SHOT DIAGRAM";
 
       const version = brand.querySelector(".version");
-      if (version) version.textContent = "m38.5";
+      if (version) version.textContent = "m38.7";
 
       brand.classList.add("mithrilHomeLink");
       brand.setAttribute("role", "button");
@@ -165,6 +174,19 @@
         homeButton.textContent = "Home / Choose Template";
         homeButton.addEventListener("click", goHome);
         firstMenuGrid.prepend(homeButton);
+      }
+
+      if (firstMenuGrid && !doc.getElementById("mithrilUpdateMenuButton")) {
+        const updateButton = doc.createElement("button");
+        updateButton.id = "mithrilUpdateMenuButton";
+        updateButton.type = "button";
+        updateButton.className = "wide";
+        updateButton.textContent = "Check for Updates";
+        updateButton.addEventListener("click", () => {
+          if (menuModal) menuModal.classList.remove("show");
+          window.checkShotDiagramForUpdates();
+        });
+        firstMenuGrid.prepend(updateButton);
       }
 
       const performanceScript = doc.createElement("script");
@@ -285,7 +307,7 @@
             window.addEventListener("orientationchange", function () { setTimeout(resizeCanvas, 60); });
           }
           window.addEventListener("pagehide", window.__mithrilFlushShotView);
-          console.log("MITHRIL m38.5 shot canvas mode:", performanceMode ? "legacy performance" : "standard");
+          console.log("MITHRIL m38.7 shot canvas mode:", performanceMode ? "legacy performance" : "standard");
         })();
       `;
       doc.body.appendChild(performanceScript);
@@ -463,5 +485,19 @@
   });
 })();
 </script>
+<script>
+window.MITHRIL_UPDATE_CONFIG = {
+  currentVersion: "m38.7",
+  appName: "MITHRIL Mobile",
+  templateName: "Shot Diagram",
+  versionUrl: "./version.json",
+  homeUrl: "./index.html",
+  serviceWorkerUrl: "./service-worker.js",
+  save: function(){
+    try { if(window.__saveMithrilShotState) window.__saveMithrilShotState(); } catch(error) { console.warn("MITHRIL could not save the shot before update check.", error); }
+  }
+};
+</script>
+<script src="./mithril-update.js?v=38.7"></script>
 </body>
 </html>
