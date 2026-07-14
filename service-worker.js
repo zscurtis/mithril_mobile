@@ -1,10 +1,10 @@
-const CACHE_NAME = "mithril-mobile-m38-11-canvas-themes-v1";
+const CACHE_NAME = "mithril-mobile-m38-12-canvas-theme-renderer-fix-v1";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./shot_diagram_m38.html",
   "./shot_diagram_m34.html",
-  "./mithril-menu-m3811.js",
+  "./mithril-menu-m3812.js",
   "./mithril-update.js",
   "./manifest.webmanifest",
   "./icons/mithril-192.png",
@@ -33,9 +33,6 @@ self.addEventListener("message", event => {
   if (event.data && event.data.type === "SKIP_WAITING") self.skipWaiting();
 });
 
-// Only the small home and wrapper documents are patched. The large stable
-// Shot Diagram engine is served unchanged so its embedded template image and
-// application script never pass through an HTML rewriting step.
 function shouldPatchHTML(requestUrl) {
   const path = requestUrl.pathname;
   return path.endsWith("/") ||
@@ -47,11 +44,12 @@ function patchHTMLResponse(response, requestUrl) {
   if (!response || !shouldPatchHTML(requestUrl)) return Promise.resolve(response);
 
   return response.text().then(html => {
-    let patched = html.replace(/m38\.\d+/g, "m38.11");
+    let patched = html.replace(/m38\.\d+/g, "m38.12");
     patched = patched.replace(/<script[^>]+mithril-menu-m389\.js[^>]*><\/script>/gi, "");
     patched = patched.replace(/<script[^>]+mithril-menu-m3810\.js[^>]*><\/script>/gi, "");
     patched = patched.replace(/<script[^>]+mithril-menu-m3811\.js[^>]*><\/script>/gi, "");
-    const scriptTag = '<script src="./mithril-menu-m3811.js?v=38.11"></script>';
+    patched = patched.replace(/<script[^>]+mithril-menu-m3812\.js[^>]*><\/script>/gi, "");
+    const scriptTag = '<script src="./mithril-menu-m3812.js?v=38.12"></script>';
     if (/<\/body>/i.test(patched)) patched = patched.replace(/<\/body>/i, scriptTag + "</body>");
     else patched += scriptTag;
 
