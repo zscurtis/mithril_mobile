@@ -1,10 +1,10 @@
-const CACHE_NAME = "mithril-mobile-m38-9-menu-unification-v1";
+const CACHE_NAME = "mithril-mobile-m38-10-shot-recovery-wheel-zoom-v1";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./shot_diagram_m38.html",
   "./shot_diagram_m34.html",
-  "./mithril-menu-m389.js",
+  "./mithril-menu-m3810.js",
   "./mithril-update.js",
   "./manifest.webmanifest",
   "./icons/mithril-192.png",
@@ -33,21 +33,24 @@ self.addEventListener("message", event => {
   if (event.data && event.data.type === "SKIP_WAITING") self.skipWaiting();
 });
 
+// Only the small home and wrapper documents are patched. The large stable
+// Shot Diagram engine is served unchanged so its embedded template image and
+// application script never pass through an HTML rewriting step.
 function shouldPatchHTML(requestUrl) {
   const path = requestUrl.pathname;
   return path.endsWith("/") ||
     path.endsWith("/index.html") ||
-    path.endsWith("/shot_diagram_m38.html") ||
-    path.endsWith("/shot_diagram_m34.html");
+    path.endsWith("/shot_diagram_m38.html");
 }
 
 function patchHTMLResponse(response, requestUrl) {
   if (!response || !shouldPatchHTML(requestUrl)) return Promise.resolve(response);
 
   return response.text().then(html => {
-    let patched = html.replace(/m38\.8/g, "m38.9");
-    if (patched.indexOf("mithril-menu-m389.js") === -1) {
-      const scriptTag = '<script src="./mithril-menu-m389.js?v=38.9"></script>';
+    let patched = html.replace(/m38\.(?:8|9)/g, "m38.10");
+    patched = patched.replace(/<script[^>]+mithril-menu-m389\.js[^>]*><\/script>/gi, "");
+    if (patched.indexOf("mithril-menu-m3810.js") === -1) {
+      const scriptTag = '<script src="./mithril-menu-m3810.js?v=38.10"></script>';
       if (/<\/body>/i.test(patched)) patched = patched.replace(/<\/body>/i, scriptTag + "</body>");
       else patched += scriptTag;
     }
@@ -83,8 +86,6 @@ self.addEventListener("fetch", event => {
 
   const requestUrl = new URL(event.request.url);
 
-  // The version file must always come from the network so an older installed
-  // MITHRIL build can discover a newer published release.
   if (requestUrl.pathname.endsWith("/version.json")) {
     event.respondWith(
       fetch(event.request, { cache: "no-store" })
