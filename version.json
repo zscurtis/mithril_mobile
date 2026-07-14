@@ -1,13 +1,13 @@
 {
-  "version": "m38.8",
-  "title": "Drill-Hole Conditions and Summary",
-  "released": "2026-07-13",
+  "version": "m38.9",
+  "title": "Unified Minimal Menus",
+  "released": "2026-07-14",
   "minimumOfflineVersion": "m38.7",
   "notes": [
-    "Drillers can mark breakthrough, dirt, bad, and wet hole conditions during hole entry.",
-    "Drill Log condition colors now match the Shot Diagram: yellow breakthrough, brown dirt, red bad, and blue wet outline.",
-    "The Drill Log PDF now begins with a summary sheet containing condition counts and footage totals.",
-    "CSV, JSON, notes pages, and share text preserve the new condition fields.",
-    "The shared update checker remains available to current and future MITHRIL templates."
+    "Drill Log and Shot Diagram now use the same simple menu structure.",
+    "Page directions stay hidden behind Add Page until they are needed.",
+    "Shot Diagram hole-data shifting stays hidden behind Shift Hole Data until it is needed.",
+    "Exports, backups, settings, updates, and destructive actions are grouped into clear expandable sections.",
+    "No hole data, storage, PDF, CSV, JSON backup, or compatibility formats were changed."
   ]
 }
