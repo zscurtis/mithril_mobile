@@ -1,13 +1,13 @@
 {
-  "version": "m38.10",
-  "title": "Shot Diagram Recovery and Desktop Zoom",
+  "version": "m38.11",
+  "title": "Canvas Background Themes",
   "released": "2026-07-14",
-  "minimumOfflineVersion": "m38.7",
+  "minimumOfflineVersion": "m38.8",
   "notes": [
-    "The Shot Diagram engine is once again served unchanged instead of being rewritten by the service worker.",
-    "The unified minimal menu is injected through the Shot Diagram wrapper after the stable engine loads.",
-    "Shot Info now includes a Back to Menu button.",
-    "Mouse-wheel and trackpad scrolling now zoom the Drill Log and Shot Diagram canvases on desktop.",
-    "No saved-hole data, export formats, calculations, calibration settings, or backup formats were changed."
+    "Both the Drill Log and Shot Diagram now include a Canvas Background option under Settings.",
+    "The six classic background themes and six bold background themes are available from the in-app menu.",
+    "The hazard-style concept was replaced with a more blasting-themed Blast Placard option.",
+    "The selected background applies immediately and stays saved on the device for future sessions.",
+    "Shot Diagram recovery, Back to Menu, and desktop wheel zoom from m38.10 remain in place."
   ]
 }

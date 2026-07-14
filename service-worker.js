@@ -1,10 +1,10 @@
-const CACHE_NAME = "mithril-mobile-m38-10-shot-recovery-wheel-zoom-v1";
+const CACHE_NAME = "mithril-mobile-m38-11-canvas-themes-v1";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./shot_diagram_m38.html",
   "./shot_diagram_m34.html",
-  "./mithril-menu-m3810.js",
+  "./mithril-menu-m3811.js",
   "./mithril-update.js",
   "./manifest.webmanifest",
   "./icons/mithril-192.png",
@@ -47,13 +47,13 @@ function patchHTMLResponse(response, requestUrl) {
   if (!response || !shouldPatchHTML(requestUrl)) return Promise.resolve(response);
 
   return response.text().then(html => {
-    let patched = html.replace(/m38\.(?:8|9)/g, "m38.10");
+    let patched = html.replace(/m38\.\d+/g, "m38.11");
     patched = patched.replace(/<script[^>]+mithril-menu-m389\.js[^>]*><\/script>/gi, "");
-    if (patched.indexOf("mithril-menu-m3810.js") === -1) {
-      const scriptTag = '<script src="./mithril-menu-m3810.js?v=38.10"></script>';
-      if (/<\/body>/i.test(patched)) patched = patched.replace(/<\/body>/i, scriptTag + "</body>");
-      else patched += scriptTag;
-    }
+    patched = patched.replace(/<script[^>]+mithril-menu-m3810\.js[^>]*><\/script>/gi, "");
+    patched = patched.replace(/<script[^>]+mithril-menu-m3811\.js[^>]*><\/script>/gi, "");
+    const scriptTag = '<script src="./mithril-menu-m3811.js?v=38.11"></script>';
+    if (/<\/body>/i.test(patched)) patched = patched.replace(/<\/body>/i, scriptTag + "</body>");
+    else patched += scriptTag;
 
     const headers = new Headers(response.headers);
     headers.set("Content-Type", "text/html; charset=utf-8");
