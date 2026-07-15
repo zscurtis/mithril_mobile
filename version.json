@@ -1,13 +1,13 @@
 {
-  "version": "m38.12",
-  "title": "Canvas Theme Renderer Fix",
-  "released": "2026-07-14",
+  "version": "m38.13",
+  "title": "Image-Based Canvas Background Themes",
+  "released": "2026-07-15",
   "minimumOfflineVersion": "m38.10",
   "notes": [
-    "Canvas background selections now visibly change the actual Drill Log and Shot Diagram canvas areas.",
-    "The renderer no longer paints the old opaque gray background over the selected theme.",
-    "All twelve custom themes and the Original Gray reset remain available under Settings.",
-    "The selected theme still applies immediately and remains saved on the device.",
-    "No saved-hole data, export formats, calculations, calibration settings, or backup formats were changed."
+    "Canvas background themes now use real image assets based on the approved concept boards instead of simplified CSS approximations.",
+    "Both Drill Log and Shot Diagram keep the same Canvas Background selector under Settings.",
+    "The former hazard-style concept is replaced by the Blast Placard theme.",
+    "Theme choices remain saved on the device and still apply immediately.",
+    "Shot Diagram recovery, Back to Menu, and desktop wheel zoom remain in place."
   ]
 }
