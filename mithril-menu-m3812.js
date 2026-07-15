@@ -2,7 +2,7 @@
   "use strict";
 
   var RELEASE_VERSION = "m38.12";
-  var RELEASE_LABEL = "working canvas background themes";
+  var RELEASE_LABEL = "multi quick fill and canvas themes";
   var THEME_STORAGE_KEY = "mithrilCanvasThemeV1";
   var THEME_CLASS_PREFIX = "m3812-theme-";
   var THEME_OPTIONS = [
@@ -185,7 +185,7 @@
       ".m3812ThemeGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}",
       ".m3812ThemeButton{min-height:44px;font-size:13px;line-height:1.25;text-align:left}",
       ".m3812ThemeButton.active{background:#1f6feb;color:#fff;border-color:#1f6feb}",
-      "html.m3812-theme-gray,body.m3812-theme-gray{background:#777d84 !important}",
+      "html.m3812-theme-gray,body.m3812-theme-gray{background:#2e2e2e !important}",
       "html.m3812-theme-dark-slate,body.m3812-theme-dark-slate{background-color:#232a31 !important;background-image:radial-gradient(circle at 18% 18%, rgba(255,255,255,.06) 0 3px, transparent 4px),radial-gradient(circle at 76% 70%, rgba(0,0,0,.2) 0 18px, transparent 20px),linear-gradient(135deg,#20262d 0%,#313b46 100%) !important;background-size:140px 140px,220px 220px,cover !important;background-attachment:fixed !important}",
       "html.m3812-theme-blue-steel,body.m3812-theme-blue-steel{background-color:#566575 !important;background-image:radial-gradient(circle at 20% 20%, rgba(255,255,255,.08) 0 2px, transparent 3px),linear-gradient(135deg,rgba(255,255,255,.08),rgba(255,255,255,0) 38%),linear-gradient(135deg,#4b5a68 0%,#6b7d8f 100%) !important;background-size:150px 150px,cover,cover !important;background-attachment:fixed !important}",
       "html.m3812-theme-subtle-grid,body.m3812-theme-subtle-grid{background-color:#252e38 !important;background-image:radial-gradient(circle at center, rgba(255,255,255,.03) 1px, transparent 1px),repeating-linear-gradient(0deg, rgba(255,255,255,.06) 0 1px, transparent 1px 26px),repeating-linear-gradient(90deg, rgba(255,255,255,.06) 0 1px, transparent 1px 26px),linear-gradient(135deg,#232b34,#2e3945) !important;background-size:26px 26px,26px 26px,26px 26px,cover !important;background-attachment:fixed !important}",
@@ -400,64 +400,15 @@
       node.classList.add(THEME_CLASS_PREFIX + selected);
     }
     refreshThemeButtons(document);
+    syncThemeSurfaces();
+    if (typeof window.draw === "function") { try { window.draw(); } catch (error) {} }
     return selected;
-  }
-
-  function isCanvasBackgroundFill(canvas, context, x, y, width, height) {
-    var fill = String(context.fillStyle || "").toLowerCase().replace(/\s+/g, "");
-    var gray = fill === "#2e2e2e" || fill === "rgb(46,46,46)" || fill === "rgba(46,46,46,1)";
-    if (!gray || Number(x) !== 0 || Number(y) !== 0) return false;
-    var rect = canvas.getBoundingClientRect ? canvas.getBoundingClientRect() : { width: canvas.width, height: canvas.height };
-    var fullCss = Number(width) >= Math.max(1, Number(rect.width || 0) - 2) && Number(height) >= Math.max(1, Number(rect.height || 0) - 2);
-    var fullPixels = Number(width) >= Math.max(1, Number(canvas.width || 0) - 2) && Number(height) >= Math.max(1, Number(canvas.height || 0) - 2);
-    return fullCss || fullPixels;
-  }
-
-  function installCanvasThemeRenderer(canvas) {
-    if (!canvas || canvas.getAttribute("data-m3812-theme-renderer") === "true") return;
-    var context = canvas.getContext && canvas.getContext("2d");
-    if (!context) return;
-    canvas.setAttribute("data-m3812-theme-renderer", "true");
-
-    var originalFillRect = context.fillRect.bind(context);
-    var originalClearRect = context.clearRect.bind(context);
-    context.fillRect = function (x, y, width, height) {
-      if (getSavedTheme() !== "gray" && isCanvasBackgroundFill(canvas, context, x, y, width, height)) {
-        originalClearRect(x, y, width, height);
-        return;
-      }
-      return originalFillRect(x, y, width, height);
-    };
-  }
-
-  function syncCanvasThemeSurface() {
-    var canvas = byId("drillCanvas") || byId("shotCanvas");
-    var wrap = byId("canvasWrap");
-    if (!canvas || !wrap) return;
-
-    var bodyStyle = window.getComputedStyle ? window.getComputedStyle(document.body) : null;
-    if (bodyStyle) {
-      wrap.style.setProperty("background-color", bodyStyle.backgroundColor || "#2e2e2e", "important");
-      wrap.style.setProperty("background-image", bodyStyle.backgroundImage || "none", "important");
-      wrap.style.setProperty("background-size", bodyStyle.backgroundSize || "auto", "important");
-      wrap.style.setProperty("background-position", bodyStyle.backgroundPosition || "0% 0%", "important");
-      wrap.style.setProperty("background-repeat", bodyStyle.backgroundRepeat || "repeat", "important");
-    }
-    canvas.style.setProperty("background", "transparent", "important");
-  }
-
-  function redrawCanvasForTheme() {
-    syncCanvasThemeSurface();
-    if (typeof window.draw === "function") {
-      try { window.draw(); } catch (error) { console.warn("MITHRIL could not redraw the canvas theme.", error); }
-    }
   }
 
   function chooseTheme(themeKey) {
     var selected = getThemeOption(themeKey).key;
     saveTheme(selected);
     applyTheme(selected);
-    redrawCanvasForTheme();
     try {
       if (window.parent && window.parent !== window && typeof window.parent.MithrilApplyTheme === 'function') {
         window.parent.MithrilApplyTheme(selected);
@@ -479,7 +430,7 @@
       '<button type="button" class="wide" data-m3812-subpanel="' + panelId + '" data-label="Canvas Background" aria-expanded="false">Canvas Background  ›</button>',
       '<div id="' + panelId + '" class="m3812Subpanel">',
       '  <div class="m3812ThemePanel">',
-      '    <p class="m3812SectionHelp">Pick a canvas background. The canvas changes immediately and stays saved on this device.</p>',
+      '    <p class="m3812SectionHelp">Pick a canvas background. The theme applies immediately and stays saved on this device.</p>',
       '    <div class="m3812ThemeGroupTitle">Classic Themes</div>',
       '    <div class="m3812ThemeGrid">' + buildThemeButtons('classic') + '</div>',
       '    <div class="m3812ThemeGroupTitle">Bold Themes</div>',
@@ -719,26 +670,766 @@
     }
   }
 
+  var DRILL_MULTI_QUICK_FIELDS = [
+    { key: "Overburden", label: "Overburden" },
+    { key: "Depth", label: "Depth" },
+    { key: "Breakthrough", label: "Breakthrough" },
+    { key: "DirtHole", label: "Dirt Hole" },
+    { key: "BadHole", label: "Bad Hole" },
+    { key: "Wet", label: "Wet Hole" }
+  ];
+
+  var SHOT_MULTI_QUICK_FIELDS = [
+    { key: "Overburden", label: "Overburden" },
+    { key: "Depth", label: "Depth" },
+    { key: "Stemming", label: "Stemming" },
+    { key: "PrimaryLoad", label: "Load" },
+    { key: "SecondaryLoad", label: "Special Load" },
+    { key: "Timing", label: "Timing" },
+    { key: "DirtHole", label: "Dirt Hole" },
+    { key: "BadHole", label: "Bad Hole" },
+    { key: "Wet", label: "Wet Hole" }
+  ];
+
+  function injectMultiQuickStyles() {
+    if (byId("mithrilMultiQuickM3812Styles")) return;
+    var style = document.createElement("style");
+    style.id = "mithrilMultiQuickM3812Styles";
+    style.textContent = [
+      ".m3812QuickIntro{margin:0 0 12px;color:#444;font-size:13px;font-weight:750;line-height:1.4}",
+      ".m3812QuickRows{display:grid;gap:10px}",
+      ".m3812QuickRow{display:grid;grid-template-columns:78px minmax(130px,1.15fr) minmax(110px,.85fr);gap:8px;align-items:end;padding:9px;border:1px solid #bbb;border-radius:10px;background:#f8f8f8}",
+      ".m3812QuickRow.inactive{opacity:.68}",
+      ".m3812QuickUse{display:flex;align-items:center;justify-content:center;gap:6px;min-height:46px;padding:6px;border:1px solid #aaa;border-radius:8px;background:#fff;font-size:13px;font-weight:950}",
+      ".m3812QuickUse input{width:24px;height:24px;min-height:24px;margin:0;padding:0}",
+      ".m3812QuickRow label{min-width:0}",
+      ".m3812QuickRow select,.m3812QuickRow input{width:100%;min-height:46px;font-size:17px;padding:8px;border:1px solid #999;border-radius:8px;background:#fff}",
+      ".m3812QuickValueCell{min-width:0}",
+      ".m3812QuickActions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:12px}",
+      ".m3812QuickActions button{min-height:48px}",
+      ".m3812QuickBarSummary{min-width:0;font-size:14px;font-weight:950;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}",
+      ".m3812QuickBarHint{grid-column:1/-1;font-size:12px;font-weight:850;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#333}",
+      "#quickBar.m3812MultiQuickBar,#singleFillBar.m3812MultiQuickBar{grid-template-columns:minmax(0,1fr) auto auto!important}",
+      "#quickModal .box.m3812QuickModalBox{width:min(650px,96vw)}",
+      "#quickModal .box.m3812QuickKeypadOpen{padding-bottom:365px!important}",
+      "@media(max-width:520px){.m3812QuickRow{grid-template-columns:68px 1fr}.m3812QuickValueCell{grid-column:2}.m3812QuickActions{grid-template-columns:1fr}.m3812QuickBarSummary{font-size:13px}}"
+    ].join("");
+    document.head.appendChild(style);
+  }
+
+  function quickFieldLabel(fields, key) {
+    for (var i = 0; i < fields.length; i += 1) {
+      if (fields[i].key === key) return fields[i].label;
+    }
+    return key || "Field";
+  }
+
+  function isQuickConditionField(field) {
+    return field === "Breakthrough" || field === "DirtHole" || field === "BadHole" || field === "Wet";
+  }
+
+  function normalizeQuickYesNo(value) {
+    var text = String(value == null ? "" : value).trim().toLowerCase();
+    return text === "no" || text === "false" || text === "0" ? "No" : "Yes";
+  }
+
+  function quickFieldAllowed(fields, field) {
+    for (var i = 0; i < fields.length; i += 1) if (fields[i].key === field) return true;
+    return false;
+  }
+
+  function optionHtml(fields) {
+    var html = "";
+    for (var i = 0; i < fields.length; i += 1) {
+      html += '<option value="' + fields[i].key + '">' + fields[i].label + '</option>';
+    }
+    return html;
+  }
+
+  function normalizeMultiQuickEntries(source, fields, defaultOrder) {
+    source = source || {};
+    var oldField = quickFieldAllowed(fields, source.field) ? source.field : defaultOrder[0];
+    var oldValue = source.value == null ? "" : String(source.value);
+    var raw = Array.isArray(source.entries) ? source.entries.slice(0, 3) : null;
+    var entries = [];
+    var i;
+
+    if (!raw || !raw.length) {
+      entries.push({ enabled: true, field: oldField, value: oldValue });
+      for (i = 0; entries.length < 3 && i < defaultOrder.length; i += 1) {
+        if (defaultOrder[i] === oldField) continue;
+        entries.push({ enabled: false, field: defaultOrder[i], value: "" });
+      }
+    } else {
+      for (i = 0; i < raw.length && entries.length < 3; i += 1) {
+        var item = raw[i] || {};
+        entries.push({
+          enabled: item.enabled !== false,
+          field: quickFieldAllowed(fields, item.field) ? item.field : defaultOrder[Math.min(i, defaultOrder.length - 1)],
+          value: item.value == null ? "" : String(item.value)
+        });
+      }
+    }
+
+    for (i = 0; entries.length < 3; i += 1) {
+      entries.push({ enabled: false, field: defaultOrder[Math.min(entries.length, defaultOrder.length - 1)], value: "" });
+    }
+    return entries.slice(0, 3);
+  }
+
+  function activeMultiQuickEntries(entries) {
+    return (entries || []).filter(function (entry) { return entry && entry.enabled; });
+  }
+
+  function validateMultiQuickEntries(entries, fields) {
+    var active = activeMultiQuickEntries(entries);
+    if (!active.length) {
+      alert("Turn on at least one Quick Fill row.");
+      return false;
+    }
+    var seen = {};
+    for (var i = 0; i < active.length; i += 1) {
+      if (seen[active[i].field]) {
+        alert("Each active Quick Fill row must use a different field.\n\n" + quickFieldLabel(fields, active[i].field) + " is selected more than once.");
+        return false;
+      }
+      seen[active[i].field] = true;
+    }
+    return true;
+  }
+
+  function buildMultiQuickRows(prefix, fields) {
+    var html = "";
+    var options = optionHtml(fields);
+    for (var i = 1; i <= 3; i += 1) {
+      html += [
+        '<div id="' + prefix + 'Row' + i + '" class="m3812QuickRow">',
+        '  <label class="m3812QuickUse"><input id="' + prefix + 'Use' + i + '" type="checkbox" /> Use ' + i + '</label>',
+        '  <label>Field<select id="' + prefix + 'Field' + i + '">' + options + '</select></label>',
+        '  <label class="m3812QuickValueCell">Value',
+        '    <input id="' + prefix + 'Value' + i + '" type="text" readonly inputmode="none" autocomplete="off" placeholder="tap keypad" />',
+        '    <select id="' + prefix + 'Bool' + i + '" style="display:none"><option value="Yes">Yes</option><option value="No">No</option></select>',
+        '  </label>',
+        '</div>'
+      ].join("");
+    }
+    return html;
+  }
+
+  function quickEntrySummary(entries, fields) {
+    var active = activeMultiQuickEntries(entries);
+    if (!active.length) return "No Quick Fill fields selected";
+    return active.map(function (entry) {
+      var value = isQuickConditionField(entry.field) ? normalizeQuickYesNo(entry.value) : String(entry.value || "blank");
+      return quickFieldLabel(fields, entry.field) + "=" + value;
+    }).join(" • ");
+  }
+
+  function syncThemeSurfaces() {
+    var body = document.body;
+    if (!body || !window.getComputedStyle) return;
+    var computed = window.getComputedStyle(body);
+    var surfaces = [byId("canvasWrap"), byId("drillCanvas"), byId("shotCanvas")];
+    for (var i = 0; i < surfaces.length; i += 1) {
+      var surface = surfaces[i];
+      if (!surface) continue;
+      surface.style.backgroundColor = computed.backgroundColor;
+      surface.style.backgroundImage = computed.backgroundImage;
+      surface.style.backgroundSize = computed.backgroundSize;
+      surface.style.backgroundPosition = computed.backgroundPosition;
+      surface.style.backgroundRepeat = computed.backgroundRepeat;
+    }
+  }
+
+  function installCanvasBackgroundBridge(canvas) {
+    if (!canvas || canvas.getAttribute("data-m3812-theme-canvas") === "true") return;
+    var context = canvas.getContext && canvas.getContext("2d");
+    if (!context || context.__mithrilM3812FillRect) return;
+    var originalFillRect = context.fillRect.bind(context);
+    context.__mithrilM3812FillRect = originalFillRect;
+    context.fillRect = function (x, y, width, height) {
+      var color = String(context.fillStyle || "").replace(/\s+/g, "").toLowerCase();
+      var rect = canvas.getBoundingClientRect();
+      var gray = color === "#2e2e2e" || color === "rgb(46,46,46)" || color === "rgba(46,46,46,1)";
+      var fullSurface = Math.abs(Number(x || 0)) < 1 && Math.abs(Number(y || 0)) < 1 && Number(width || 0) >= rect.width - 2 && Number(height || 0) >= rect.height - 2;
+      if (gray && fullSurface) return;
+      return originalFillRect(x, y, width, height);
+    };
+    canvas.setAttribute("data-m3812-theme-canvas", "true");
+  }
+
+  function ensureDrillQuickState() {
+    var entries = normalizeMultiQuickEntries(quick, DRILL_MULTI_QUICK_FIELDS, ["Overburden", "Depth", "Breakthrough"]);
+    quick.entries = entries;
+    var first = activeMultiQuickEntries(entries)[0] || entries[0];
+    quick.field = first.field;
+    quick.value = first.value;
+    return quick;
+  }
+
+  function drillQuickPrefix() { return "m3812DrillQuick"; }
+
+  function drillQuickEntriesFromModal() {
+    var prefix = drillQuickPrefix();
+    var entries = [];
+    for (var i = 1; i <= 3; i += 1) {
+      var field = byId(prefix + "Field" + i).value;
+      var condition = isQuickConditionField(field);
+      entries.push({
+        enabled: !!byId(prefix + "Use" + i).checked,
+        field: field,
+        value: condition ? byId(prefix + "Bool" + i).value : byId(prefix + "Value" + i).value
+      });
+    }
+    return entries;
+  }
+
+  function syncDrillQuickRow(index) {
+    var prefix = drillQuickPrefix();
+    var use = byId(prefix + "Use" + index);
+    var field = byId(prefix + "Field" + index);
+    var input = byId(prefix + "Value" + index);
+    var boolSelect = byId(prefix + "Bool" + index);
+    var row = byId(prefix + "Row" + index);
+    if (!use || !field || !input || !boolSelect || !row) return;
+    var condition = isQuickConditionField(field.value);
+    input.style.display = condition ? "none" : "block";
+    boolSelect.style.display = condition ? "block" : "none";
+    if (condition && !boolSelect.value) boolSelect.value = "Yes";
+    row.classList.toggle("inactive", !use.checked);
+    if (condition && typeof window.hidePad === "function" && typeof activeInput !== "undefined" && activeInput === input.id) window.hidePad();
+  }
+
+  function fillDrillQuickModal() {
+    var state = ensureDrillQuickState();
+    var prefix = drillQuickPrefix();
+    for (var i = 1; i <= 3; i += 1) {
+      var entry = state.entries[i - 1];
+      byId(prefix + "Use" + i).checked = !!entry.enabled;
+      byId(prefix + "Field" + i).value = entry.field;
+      byId(prefix + "Value" + i).value = isQuickConditionField(entry.field) ? "" : entry.value;
+      byId(prefix + "Bool" + i).value = isQuickConditionField(entry.field) ? normalizeQuickYesNo(entry.value) : "Yes";
+      syncDrillQuickRow(i);
+    }
+  }
+
+  function saveDrillMultiQuick(enabled) {
+    var entries = drillQuickEntriesFromModal();
+    if (enabled && !validateMultiQuickEntries(entries, DRILL_MULTI_QUICK_FIELDS)) return false;
+    quick.entries = entries;
+    quick.enabled = !!enabled;
+    var first = activeMultiQuickEntries(entries)[0] || entries[0];
+    quick.field = first.field;
+    quick.value = first.value;
+    if (typeof saveState === "function") saveState();
+    updateDrillMultiQuickBar();
+    if (typeof window.closeQuickModal === "function") window.closeQuickModal();
+    if (typeof draw === "function") draw();
+    return true;
+  }
+
+  function updateDrillMultiQuickBar(message) {
+    var state = ensureDrillQuickState();
+    var bar = byId("quickBar");
+    if (!bar) return;
+    bar.classList.toggle("show", !!state.enabled);
+    var summary = byId("m3812DrillQuickSummary");
+    var hint = byId("m3812DrillQuickHint");
+    if (summary) summary.textContent = quickEntrySummary(state.entries, DRILL_MULTI_QUICK_FIELDS);
+    if (hint) hint.textContent = message || (activeMultiQuickEntries(state.entries).length + " field" + (activeMultiQuickEntries(state.entries).length === 1 ? "" : "s") + " active. Tap a hole once to apply all of them.");
+  }
+
+  function applyDrillMultiQuick(holeId) {
+    var state = ensureDrillQuickState();
+    if (!state.enabled) return;
+    var entries = activeMultiQuickEntries(state.entries);
+    if (!entries.length) return;
+    var data = currentData();
+    var row = data[holeId] || { HoleID: holeId, Overburden: "", Depth: "", Breakthrough: "No", DirtHole: "No", BadHole: "No", Wet: "No", Notes: "" };
+    for (var i = 0; i < entries.length; i += 1) {
+      var entry = entries[i];
+      row[entry.field] = isQuickConditionField(entry.field) ? normalizeQuickYesNo(entry.value) : String(entry.value || "");
+    }
+    row.HoleID = holeId;
+    row.Timestamp = new Date().toLocaleString();
+    data[holeId] = row;
+    if (typeof invalidatePageCache === "function") invalidatePageCache(currentPage);
+    if (typeof saveState === "function") saveState();
+    if (typeof markDirty === "function") markDirty();
+    if (typeof draw === "function") draw();
+    updateDrillMultiQuickBar("Updated " + holeId + ": " + quickEntrySummary(entries, DRILL_MULTI_QUICK_FIELDS) + ".");
+  }
+
+  function installDrillQuickPadSupport() {
+    if (window.__mithrilM3812DrillPad) return;
+    window.__mithrilM3812DrillPad = true;
+    var originalShowPad = window.showPad;
+    var originalHidePad = window.hidePad;
+    var originalInputLabel = window.inputLabel;
+    var originalNextInput = window.nextInput;
+    var prefix = drillQuickPrefix();
+
+    window.inputLabel = function (id) {
+      if (String(id || "").indexOf(prefix + "Value") === 0) {
+        var index = Number(String(id).replace(prefix + "Value", ""));
+        var field = byId(prefix + "Field" + index);
+        return "Quick Fill " + index + " — " + quickFieldLabel(DRILL_MULTI_QUICK_FIELDS, field ? field.value : "");
+      }
+      return typeof originalInputLabel === "function" ? originalInputLabel(id) : "Value";
+    };
+
+    window.showPad = function (id) {
+      if (typeof originalShowPad === "function") originalShowPad(id);
+      for (var i = 1; i <= 3; i += 1) {
+        var input = byId(prefix + "Value" + i);
+        if (input) input.classList.toggle("activeInput", input.id === id);
+      }
+      var box = byId("quickModal") && byId("quickModal").querySelector(".box");
+      if (box && byId("quickModal").classList.contains("show")) box.classList.add("m3812QuickKeypadOpen");
+      var label = byId("padLabel");
+      if (label) label.textContent = window.inputLabel(id);
+    };
+
+    window.hidePad = function () {
+      if (typeof originalHidePad === "function") originalHidePad();
+      for (var i = 1; i <= 3; i += 1) {
+        var input = byId(prefix + "Value" + i);
+        if (input) input.classList.remove("activeInput");
+      }
+      var box = byId("quickModal") && byId("quickModal").querySelector(".box");
+      if (box) box.classList.remove("m3812QuickKeypadOpen");
+    };
+
+    window.nextInput = function () {
+      if (typeof activeInput !== "undefined" && String(activeInput || "").indexOf(prefix + "Value") === 0) {
+        var current = Number(String(activeInput).replace(prefix + "Value", ""));
+        for (var offset = 1; offset <= 3; offset += 1) {
+          var next = ((current - 1 + offset) % 3) + 1;
+          var use = byId(prefix + "Use" + next);
+          var field = byId(prefix + "Field" + next);
+          if (use && use.checked && field && !isQuickConditionField(field.value)) {
+            window.showPad(prefix + "Value" + next);
+            return;
+          }
+        }
+        window.hidePad();
+        return;
+      }
+      if (typeof originalNextInput === "function") originalNextInput();
+    };
+  }
+
+  function patchDrillMultiQuick() {
+    var modal = byId("quickModal");
+    var bar = byId("quickBar");
+    if (!modal || !bar || modal.getAttribute("data-m3812-multi-quick") === "drill") return;
+    modal.setAttribute("data-m3812-multi-quick", "drill");
+    var box = modal.querySelector(".box");
+    if (!box) return;
+    box.classList.add("m3812QuickModalBox");
+    box.innerHTML = [
+      '<div class="boxHead"><span>Quick Fill</span><button type="button" id="m3812DrillQuickClose">Close</button></div>',
+      '<p class="m3812QuickIntro">Use up to three different fields. One tap on a hole applies every active row together.</p>',
+      '<div class="m3812QuickRows">' + buildMultiQuickRows(drillQuickPrefix(), DRILL_MULTI_QUICK_FIELDS) + '</div>',
+      '<div class="m3812QuickActions">',
+      '  <button type="button" class="primary" id="m3812DrillQuickOn">Turn On</button>',
+      '  <button type="button" id="m3812DrillQuickOff">Turn Off</button>',
+      '  <button type="button" class="danger" id="m3812DrillQuickClear">Clear Values</button>',
+      '</div>'
+    ].join("");
+
+    bar.classList.add("m3812MultiQuickBar");
+    bar.innerHTML = [
+      '<div id="m3812DrillQuickSummary" class="m3812QuickBarSummary"></div>',
+      '<button type="button" id="m3812DrillQuickEdit">Edit</button>',
+      '<button type="button" class="danger" id="m3812DrillQuickBarOff">Off</button>',
+      '<div id="m3812DrillQuickHint" class="m3812QuickBarHint"></div>'
+    ].join("");
+
+    installDrillQuickPadSupport();
+    var prefix = drillQuickPrefix();
+    for (var i = 1; i <= 3; i += 1) {
+      (function (index) {
+        byId(prefix + "Use" + index).addEventListener("change", function () { syncDrillQuickRow(index); });
+        byId(prefix + "Field" + index).addEventListener("change", function () { syncDrillQuickRow(index); });
+        var input = byId(prefix + "Value" + index);
+        input.addEventListener("pointerdown", function (event) { event.preventDefault(); window.showPad(input.id); });
+        input.addEventListener("focus", function () { window.showPad(input.id); });
+      })(i);
+    }
+
+    byId("m3812DrillQuickClose").addEventListener("click", function () { window.closeQuickModal(); });
+    byId("m3812DrillQuickOn").addEventListener("click", function () { saveDrillMultiQuick(true); });
+    byId("m3812DrillQuickOff").addEventListener("click", function () { saveDrillMultiQuick(false); });
+    byId("m3812DrillQuickClear").addEventListener("click", function () {
+      for (var i = 1; i <= 3; i += 1) {
+        byId(prefix + "Value" + i).value = "";
+        byId(prefix + "Bool" + i).value = "Yes";
+      }
+      if (typeof window.hidePad === "function") window.hidePad();
+    });
+    byId("m3812DrillQuickEdit").addEventListener("click", function () { window.openQuickModal(); });
+    byId("m3812DrillQuickBarOff").addEventListener("click", function () { window.turnQuickOff(); });
+
+    window.openQuickModal = function () {
+      fillDrillQuickModal();
+      modal.classList.add("show");
+    };
+    window.closeQuickModal = function () {
+      if (typeof window.hidePad === "function") window.hidePad();
+      modal.classList.remove("show");
+    };
+    window.enableQuickFill = function () { return saveDrillMultiQuick(true); };
+    window.saveQuickSettings = function () { ensureDrillQuickState(); if (typeof saveState === "function") saveState(); updateDrillMultiQuickBar(); };
+    window.turnQuickOff = function () {
+      ensureDrillQuickState();
+      quick.enabled = false;
+      if (typeof saveState === "function") saveState();
+      updateDrillMultiQuickBar();
+      if (typeof draw === "function") draw();
+    };
+    window.updateQuickBar = updateDrillMultiQuickBar;
+    window.applyQuick = applyDrillMultiQuick;
+
+    ensureDrillQuickState();
+    updateDrillMultiQuickBar();
+  }
+
+  function ensureShotQuickState() {
+    var entries = normalizeMultiQuickEntries(quickEntry, SHOT_MULTI_QUICK_FIELDS, ["Depth", "Stemming", "Overburden", "PrimaryLoad"]);
+    quickEntry.entries = entries;
+    var first = activeMultiQuickEntries(entries)[0] || entries[0];
+    quickEntry.field = first.field;
+    quickEntry.value = first.value;
+    return quickEntry;
+  }
+
+  function shotQuickPrefix() { return "m3812ShotQuick"; }
+
+  function shotQuickEntriesFromModal() {
+    var prefix = shotQuickPrefix();
+    var entries = [];
+    for (var i = 1; i <= 3; i += 1) {
+      var field = byId(prefix + "Field" + i).value;
+      var condition = isQuickConditionField(field);
+      var value = condition ? byId(prefix + "Bool" + i).value : byId(prefix + "Value" + i).value;
+      if ((field === "PrimaryLoad" || field === "SecondaryLoad") && typeof normalizeLoadValue === "function") value = normalizeLoadValue(value);
+      entries.push({ enabled: !!byId(prefix + "Use" + i).checked, field: field, value: value });
+    }
+    return entries;
+  }
+
+  function syncShotQuickRow(index) {
+    var prefix = shotQuickPrefix();
+    var use = byId(prefix + "Use" + index);
+    var field = byId(prefix + "Field" + index);
+    var input = byId(prefix + "Value" + index);
+    var boolSelect = byId(prefix + "Bool" + index);
+    var row = byId(prefix + "Row" + index);
+    if (!use || !field || !input || !boolSelect || !row) return;
+    var condition = isQuickConditionField(field.value);
+    input.style.display = condition ? "none" : "block";
+    boolSelect.style.display = condition ? "block" : "none";
+    if (condition && !boolSelect.value) boolSelect.value = "Yes";
+    row.classList.toggle("inactive", !use.checked);
+    if (condition && typeof window.hideLoadKeypad === "function" && typeof activeLoadInputId !== "undefined" && activeLoadInputId === input.id) window.hideLoadKeypad();
+    if (typeof window.updateEntryKeypadMode === "function") window.updateEntryKeypadMode();
+  }
+
+  function fillShotQuickModal() {
+    var state = ensureShotQuickState();
+    var prefix = shotQuickPrefix();
+    for (var i = 1; i <= 3; i += 1) {
+      var entry = state.entries[i - 1];
+      byId(prefix + "Use" + i).checked = !!entry.enabled;
+      byId(prefix + "Field" + i).value = entry.field;
+      byId(prefix + "Value" + i).value = isQuickConditionField(entry.field) ? "" : entry.value;
+      byId(prefix + "Bool" + i).value = isQuickConditionField(entry.field) ? normalizeQuickYesNo(entry.value) : "Yes";
+      syncShotQuickRow(i);
+    }
+  }
+
+  function saveShotMultiQuick(enabled) {
+    var entries = shotQuickEntriesFromModal();
+    if (enabled && !validateMultiQuickEntries(entries, SHOT_MULTI_QUICK_FIELDS)) return false;
+    quickEntry.entries = entries;
+    quickEntry.enabled = !!enabled;
+    var first = activeMultiQuickEntries(entries)[0] || entries[0];
+    quickEntry.field = first.field;
+    quickEntry.value = first.value;
+    localStorage.setItem("mithrilCanvasQuickEntryM06", JSON.stringify(quickEntry));
+    updateShotMultiQuickBar();
+    if (typeof window.closeQuickEntry === "function") window.closeQuickEntry();
+    if (typeof draw === "function") draw();
+    return true;
+  }
+
+  function updateShotMultiQuickBar(message) {
+    var state = ensureShotQuickState();
+    var bar = byId("singleFillBar");
+    if (!bar) return;
+    bar.classList.toggle("show", !!state.enabled);
+    var summary = byId("m3812ShotQuickSummary");
+    var hint = byId("m3812ShotQuickHint");
+    if (summary) summary.textContent = quickEntrySummary(state.entries, SHOT_MULTI_QUICK_FIELDS);
+    if (hint) hint.textContent = message || (activeMultiQuickEntries(state.entries).length + " field" + (activeMultiQuickEntries(state.entries).length === 1 ? "" : "s") + " active. Tap a hole once to apply all of them.");
+  }
+
+  function applyShotMultiQuick(pageNum, holeId) {
+    var state = ensureShotQuickState();
+    if (!state.enabled) return false;
+    var entries = activeMultiQuickEntries(state.entries);
+    if (!entries.length) return false;
+    var pageKey = String(pageNum);
+    if (!pagesData[pageKey]) pagesData[pageKey] = {};
+    if (!pagesData[pageKey][holeId]) {
+      pagesData[pageKey][holeId] = {
+        PageNumber: pageNum,
+        FieldDate: typeof formatShotDate === "function" ? (formatShotDate(headerData.FieldDate) || "") : (headerData.FieldDate || ""),
+        ShotID: headerData.ShotID || "",
+        JobName: headerData.JobName || "",
+        Blaster: headerData.Blaster || "",
+        HoleID: holeId,
+        Depth: "",
+        Stemming: "",
+        PrimaryLoad: "",
+        SecondaryLoad: "",
+        Overburden: "",
+        Timing: "",
+        Wet: "No",
+        BadHole: "No",
+        DirtHole: "No",
+        Notes: "",
+        EnteredBy: headerData.EnteredByDefault || "",
+        Timestamp: new Date().toLocaleString()
+      };
+    }
+    var row = pagesData[pageKey][holeId];
+    for (var i = 0; i < entries.length; i += 1) {
+      var entry = entries[i];
+      var value = entry.value;
+      if ((entry.field === "PrimaryLoad" || entry.field === "SecondaryLoad") && typeof normalizeLoadValue === "function") value = normalizeLoadValue(value);
+      if (isQuickConditionField(entry.field)) value = normalizeQuickYesNo(value);
+      row[entry.field] = String(value == null ? "" : value);
+    }
+    if (typeof normalizeHoleEntry === "function") normalizeHoleEntry(row);
+    row.PageNumber = pageNum;
+    row.FieldDate = typeof formatShotDate === "function" ? (formatShotDate(headerData.FieldDate) || "") : (headerData.FieldDate || "");
+    row.ShotID = headerData.ShotID || "";
+    row.JobName = headerData.JobName || "";
+    row.Blaster = headerData.Blaster || "";
+    row.EnteredBy = headerData.EnteredByDefault || "";
+    row.Timestamp = new Date().toLocaleString();
+    if (Number(pageNum) === Number(currentPage)) holeData = pagesData[pageKey];
+    if (typeof saveData === "function") saveData();
+    if (typeof markDirty === "function") markDirty();
+    if (typeof draw === "function") draw();
+    updateShotMultiQuickBar("Updated " + holeId + ": " + quickEntrySummary(entries, SHOT_MULTI_QUICK_FIELDS) + ".");
+    return true;
+  }
+
+  function installShotQuickKeypadSupport() {
+    if (window.__mithrilM3812ShotPad) return;
+    window.__mithrilM3812ShotPad = true;
+    var originalIsEntryKeypadField = window.isEntryKeypadField;
+    var originalIsLoadValueInputId = window.isLoadValueInputId;
+    var originalSetActiveLoadInput = window.setActiveLoadInput;
+    var originalLoadInputLabel = window.loadInputLabel;
+    var originalActiveEntryAllowsLoadLetters = window.activeEntryAllowsLoadLetters;
+    var originalScrollActive = window.scrollActiveLoadInputIntoView;
+    var originalHideLoadKeypad = window.hideLoadKeypad;
+    var originalNextLoadInput = window.nextLoadInput;
+    var prefix = shotQuickPrefix();
+
+    function customIndex(id) {
+      if (String(id || "").indexOf(prefix + "Value") !== 0) return 0;
+      return Number(String(id).replace(prefix + "Value", "")) || 0;
+    }
+    function customField(id) {
+      var index = customIndex(id);
+      var field = index ? byId(prefix + "Field" + index) : null;
+      return field ? field.value : "";
+    }
+
+    window.isEntryKeypadField = function (id) {
+      if (customIndex(id)) return !isQuickConditionField(customField(id));
+      return typeof originalIsEntryKeypadField === "function" ? originalIsEntryKeypadField(id) : false;
+    };
+    window.isLoadValueInputId = function (id) {
+      if (customIndex(id)) {
+        var field = customField(id);
+        return field === "PrimaryLoad" || field === "SecondaryLoad";
+      }
+      return typeof originalIsLoadValueInputId === "function" ? originalIsLoadValueInputId(id) : false;
+    };
+    window.setActiveLoadInput = function (id) {
+      if (typeof originalSetActiveLoadInput === "function") originalSetActiveLoadInput(id);
+      for (var i = 1; i <= 3; i += 1) {
+        var input = byId(prefix + "Value" + i);
+        if (input) input.classList.toggle("loadInputActive", input.id === id);
+      }
+    };
+    window.loadInputLabel = function (id) {
+      var index = customIndex(id);
+      if (index) return "Quick Fill " + index + " — " + quickFieldLabel(SHOT_MULTI_QUICK_FIELDS, customField(id));
+      return typeof originalLoadInputLabel === "function" ? originalLoadInputLabel(id) : "Entry";
+    };
+    window.activeEntryAllowsLoadLetters = function (id) {
+      id = id || (typeof activeLoadInputId !== "undefined" ? activeLoadInputId : "");
+      if (customIndex(id)) {
+        var field = customField(id);
+        return field === "PrimaryLoad" || field === "SecondaryLoad";
+      }
+      return typeof originalActiveEntryAllowsLoadLetters === "function" ? originalActiveEntryAllowsLoadLetters(id) : false;
+    };
+    window.scrollActiveLoadInputIntoView = function (id) {
+      if (typeof originalScrollActive === "function") originalScrollActive(id);
+      if (customIndex(id)) {
+        var box = byId("quickModal") && byId("quickModal").querySelector(".box");
+        if (box) box.classList.add("m3812QuickKeypadOpen");
+      }
+    };
+    window.hideLoadKeypad = function () {
+      if (typeof originalHideLoadKeypad === "function") originalHideLoadKeypad();
+      var box = byId("quickModal") && byId("quickModal").querySelector(".box");
+      if (box) box.classList.remove("m3812QuickKeypadOpen");
+      for (var i = 1; i <= 3; i += 1) {
+        var input = byId(prefix + "Value" + i);
+        if (input) input.classList.remove("loadInputActive");
+      }
+    };
+    window.nextLoadInput = function () {
+      var activeId = typeof activeLoadInputId !== "undefined" ? activeLoadInputId : "";
+      var current = customIndex(activeId);
+      if (current) {
+        for (var offset = 1; offset <= 3; offset += 1) {
+          var next = ((current - 1 + offset) % 3) + 1;
+          var use = byId(prefix + "Use" + next);
+          var field = byId(prefix + "Field" + next);
+          if (use && use.checked && field && !isQuickConditionField(field.value)) {
+            window.showEntryKeypad(prefix + "Value" + next, { noGuard: true });
+            return;
+          }
+        }
+        window.hideLoadKeypad();
+        return;
+      }
+      if (typeof originalNextLoadInput === "function") originalNextLoadInput();
+    };
+  }
+
+  function patchShotMultiQuick() {
+    var modal = byId("quickModal");
+    var bar = byId("singleFillBar");
+    if (!modal || !bar || modal.getAttribute("data-m3812-multi-quick") === "shot") return;
+    modal.setAttribute("data-m3812-multi-quick", "shot");
+    var box = modal.querySelector(".box");
+    if (!box) return;
+    box.classList.add("m3812QuickModalBox");
+    box.innerHTML = [
+      '<div class="boxHead"><span>Quick Fill</span><button type="button" id="m3812ShotQuickClose">Close</button></div>',
+      '<p class="m3812QuickIntro">Use up to three different fields. One tap on a hole applies every active row together.</p>',
+      '<div class="m3812QuickRows">' + buildMultiQuickRows(shotQuickPrefix(), SHOT_MULTI_QUICK_FIELDS) + '</div>',
+      '<div class="m3812QuickActions">',
+      '  <button type="button" class="primary" id="m3812ShotQuickOn">Turn On</button>',
+      '  <button type="button" id="m3812ShotQuickOff">Turn Off</button>',
+      '  <button type="button" class="danger" id="m3812ShotQuickClear">Clear Values</button>',
+      '</div>'
+    ].join("");
+
+    bar.classList.add("m3812MultiQuickBar");
+    bar.innerHTML = [
+      '<div id="m3812ShotQuickSummary" class="m3812QuickBarSummary"></div>',
+      '<button type="button" id="m3812ShotQuickEdit">Edit</button>',
+      '<button type="button" class="danger" id="m3812ShotQuickBarOff">Off</button>',
+      '<div id="m3812ShotQuickHint" class="m3812QuickBarHint"></div>'
+    ].join("");
+
+    installShotQuickKeypadSupport();
+    var prefix = shotQuickPrefix();
+    for (var i = 1; i <= 3; i += 1) {
+      (function (index) {
+        byId(prefix + "Use" + index).addEventListener("change", function () { syncShotQuickRow(index); });
+        byId(prefix + "Field" + index).addEventListener("change", function () { syncShotQuickRow(index); });
+        var input = byId(prefix + "Value" + index);
+        input.addEventListener("pointerdown", function (event) {
+          event.preventDefault();
+          if (typeof window.showEntryKeypad === "function") window.showEntryKeypad(input.id);
+        });
+        input.addEventListener("focus", function () { if (typeof window.showEntryKeypad === "function") window.showEntryKeypad(input.id); });
+      })(i);
+    }
+
+    byId("m3812ShotQuickClose").addEventListener("click", function () { window.closeQuickEntry(); });
+    byId("m3812ShotQuickOn").addEventListener("click", function () { saveShotMultiQuick(true); });
+    byId("m3812ShotQuickOff").addEventListener("click", function () { saveShotMultiQuick(false); });
+    byId("m3812ShotQuickClear").addEventListener("click", function () {
+      for (var i = 1; i <= 3; i += 1) {
+        byId(prefix + "Value" + i).value = "";
+        byId(prefix + "Bool" + i).value = "Yes";
+      }
+      if (typeof window.hideLoadKeypad === "function") window.hideLoadKeypad();
+    });
+    byId("m3812ShotQuickEdit").addEventListener("click", function () { window.openQuickEntry(); });
+    byId("m3812ShotQuickBarOff").addEventListener("click", function () { window.quickEnabledOff(); });
+
+    window.openQuickEntry = function () {
+      fillShotQuickModal();
+      modal.classList.add("show");
+    };
+    window.closeQuickEntry = function () {
+      if (typeof window.hideLoadKeypad === "function") window.hideLoadKeypad();
+      modal.classList.remove("show");
+    };
+    window.saveQuickEntrySettings = function () { return saveShotMultiQuick(true); };
+    window.clearQuickEntryValue = function () {
+      for (var i = 1; i <= 3; i += 1) byId(prefix + "Value" + i).value = "";
+    };
+    window.singleFillOff = function () {
+      ensureShotQuickState();
+      quickEntry.enabled = false;
+      localStorage.setItem("mithrilCanvasQuickEntryM06", JSON.stringify(quickEntry));
+      updateShotMultiQuickBar();
+      if (typeof draw === "function") draw();
+    };
+    window.quickEnabledOff = window.singleFillOff;
+    window.syncSingleFillToQuickEntry = function () {};
+    window.updateSingleFillBar = updateShotMultiQuickBar;
+    window.applyQuickEntry = applyShotMultiQuick;
+    window.getQuickStatusText = function () {
+      var state = ensureShotQuickState();
+      return state.enabled ? " — FILL " + quickEntrySummary(state.entries, SHOT_MULTI_QUICK_FIELDS) : "";
+    };
+
+    ensureShotQuickState();
+    updateShotMultiQuickBar();
+  }
+
   function initialize() {
     installClosestPolyfill();
     injectStyles();
+    injectMultiQuickStyles();
     updateRuntimeLabels();
+
+    var drillCanvas = byId("drillCanvas");
+    var shotCanvas = byId("shotCanvas");
+    if (drillCanvas) installCanvasBackgroundBridge(drillCanvas);
+    if (shotCanvas) installCanvasBackgroundBridge(shotCanvas);
+
     window.MithrilApplyTheme = applyTheme;
     applyTheme(getSavedTheme());
 
-    if (byId("drillCanvas")) {
+    if (drillCanvas) {
       updateToolbar(false);
       patchDrillMenu();
-      enableWheelZoom(byId("drillCanvas"));
-      installCanvasThemeRenderer(byId("drillCanvas"));
-      window.setTimeout(redrawCanvasForTheme, 0);
-    } else if (byId("shotCanvas")) {
+      patchDrillMultiQuick();
+      enableWheelZoom(drillCanvas);
+    } else if (shotCanvas) {
       updateToolbar(true);
       patchShotMenu();
       addShotInfoBackButton();
-      enableWheelZoom(byId("shotCanvas"));
-      installCanvasThemeRenderer(byId("shotCanvas"));
-      window.setTimeout(redrawCanvasForTheme, 0);
+      patchShotMultiQuick();
+      enableWheelZoom(shotCanvas);
     } else if (byId("shotFrame")) {
       installShotFrameBridge();
     }

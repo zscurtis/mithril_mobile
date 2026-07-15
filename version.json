@@ -1,13 +1,13 @@
 {
-  "version": "m38.14",
-  "title": "Background-Only Theme Assets",
+  "version": "m38.12",
+  "title": "Multi Quick Fill",
   "released": "2026-07-15",
-  "minimumOfflineVersion": "m38.10",
+  "minimumOfflineVersion": "m38.8",
   "notes": [
-    "Theme assets were rebuilt to remove the theme-name labels and the mockup mobile device from the background images.",
-    "Canvas Background under Settings still includes the same classic and bold theme choices.",
-    "The backgrounds now show only the background artwork itself.",
-    "Theme choices remain saved on the device and still apply immediately.",
-    "Shot Diagram recovery, Back to Menu, and desktop wheel zoom remain in place."
+    "Quick Fill now supports up to three different field-and-value rows at the same time.",
+    "One hole tap applies every active Quick Fill row together in a single save operation.",
+    "Existing single-field Quick Fill settings are migrated automatically into the first row.",
+    "Duplicate active fields are blocked to prevent accidental conflicting entries.",
+    "Canvas background themes, Shot Info Back to Menu, and desktop wheel zoom remain included."
   ]
 }
