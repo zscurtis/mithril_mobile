@@ -1,10 +1,10 @@
-const CACHE_NAME = "mithril-mobile-m38-20-compact-gps-callouts-v1";
+const CACHE_NAME = "mithril-mobile-m38-21-edge-anchored-gps-arrows-v1";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./shot_diagram_m38.html",
   "./shot_diagram_m34.html",
-  "./mithril-menu-m3820.js",
+  "./mithril-menu-m3821.js",
   "./mithril-update.js",
   "./manifest.webmanifest",
   "./icons/mithril-192.png",
@@ -46,11 +46,11 @@ function patchHTMLResponse(response, requestUrl) {
   if (!response || !shouldPatchHTML(requestUrl)) return Promise.resolve(response);
 
   return response.text().then(html => {
-    let patched = html.replace(/m38\.\d+/g, "m38.20");
-    // Remove any previously injected MITHRIL menu helper before adding m38.20.
+    let patched = html.replace(/m38\.\d+/g, "m38.21");
+    // Remove any previously injected MITHRIL menu helper before adding m38.21.
     patched = patched.replace(/<script[^>]+mithril-menu-m38(?:9|\d{2})\.js[^>]*><\/script>/gi, "");
 
-    const scriptTag = '<script src="./mithril-menu-m3820.js?v=38.20"></script>';
+    const scriptTag = '<script src="./mithril-menu-m3821.js?v=38.21"></script>';
     if (/<\/body>/i.test(patched)) patched = patched.replace(/<\/body>/i, scriptTag + "</body>");
     else patched += scriptTag;
 
