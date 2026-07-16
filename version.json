@@ -1,13 +1,14 @@
 {
-  "version": "m38.23",
-  "title": "Exclude Dirt Holes from Notes",
+  "version": "m38.24",
+  "title": "Structured Quarry Hole Conditions",
   "released": "2026-07-16",
-  "minimumOfflineVersion": "m38.22",
+  "minimumOfflineVersion": "m38.23",
   "notes": [
-    "Dirt holes are no longer included on Drill Log PDF Notes pages.",
-    "A Dirt condition by itself no longer creates a notes entry or extra notes page.",
-    "Dirt holes remain visible on the Drill Log pages and remain counted on the summary for field context.",
-    "Manually entered notes on non-dirt holes and other condition notes continue to export normally.",
-    "Cross-page GPS arranging, loaded-hole summary rules, edge-anchored GPS arrows, compact callouts, and Quick Fill targeting fixes remain included."
+    "The yellow Breakthrough control is now a general Hole Condition control for Breakthrough, Broken Rock, Mud / Clay Seam, Void, Water, or Other.",
+    "Each hole can store up to eight condition intervals with a starting depth, competent-rock resume depth, or a Continues to bottom setting.",
+    "MITHRIL automatically generates a standardized loading note while preserving anything typed manually in Notes.",
+    "Structured condition intervals are included in JSON backups and added to Drill Log CSV exports.",
+    "Hole conditions are informational only and are never subtracted from Total Rock, which remains Depth minus Overburden for loaded holes.",
+    "Dirt holes remain excluded from PDF Notes pages; m38.22 summary and GPS workflow improvements remain included."
   ]
 }
