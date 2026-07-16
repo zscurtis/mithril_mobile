@@ -1,13 +1,13 @@
 {
-  "version": "m38.21",
-  "title": "Edge-Anchored GPS Arrows",
+  "version": "m38.22",
+  "title": "Cross-Page GPS Arrange and Loaded-Hole Summary",
   "released": "2026-07-15",
-  "minimumOfflineVersion": "m38.20",
+  "minimumOfflineVersion": "m38.21",
   "notes": [
-    "The GPS arrow endpoint circle has been removed from both templates and PDF exports.",
-    "Arrowheads now stop at the nearest edge of the tagged hole instead of covering the center data.",
-    "As a callout box is moved, its arrow tip automatically travels around the hole perimeter.",
-    "Compact coordinate-only callout boxes and their expanded invisible drag targets remain unchanged.",
-    "The m38.19 blank-GPS cleanup and m38.18 Quick Fill targeting fix remain included."
+    "GPS callout Arrange mode now detects the page under the callout box, so boxes on any visible page can be moved without manually changing the page selector.",
+    "Touching a callout on another page automatically makes that page active without snapping or changing the current zoom.",
+    "The Drill Log summary now shows Loaded holes, defined as entered holes that are not marked Dirt or Bad.",
+    "Dirt and Bad holes remain visible as field context but are excluded from review warnings and loaded-hole footage totals.",
+    "Edge-anchored GPS arrows, compact callouts, blank-GPS cleanup, and precision Quick Fill targeting remain included."
   ]
 }
