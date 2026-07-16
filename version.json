@@ -1,14 +1,15 @@
 {
-  "version": "m38.24",
-  "title": "Structured Quarry Hole Conditions",
+  "version": "m39.0",
+  "title": "Shot Diagram Selection and Transform Engine",
   "released": "2026-07-16",
-  "minimumOfflineVersion": "m38.23",
+  "minimumOfflineVersion": "m38.24",
   "notes": [
-    "The yellow Breakthrough control is now a general Hole Condition control for Breakthrough, Broken Rock, Mud / Clay Seam, Void, Water, or Other.",
-    "Each hole can store up to eight condition intervals with a starting depth, competent-rock resume depth, or a Continues to bottom setting.",
-    "MITHRIL automatically generates a standardized loading note while preserving anything typed manually in Notes.",
-    "Structured condition intervals are included in JSON backups and added to Drill Log CSV exports.",
-    "Hole conditions are informational only and are never subtracted from Total Rock, which remains Depth minus Overburden for loaded holes.",
-    "Dirt holes remain excluded from PDF Notes pages; m38.22 summary and GPS workflow improvements remain included."
+    "Shot Diagram Edit Holes mode supports individual and multi-hole selection.",
+    "Rows, columns, and every saved hole on the current page can be selected with one action.",
+    "Selected holes can be copied, cut, pasted, or shifted one cell in any direction.",
+    "Moves and pastes continue across page boundaries and automatically create neighboring pages when needed.",
+    "Copy excludes GPS coordinates; cut and shift move GPS tags with the hole and reset only the visual callout position.",
+    "Occupied destinations require explicit replacement confirmation, and the last ten edit operations can be undone.",
+    "Structured quarry hole conditions and all m38.24 Drill Log improvements remain included."
   ]
 }
