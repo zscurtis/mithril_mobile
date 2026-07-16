@@ -1,13 +1,13 @@
 {
-  "version": "m38.22",
-  "title": "Cross-Page GPS Arrange and Loaded-Hole Summary",
-  "released": "2026-07-15",
-  "minimumOfflineVersion": "m38.21",
+  "version": "m38.23",
+  "title": "Exclude Dirt Holes from Notes",
+  "released": "2026-07-16",
+  "minimumOfflineVersion": "m38.22",
   "notes": [
-    "GPS callout Arrange mode now detects the page under the callout box, so boxes on any visible page can be moved without manually changing the page selector.",
-    "Touching a callout on another page automatically makes that page active without snapping or changing the current zoom.",
-    "The Drill Log summary now shows Loaded holes, defined as entered holes that are not marked Dirt or Bad.",
-    "Dirt and Bad holes remain visible as field context but are excluded from review warnings and loaded-hole footage totals.",
-    "Edge-anchored GPS arrows, compact callouts, blank-GPS cleanup, and precision Quick Fill targeting remain included."
+    "Dirt holes are no longer included on Drill Log PDF Notes pages.",
+    "A Dirt condition by itself no longer creates a notes entry or extra notes page.",
+    "Dirt holes remain visible on the Drill Log pages and remain counted on the summary for field context.",
+    "Manually entered notes on non-dirt holes and other condition notes continue to export normally.",
+    "Cross-page GPS arranging, loaded-hole summary rules, edge-anchored GPS arrows, compact callouts, and Quick Fill targeting fixes remain included."
   ]
 }
