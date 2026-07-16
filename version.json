@@ -1,13 +1,13 @@
 {
-  "version": "m38.18",
-  "title": "Precision Quick Fill Targeting",
+  "version": "m38.19",
+  "title": "GPS Blank Tag Fix",
   "released": "2026-07-15",
-  "minimumOfflineVersion": "m38.17",
+  "minimumOfflineVersion": "m38.18",
   "notes": [
-    "Corrected iPad touch-to-canvas coordinate handling used when tapping holes.",
-    "Quick Fill now prefers coordinates measured directly from the canvas instead of coordinates that can shift when the browser visual viewport changes.",
-    "The correction applies to both Drill Log and Shot Diagram and is most noticeable when the page is zoomed out.",
-    "Mouse and trackpad targeting remain unchanged.",
-    "Multi Quick Fill, manual GPS tags and callouts, canvas backgrounds, exports, and backups remain included."
+    "Blank manual GPS fields no longer convert to 0.000000 coordinates when a hole is saved.",
+    "Only holes with valid manually entered latitude and longitude values receive GPS callouts.",
+    "Existing false 0,0 and invalid NaN GPS callouts created by m38.18 are removed automatically.",
+    "Valid manually entered GPS coordinates and adjusted callout positions remain unchanged.",
+    "The m38.18 Quick Fill touch-targeting correction remains included."
   ]
 }
