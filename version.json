@@ -1,14 +1,13 @@
 {
-  "version": "m38.17",
-  "title": "Manual Hole GPS Tags and Callouts",
+  "version": "m38.18",
+  "title": "Precision Quick Fill Targeting",
   "released": "2026-07-15",
-  "minimumOfflineVersion": "m38.15",
+  "minimumOfflineVersion": "m38.17",
   "notes": [
-    "Both templates can now store manually entered latitude and longitude on individual holes.",
-    "MITHRIL does not request, capture, or use the iPad or browser location service.",
-    "GPS callout boxes and arrows can be shown or hidden without deleting the saved coordinate tags.",
-    "Callout boxes can be dragged to clear positions while their arrows remain attached to the correct holes.",
-    "Visible callouts are included in PDF output and latitude/longitude columns are included in CSV exports.",
-    "Multi Quick Fill, canvas backgrounds, Shot Info Back to Menu, and desktop wheel zoom remain included."
+    "Corrected iPad touch-to-canvas coordinate handling used when tapping holes.",
+    "Quick Fill now prefers coordinates measured directly from the canvas instead of coordinates that can shift when the browser visual viewport changes.",
+    "The correction applies to both Drill Log and Shot Diagram and is most noticeable when the page is zoomed out.",
+    "Mouse and trackpad targeting remain unchanged.",
+    "Multi Quick Fill, manual GPS tags and callouts, canvas backgrounds, exports, and backups remain included."
   ]
 }
