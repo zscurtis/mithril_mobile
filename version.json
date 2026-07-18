@@ -1,15 +1,14 @@
 {
-  "version": "m39.0",
-  "title": "Shot Diagram Selection and Transform Engine",
-  "released": "2026-07-16",
-  "minimumOfflineVersion": "m38.24",
+  "version": "m39.2",
+  "title": "Drill Log Selection and Transfer Engine",
+  "released": "2026-07-18",
+  "minimumOfflineVersion": "m39.0",
   "notes": [
-    "Shot Diagram Edit Holes mode supports individual and multi-hole selection.",
-    "Rows, columns, and every saved hole on the current page can be selected with one action.",
-    "Selected holes can be copied, cut, pasted, or shifted one cell in any direction.",
-    "Moves and pastes continue across page boundaries and automatically create neighboring pages when needed.",
-    "Copy excludes GPS coordinates; cut and shift move GPS tags with the hole and reset only the visual callout position.",
-    "Occupied destinations require explicit replacement confirmation, and the last ten edit operations can be undone.",
-    "Structured quarry hole conditions and all m38.24 Drill Log improvements remain included."
+    "The Drill Log now has the same Edit Holes selection and transfer workflow as the Shot Diagram.",
+    "Individual holes, rows, columns, and every saved hole on the active page can be selected.",
+    "Selected Drill Log holes can be shifted, copied, cut, and pasted across page boundaries, with neighboring pages created automatically when needed.",
+    "Copy excludes GPS coordinates; cut and shift move GPS coordinates with the hole while resetting only the visual callout position.",
+    "Occupied destinations require explicit replacement confirmation, and the last ten Drill Log edit operations can be undone.",
+    "The m39.1 embedded Drill Log template repair and all working m39.0 Shot Diagram editing features remain included."
   ]
 }

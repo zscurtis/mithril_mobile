@@ -1,10 +1,10 @@
-const CACHE_NAME = "mithril-mobile-m39-0-shot-edit-engine-v1";
+const CACHE_NAME = "mithril-mobile-m39-2-drill-selection-transfer-v1";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./shot_diagram_m38.html",
   "./shot_diagram_m34.html",
-  "./mithril-menu-m390.js",
+  "./mithril-menu-m392.js",
   "./mithril-update.js",
   "./manifest.webmanifest",
   "./icons/mithril-192.png",
@@ -33,8 +33,10 @@ self.addEventListener("message", event => {
   if (event.data && event.data.type === "SKIP_WAITING") self.skipWaiting();
 });
 
-// Only the small home and wrapper documents are patched. The large stable
-// Shot Diagram engine remains unchanged.
+// Only the home document and Shot Diagram wrapper receive the release helper.
+// IMPORTANT: index.html contains the Drill Log template as an embedded base64 PNG.
+// Never run a broad version-number replacement over the full HTML string because
+// ordinary base64 characters can contain text such as "m39" and be corrupted.
 function shouldPatchHTML(requestUrl) {
   const path = requestUrl.pathname;
   return path.endsWith("/") ||
@@ -46,11 +48,14 @@ function patchHTMLResponse(response, requestUrl) {
   if (!response || !shouldPatchHTML(requestUrl)) return Promise.resolve(response);
 
   return response.text().then(html => {
-    let patched = html.replace(/m(?:38\.\d+|39(?:\.\d+)?)/g, "m39.0");
-    // Remove any previously injected MITHRIL helper before adding m39.0.
-    patched = patched.replace(/<script[^>]+mithril-menu-(?:m38(?:9|\d{2})|m39(?:0|\d{2}))\.js[^>]*><\/script>/gi, "");
+    // Version labels are updated safely at runtime by mithril-menu-m392.js.
+    // Here we modify script tags only and leave all embedded data untouched.
+    let patched = html.replace(
+      /<script[^>]+mithril-menu-m(?:38\d+|39\d+)\.js[^>]*><\/script>/gi,
+      ""
+    );
 
-    const scriptTag = '<script src="./mithril-menu-m390.js?v=39.0"></script>';
+    const scriptTag = '<script src="./mithril-menu-m392.js?v=39.2"></script>';
     if (/<\/body>/i.test(patched)) patched = patched.replace(/<\/body>/i, scriptTag + "</body>");
     else patched += scriptTag;
 
