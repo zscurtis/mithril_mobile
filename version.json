@@ -1,14 +1,15 @@
 {
-  "version": "m39.3",
-  "title": "Summary Depth and Explosive Load Calculations",
+  "version": "m39.4",
+  "title": "Pattern Volume and PDF Navigation",
   "released": "2026-07-20",
-  "minimumOfflineVersion": "m39.2",
+  "minimumOfflineVersion": "m39.3",
   "notes": [
-    "Shot Diagram and Drill Log Information now include a Hole Diameter selection from 3.0 to 5.5 inches, defaulting to 3.5 inches for existing data.",
-    "Both PDF summary sheets now report the drilled depth range across all valid positive hole depths.",
-    "The Shot Diagram summary calculates explosive weight from ANFO footage, 7-pound dinks, and bare-pound entries in Primary and Secondary Load.",
-    "The Shot Diagram summary identifies the lightest and heaviest eligible explosive loads and warns when a load entry cannot be interpreted.",
-    "Dirt and bad holes are excluded from explosive-load comparisons; wet holes remain included.",
-    "All m39.2 Shot Diagram and Drill Log selection, transfer, GPS, structured condition, Quick Fill, theme, and offline features remain included."
+    "Drill Log Hole Diameter and Drilled Depth Range now appear as large, high-contrast summary callouts.",
+    "The Shot Diagram PDF opens in a closable in-app preview with Done and Share / Save PDF controls, so the canvas can be resumed without closing MITHRIL.",
+    "Shot Information now supports Default Burden and Default Spacing, and Patterns & Volume can store additional named patterns.",
+    "Selected Shot Diagram holes can be assigned to a pattern using the existing Hole, Row, Column, and All Page selection engine.",
+    "Temporary numbered pattern colors are available during Edit Holes and never print on the diagram.",
+    "The Shot Diagram report calculates estimated pattern area and bank cubic yards overall and by pattern, with missing-data warnings.",
+    "All m39.3 depth-range, diameter, ANFO-load, selection, transfer, GPS, structured condition, Quick Fill, theme, backup, and offline features remain included."
   ]
 }
