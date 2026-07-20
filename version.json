@@ -1,14 +1,14 @@
 {
-  "version": "m39.2",
-  "title": "Drill Log Selection and Transfer Engine",
-  "released": "2026-07-18",
-  "minimumOfflineVersion": "m39.0",
+  "version": "m39.3",
+  "title": "Summary Depth and Explosive Load Calculations",
+  "released": "2026-07-20",
+  "minimumOfflineVersion": "m39.2",
   "notes": [
-    "The Drill Log now has the same Edit Holes selection and transfer workflow as the Shot Diagram.",
-    "Individual holes, rows, columns, and every saved hole on the active page can be selected.",
-    "Selected Drill Log holes can be shifted, copied, cut, and pasted across page boundaries, with neighboring pages created automatically when needed.",
-    "Copy excludes GPS coordinates; cut and shift move GPS coordinates with the hole while resetting only the visual callout position.",
-    "Occupied destinations require explicit replacement confirmation, and the last ten Drill Log edit operations can be undone.",
-    "The m39.1 embedded Drill Log template repair and all working m39.0 Shot Diagram editing features remain included."
+    "Shot Diagram and Drill Log Information now include a Hole Diameter selection from 3.0 to 5.5 inches, defaulting to 3.5 inches for existing data.",
+    "Both PDF summary sheets now report the drilled depth range across all valid positive hole depths.",
+    "The Shot Diagram summary calculates explosive weight from ANFO footage, 7-pound dinks, and bare-pound entries in Primary and Secondary Load.",
+    "The Shot Diagram summary identifies the lightest and heaviest eligible explosive loads and warns when a load entry cannot be interpreted.",
+    "Dirt and bad holes are excluded from explosive-load comparisons; wet holes remain included.",
+    "All m39.2 Shot Diagram and Drill Log selection, transfer, GPS, structured condition, Quick Fill, theme, and offline features remain included."
   ]
 }
