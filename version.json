@@ -1,15 +1,15 @@
 {
-  "version": "m39.4",
-  "title": "Pattern Volume and PDF Navigation",
+  "version": "m39.5",
+  "title": "Drill Patterns and Dual Shot Volume",
   "released": "2026-07-20",
-  "minimumOfflineVersion": "m39.3",
+  "minimumOfflineVersion": "m39.4",
   "notes": [
-    "Drill Log Hole Diameter and Drilled Depth Range now appear as large, high-contrast summary callouts.",
-    "The Shot Diagram PDF opens in a closable in-app preview with Done and Share / Save PDF controls, so the canvas can be resumed without closing MITHRIL.",
-    "Shot Information now supports Default Burden and Default Spacing, and Patterns & Volume can store additional named patterns.",
-    "Selected Shot Diagram holes can be assigned to a pattern using the existing Hole, Row, Column, and All Page selection engine.",
-    "Temporary numbered pattern colors are available during Edit Holes and never print on the diagram.",
-    "The Shot Diagram report calculates estimated pattern area and bank cubic yards overall and by pattern, with missing-data warnings.",
-    "All m39.3 depth-range, diameter, ANFO-load, selection, transfer, GPS, structured condition, Quick Fill, theme, backup, and offline features remain included."
+    "Drill Log Hole Diameter and Drilled Depth Range callouts were moved fully below the header so they no longer overlap the Drill Log number or date.",
+    "Patterns and Shot Volume are now available in both the Drill Log and Shot Diagram.",
+    "Selected Drill Log holes, rows, columns, or pages can be assigned to named burden and spacing patterns through Edit Holes.",
+    "Both templates now report Shot Volume (Rock Only) and Shot Volume (Rock and Overburden).",
+    "Rock-only volume uses depth minus overburden; rock-and-overburden volume uses total drilled depth.",
+    "Drill Log JSON backups preserve pattern groups and per-hole PatternID assignments.",
+    "All m39.4 PDF navigation, load calculations, selection, transfer, GPS, conditions, Quick Fill, themes, backups, and offline features remain included."
   ]
 }
