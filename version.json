@@ -1,15 +1,15 @@
 {
-  "version": "m39.5",
-  "title": "Drill Patterns and Dual Shot Volume",
-  "released": "2026-07-20",
-  "minimumOfflineVersion": "m39.4",
+  "version": "m39.6",
+  "title": "Physical Keyboard and Numpad Entry",
+  "released": "2026-07-22",
+  "minimumOfflineVersion": "m39.5",
   "notes": [
-    "Drill Log Hole Diameter and Drilled Depth Range callouts were moved fully below the header so they no longer overlap the Drill Log number or date.",
-    "Patterns and Shot Volume are now available in both the Drill Log and Shot Diagram.",
-    "Selected Drill Log holes, rows, columns, or pages can be assigned to named burden and spacing patterns through Edit Holes.",
-    "Both templates now report Shot Volume (Rock Only) and Shot Volume (Rock and Overburden).",
-    "Rock-only volume uses depth minus overburden; rock-and-overburden volume uses total drilled depth.",
-    "Drill Log JSON backups preserve pattern groups and per-hole PatternID assignments.",
-    "All m39.4 PDF navigation, load calculations, selection, transfer, GPS, conditions, Quick Fill, themes, backups, and offline features remain included."
+    "Shot Diagram and Drill Log Settings now include a saved Entry Method toggle: Touch Keypad or Physical Keyboard.",
+    "Physical Keyboard mode accepts the laptop number row and numpad directly in hole-entry fields without opening the MITHRIL touch keypad.",
+    "Tab moves through the normal field sequence, Shift+Tab moves backward, Enter saves and opens the next hole, and Ctrl+Enter saves and closes the current hole.",
+    "The hole editor shows a compact mode indicator with the available keyboard shortcuts.",
+    "Opening a hole in Physical Keyboard mode focuses and selects Overburden so typing can begin immediately.",
+    "The Entry Method setting is stored on the current device, allowing a laptop to stay in Physical Keyboard mode while an iPad remains in Touch Keypad mode.",
+    "All m39.5 pattern, dual shot-volume, PDF navigation, load calculations, selection, transfer, GPS, condition, Quick Fill, theme, backup, and offline behavior remains included."
   ]
 }
