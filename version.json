@@ -1,14 +1,16 @@
 {
-  "version": "m39.6.3",
-  "title": "Shot Diagram Keyboard Frame-Loader Repair",
+  "version": "m39.7",
+  "title": "Shot Diagram Timing Sequence Mode",
   "released": "2026-07-22",
-  "minimumOfflineVersion": "m39.6.2",
+  "minimumOfflineVersion": "m39.6.3",
   "notes": [
-    "Fixes the actual Shot Diagram Physical Keyboard failure: the m39.6.2 wrapper was still loading the original m39.6 helper inside the Shot Diagram iframe.",
-    "The Shot Diagram iframe now loads mithril-menu-m3963.js, so the current readonly, focus, click, and keyboard repairs run in the document that contains the hole-entry fields.",
-    "The frame loader now identifies its release and removes a stale child loader before attaching the current helper.",
-    "The Shot Diagram header should now display m39.6.3 rather than m39.6 when the current helper is active inside the iframe.",
-    "Number-row and numpad entry, A/D load entry, Tab, Shift+Tab, Enter Save + Next, Ctrl+Enter Save & Close, and the Keyboard Mode indicator remain included.",
-    "Touch Keypad mode and every m39.5/m39.6 pattern, shot-volume, PDF, load, selection, GPS, condition, backup, theme, and offline feature remain included."
+    "Adds Timing Sequence Mode to the Shot Diagram with a manually chosen row starting time and interval.",
+    "A row start of 0 with interval 25 produces 0, 25, 50, 75, 100; resetting the next row start to 42 produces 42, 67, 92, 117.",
+    "Tap or click saved holes to apply the current Next Time and automatically advance by the interval.",
+    "Shift-click a saved hole on a desktop to fill every eligible saved hole in that row, left-to-right or right-to-left.",
+    "Mobile and desktop users can select holes, rows, columns, or a page through Edit Holes and use Fill Timing Sequence.",
+    "Includes Set Row Start, Back/Advance Interval, Reset to Start, timing-specific Undo, blank-only or overwrite handling, and an active Timing Fill indicator.",
+    "Dirt and bad holes are skipped. Timing values remain ordinary hole Timing data and continue to export through existing PDF, CSV, and JSON workflows.",
+    "Preserves Physical Keyboard mode, Touch Keypad mode, dual shot volumes, patterns, selections, GPS, conditions, themes, PDF navigation, and offline support."
   ]
 }
