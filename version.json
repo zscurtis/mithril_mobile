@@ -1,15 +1,13 @@
 {
-  "version": "m39.6",
-  "title": "Physical Keyboard and Numpad Entry",
+  "version": "m39.6.1",
+  "title": "Physical Keyboard Entry Repair",
   "released": "2026-07-22",
-  "minimumOfflineVersion": "m39.5",
+  "minimumOfflineVersion": "m39.6",
   "notes": [
-    "Shot Diagram and Drill Log Settings now include a saved Entry Method toggle: Touch Keypad or Physical Keyboard.",
-    "Physical Keyboard mode accepts the laptop number row and numpad directly in hole-entry fields without opening the MITHRIL touch keypad.",
-    "Tab moves through the normal field sequence, Shift+Tab moves backward, Enter saves and opens the next hole, and Ctrl+Enter saves and closes the current hole.",
-    "The hole editor shows a compact mode indicator with the available keyboard shortcuts.",
-    "Opening a hole in Physical Keyboard mode focuses and selects Overburden so typing can begin immediately.",
-    "The Entry Method setting is stored on the current device, allowing a laptop to stay in Physical Keyboard mode while an iPad remains in Touch Keypad mode.",
-    "All m39.5 pattern, dual shot-volume, PDF navigation, load calculations, selection, transfer, GPS, condition, Quick Fill, theme, backup, and offline behavior remains included."
+    "Repairs Physical Keyboard mode when the focused hole-entry field still retained the core application's readonly state.",
+    "Keyboard mode now removes both readonly and temporary-readonly markers whenever a field opens, receives focus, is clicked, or receives input.",
+    "Number-row and numpad digits, decimal input, Backspace, Delete, and Shot Diagram A/D load designators are captured directly by the MITHRIL keyboard handler.",
+    "Tab, Shift+Tab, Enter Save + Next, Ctrl+Enter Save & Close, and the compact Keyboard Mode indicator remain unchanged.",
+    "Touch Keypad mode and every m39.5/m39.6 pattern, shot-volume, PDF, load, selection, GPS, condition, backup, theme, and offline feature remain included."
   ]
 }

@@ -1,10 +1,10 @@
-const CACHE_NAME = "mithril-mobile-m39-6-physical-keyboard-entry-v1";
+const CACHE_NAME = "mithril-mobile-m39-6-1-keyboard-entry-repair-v1";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./shot_diagram_m38.html",
   "./shot_diagram_m34.html",
-  "./mithril-menu-m396.js",
+  "./mithril-menu-m3961.js",
   "./mithril-update.js",
   "./manifest.webmanifest",
   "./icons/mithril-192.png",
@@ -48,14 +48,14 @@ function patchHTMLResponse(response, requestUrl) {
   if (!response || !shouldPatchHTML(requestUrl)) return Promise.resolve(response);
 
   return response.text().then(html => {
-    // Version labels are updated safely at runtime by mithril-menu-m396.js.
+    // Version labels are updated safely at runtime by mithril-menu-m3961.js.
     // Here we modify script tags only and leave all embedded data untouched.
     let patched = html.replace(
       /<script[^>]+mithril-menu-m(?:38\d+|39\d+)\.js[^>]*><\/script>/gi,
       ""
     );
 
-    const scriptTag = '<script src="./mithril-menu-m396.js?v=39.6"></script>';
+    const scriptTag = '<script src="./mithril-menu-m3961.js?v=39.6.1"></script>';
     if (/<\/body>/i.test(patched)) patched = patched.replace(/<\/body>/i, scriptTag + "</body>");
     else patched += scriptTag;
 
