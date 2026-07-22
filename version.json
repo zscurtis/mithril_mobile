@@ -1,13 +1,14 @@
 {
-  "version": "m39.6.1",
-  "title": "Physical Keyboard Entry Repair",
+  "version": "m39.6.2",
+  "title": "Physical Keyboard Focus and Event Repair",
   "released": "2026-07-22",
-  "minimumOfflineVersion": "m39.6",
+  "minimumOfflineVersion": "m39.6.1",
   "notes": [
-    "Repairs Physical Keyboard mode when the focused hole-entry field still retained the core application's readonly state.",
-    "Keyboard mode now removes both readonly and temporary-readonly markers whenever a field opens, receives focus, is clicked, or receives input.",
-    "Number-row and numpad digits, decimal input, Backspace, Delete, and Shot Diagram A/D load designators are captured directly by the MITHRIL keyboard handler.",
-    "Tab, Shift+Tab, Enter Save + Next, Ctrl+Enter Save & Close, and the compact Keyboard Mode indicator remain unchanged.",
+    "Repairs Physical Keyboard mode when the blue active-field outline appeared but Edge did not give the input true typing focus.",
+    "Keyboard mode now intercepts the original mobile pointer, click, and focus handlers before they can reopen the touch keypad or cancel browser focus.",
+    "A document-level keyboard handler keeps number-row and numpad entry working even if browser focus temporarily falls back to the modal or page body.",
+    "Clicking Overburden, Depth, Stemming, Primary Load, Secondary Load, or Timing now selects and visibly highlights that exact field.",
+    "Tab, Shift+Tab, Enter Save + Next, Ctrl+Enter Save & Close, load-field A/D entry, and the Keyboard Mode indicator remain included.",
     "Touch Keypad mode and every m39.5/m39.6 pattern, shot-volume, PDF, load, selection, GPS, condition, backup, theme, and offline feature remain included."
   ]
 }
