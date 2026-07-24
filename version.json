@@ -1,16 +1,16 @@
 {
-  "version": "m39.7",
-  "title": "Shot Diagram Timing Sequence Mode",
-  "released": "2026-07-22",
+  "version": "m39.8",
+  "title": "Drill Log to Shot Diagram Import",
+  "released": "2026-07-24",
   "minimumOfflineVersion": "m39.6.3",
   "notes": [
-    "Adds Timing Sequence Mode to the Shot Diagram with a manually chosen row starting time and interval.",
-    "A row start of 0 with interval 25 produces 0, 25, 50, 75, 100; resetting the next row start to 42 produces 42, 67, 92, 117.",
-    "Tap or click saved holes to apply the current Next Time and automatically advance by the interval.",
-    "Shift-click a saved hole on a desktop to fill every eligible saved hole in that row, left-to-right or right-to-left.",
-    "Mobile and desktop users can select holes, rows, columns, or a page through Edit Holes and use Fill Timing Sequence.",
-    "Includes Set Row Start, Back/Advance Interval, Reset to Start, timing-specific Undo, blank-only or overwrite handling, and an active Timing Fill indicator.",
-    "Dirt and bad holes are skipped. Timing values remain ordinary hole Timing data and continue to export through existing PDF, CSV, and JSON workflows.",
-    "Preserves Physical Keyboard mode, Touch Keypad mode, dual shot volumes, patterns, selections, GPS, conditions, themes, PDF navigation, and offline support."
+    "Adds Create Shot Diagram from Drill Log to the Drill Log menu.",
+    "Transfers populated Drill Log holes into a new Shot Diagram while preserving the physical column-and-row orientation.",
+    "Converts each 16-column by 34-row Drill Log page into up to three vertically stacked 16-column by 15-row Shot Diagram pages.",
+    "Copies depth, overburden, wet/dirt/bad flags, notes, structured hole conditions, hole diameter, pattern definitions, and pattern assignments.",
+    "Leaves stemming, primary load, secondary load, and timing blank so loading work can begin in the Shot Diagram.",
+    "Shows a review screen before transfer and another confirmation before replacing the current Shot Diagram.",
+    "Saves the previous Shot Diagram as one Undo Import snapshot and never changes the source Drill Log.",
+    "Preserves m39.7 Timing Sequence, Physical Keyboard, Touch Keypad, selections, movement, GPS, calculations, PDF/JSON workflows, and offline support."
   ]
 }
