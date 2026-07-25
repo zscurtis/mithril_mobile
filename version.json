@@ -1,13 +1,14 @@
 {
-  "version": "m39.9.1",
-  "title": "Cloud Download Compatibility Fix",
+  "version": "m39.9.2",
+  "title": "Cloud Download In-Place Refresh",
   "released": "2026-07-25",
   "minimumOfflineVersion": "m39.6.3",
   "notes": [
-    "Fixes the holeData is not defined error when opening a cloud Drill Log on another device.",
-    "Keeps the Shot Diagram download path unchanged while allowing the Drill Log to restore directly from pagesData.",
-    "Preserves the successfully uploaded m39.9 cloud records, Firebase sign-in, private document listing, revisions, and device names.",
-    "No re-upload is required before retrying Open on This Device.",
-    "Preserves all existing local/offline saving, m39.8 Drill Log-to-Shot Diagram import, and m39.7 field workflows."
+    "Keeps users inside the open Drill Log after downloading a cloud revision instead of returning to the MITHRIL landing screen.",
+    "Refreshes Drill Log pages, page navigation, cached rendering, and the visible canvas immediately after the cloud data is applied.",
+    "Shows a clear loaded-successfully confirmation with the cloud revision number.",
+    "Keeps the Shot Diagram inside its existing wrapper while refreshing its inner document after a cloud download.",
+    "Adds the active cloud-sync helper version to the Cloud Sync window for easier cache troubleshooting.",
+    "Preserves private Firebase sign-in, revisions, device names, local/offline saving, and all m39.8 and m39.7 workflows."
   ]
 }

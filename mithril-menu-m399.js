@@ -1,9 +1,9 @@
 (function () {
   "use strict";
 
-  var RELEASE_VERSION = "m39.9.1";
+  var RELEASE_VERSION = "m39.9.2";
   var SCRIPT_ID = "mithrilMenuM399ChildLoader";
-  var SCRIPT_SRC = "./mithril-menu-m399.js?rev=3991-frame";
+  var SCRIPT_SRC = "./mithril-menu-m399.js?rev=3992-frame";
   var DEVICE_KEY = "mithrilCloudDeviceNameM399";
   var FIREBASE_VERSION = "12.16.0";
   var firebaseConfig = {
@@ -124,6 +124,7 @@
       ".m399CloudIdentity{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;padding:9px;border-radius:8px;background:#eef4ff;border:1px solid #9ab8df;margin-bottom:9px;font-size:13px;font-weight:800}",
       ".m399CloudDocs{display:grid;gap:8px;margin-top:10px}.m399CloudDoc{border:1px solid #aaa;border-radius:9px;padding:9px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:9px;align-items:center}.m399CloudDocTitle{font-size:15px;font-weight:900}.m399CloudMeta{font-size:12px;color:#555;font-weight:750;line-height:1.35;margin-top:3px}.m399CloudDocActions{display:grid;gap:6px}",
       ".m399CloudNote{font-size:12px;line-height:1.4;color:#555;font-weight:750;margin:8px 0}",
+      ".m399CloudToast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:17000;max-width:min(680px,calc(100vw - 24px));padding:12px 16px;border:2px solid #4f9a61;border-radius:10px;background:#e9f8ec;color:#173d20;font-size:14px;font-weight:900;line-height:1.35;box-shadow:0 8px 28px rgba(0,0,0,.35);text-align:center}",
       "@media(max-width:600px){.m399CloudLogin,.m399CloudActions{grid-template-columns:1fr}.m399CloudWide{grid-column:auto}.m399CloudDoc{grid-template-columns:1fr}.m399CloudDocActions{grid-template-columns:1fr 1fr}}"
     ].join("");
     document.head.appendChild(style);
@@ -136,7 +137,7 @@
     modal.id = "m399CloudModal"; modal.className = "m399CloudModal";
     modal.innerHTML = [
       '<div class="m399CloudBox">',
-      '<div class="m399CloudHead"><strong>MITHRIL Cloud Sync — Prototype 1</strong><button type="button" id="m399CloudClose">Close</button></div>',
+      '<div class="m399CloudHead"><strong>MITHRIL Cloud Sync — Prototype 1 · m39.9.2</strong><button type="button" id="m399CloudClose">Close</button></div>',
       '<div id="m399CloudSignedOut">',
       '<div class="m399CloudNote">Sign in with the Firebase test account you created. Your password is sent directly to Firebase and is not stored by MITHRIL.</div>',
       '<div class="m399CloudLogin"><label>Email<input type="email" id="m399CloudEmail" autocomplete="username"></label><label>Password<input type="password" id="m399CloudPassword" autocomplete="current-password"></label><label class="m399CloudWide">Device name<input type="text" id="m399CloudDeviceOut" placeholder="Example: Zach Field iPad"></label><button type="button" class="primary m399CloudWide" id="m399CloudSignIn">Sign In</button></div>',
@@ -317,15 +318,48 @@
     if (p.view && typeof view !== "undefined") view = clone(p.view);
     if (typeof saveState === "function") saveState();
   }
+  function showCloudToast(message) {
+    var old = byId("m399CloudToast");
+    if (old && old.parentNode) old.parentNode.removeChild(old);
+    var toast = document.createElement("div");
+    toast.id = "m399CloudToast";
+    toast.className = "m399CloudToast";
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(function(){
+      if (toast && toast.parentNode) toast.parentNode.removeChild(toast);
+    }, 5000);
+  }
+  function refreshDownloadedDocument(data) {
+    var label = data.title || docTypeLabel(data.type);
+    var revision = data.revision || 1;
+    if (isDrill()) {
+      try { if (typeof ensurePageMeta === "function") ensurePageMeta(); } catch (error1) {}
+      try { if (typeof invalidatePageCache === "function") invalidatePageCache(); } catch (error2) {}
+      try { if (typeof refreshPageSelect === "function") refreshPageSelect(); } catch (error3) {}
+      try { if (typeof updateQuickBar === "function") updateQuickBar(); } catch (error4) {}
+      try {
+        if (typeof resizeCanvas === "function") resizeCanvas();
+        else if (typeof draw === "function") draw();
+      } catch (error5) {}
+      var modal = byId("m399CloudModal");
+      if (modal) modal.classList.remove("show");
+      showCloudToast(label + " — cloud revision " + revision + " loaded successfully.");
+      return;
+    }
+    try {
+      sessionStorage.setItem("mithrilCloudDownloadNoticeM399", JSON.stringify({ title: label, revision: revision }));
+    } catch (error6) {}
+    setStatus(label + " downloaded. Refreshing the Shot Diagram…", "good");
+    setTimeout(function(){ window.location.reload(); }, 500);
+  }
   function downloadDocument(id, data) {
-    var current = currentPayload();
     var warning = "Open cloud revision " + (data.revision || 1) + " of:\n\n" + (data.title || docTypeLabel(data.type)) + "\nSaved from " + (data.sourceDevice || "Unknown device") + "\n\nThis replaces the current local " + docTypeLabel(data.type) + " on this device. Make a local JSON backup first if you need to preserve it.";
     if (!confirm(warning)) { setStatus("Download cancelled. Nothing was changed.", ""); return; }
     setStatus("Downloading and applying the cloud document…", "wait");
     try {
       saveDownloadedState(data);
-      setStatus((data.title || docTypeLabel(data.type)) + " downloaded. Reloading MITHRIL…", "good");
-      setTimeout(function(){ window.location.reload(); }, 500);
+      refreshDownloadedDocument(data);
     } catch (error) { setStatus(friendlyError(error), "bad"); }
   }
   function deleteDocument(id, data) {
@@ -377,6 +411,15 @@
   }
   function boot() {
     updateVersionLabels();
+    try {
+      var rawNotice = sessionStorage.getItem("mithrilCloudDownloadNoticeM399");
+      if (rawNotice && isShot()) {
+        sessionStorage.removeItem("mithrilCloudDownloadNoticeM399");
+        var notice = JSON.parse(rawNotice);
+        ensureStyles();
+        setTimeout(function(){ showCloudToast((notice.title || "Shot Diagram") + " — cloud revision " + (notice.revision || 1) + " loaded successfully."); }, 250);
+      }
+    } catch (noticeError) {}
     if (isWrapper()) injectIntoShotFrame();
     var tries = 0, timer = setInterval(function(){
       tries += 1; updateVersionLabels();
