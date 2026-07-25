@@ -1,14 +1,13 @@
 {
-  "version": "m40.0",
-  "title": "Standardized Documents and Compact Shot Conversion",
+  "version": "m40.0.1",
+  "title": "Single Cloud Sync Control Fix",
   "released": "2026-07-25",
   "minimumOfflineVersion": "m39.6.3",
   "notes": [
-    "Adds one shared MithrilDocument contract for Drill Log and Shot Diagram snapshots, saving, restoring, refreshing, page numbering, and cloud synchronization.",
-    "Moves cloud upload and download through the shared document contract while remaining compatible with existing Firebase cloud records.",
-    "Removes the blue A-P and 1-34 coordinate labels from exported Drill Log PDF pages while keeping them visible inside the field application.",
-    "Adds Auto, keep, rotate right, rotate left, and rotate 180-degree choices when converting a Drill Log into a Shot Diagram, with page-count previews for each orientation.",
-    "Tiles only populated holes into the converted Shot Diagram, removes empty result pages, and numbers all resulting pages consecutively.",
-    "Renumbers remaining Drill Log and Shot Diagram pages after a page is deleted so page numbering never contains gaps."
+    "Fixes duplicate Cloud Sync sections appearing in both the Drill Log and Shot Diagram menus.",
+    "Stops the retired m39.8 transfer helper and m39.9 cloud helper from loading alongside the m40 standardized document layer.",
+    "Makes m40 the single owner of Drill Log transfer and Cloud Sync controls.",
+    "Removes any stale or duplicate Cloud Sync buttons and Cloud menu groups left by an older cached page.",
+    "Preserves the m40 shared document contract, cloud data compatibility, PDF cleanup, rotation-aware conversion, and automatic page renumbering."
   ]
 }

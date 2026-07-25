@@ -1,9 +1,9 @@
 (function () {
   "use strict";
 
-  var RELEASE_VERSION = "m40.0";
+  var RELEASE_VERSION = "m40.0.1";
   var CHILD_SCRIPT_ID = "mithrilCoreM400ChildLoader";
-  var CHILD_SCRIPT_SRC = "./mithril-core-m400.js?rev=4000-frame";
+  var CHILD_SCRIPT_SRC = "./mithril-core-m400.js?rev=4001-frame";
   var TRANSFER_KEY = "mithrilDrillToShotTransferM400";
   var UNDO_KEY = "mithrilDrillToShotUndoM400";
   var DEVICE_KEY = "mithrilCloudDeviceNameM399";
@@ -16,6 +16,11 @@
     messagingSenderId: "797958678485",
     appId: "1:797958678485:web:e19ab69e74e00cd8587f5c"
   };
+
+  // m40 owns Drill Log transfer and cloud sync. Prevent retired m39.8/m39.9
+  // helpers from starting if an older cached HTML response still references them.
+  window.__mithrilM398Installed = true;
+  window.__mithrilM399Installed = true;
 
   if (window.__mithrilM400Installed) return;
   window.__mithrilM400Installed = true;
@@ -811,7 +816,7 @@
     modal.className = "m400Modal";
     modal.innerHTML = [
       '<div class="m400Box">',
-      '<div class="m400Head"><strong>MITHRIL Cloud Sync · Shared Contract v2 · m40.0</strong><button type="button" id="m400CloudClose">Close</button></div>',
+      '<div class="m400Head"><strong>MITHRIL Cloud Sync · Shared Contract v2 · m40.0.1</strong><button type="button" id="m400CloudClose">Close</button></div>',
       '<div id="m400CloudOut">',
       '<div class="m400Note">Sign in with the Firebase account. Cloud Sync now reads and writes through the same MITHRIL document interface for Drill Logs and Shot Diagrams.</div>',
       '<div class="m400Grid"><label>Email<input type="email" id="m400Email" autocomplete="username"></label><label>Password<input type="password" id="m400Password" autocomplete="current-password"></label><label class="m400Wide">Device name<input id="m400DeviceOut" type="text"></label><button type="button" class="primary m400Wide" id="m400SignIn">Sign In</button></div>',
@@ -977,11 +982,39 @@
       .catch(function (error) { setCloudStatus(friendlyError(error), "bad"); });
   }
 
+  function removeDuplicateCloudControls() {
+    var menu = byId("menuModal");
+    if (!menu) return null;
+
+    var currentButtons = menu.querySelectorAll('[id="m400CloudSyncButton"]');
+    var keep = currentButtons.length ? currentButtons[0] : null;
+
+    Array.prototype.forEach.call(menu.querySelectorAll("button"), function (button) {
+      var label = text(button.textContent);
+      var isCloud = button.id === "m399CloudSyncButton" || button.id === "m400CloudSyncButton" || /^Cloud Sync$/i.test(label);
+      if (!isCloud || button === keep) return;
+      var group = button.closest ? button.closest(".m395MenuGroup") : null;
+      if (group && group.parentNode) group.parentNode.removeChild(group);
+      else if (button.parentNode) button.parentNode.removeChild(button);
+    });
+
+    Array.prototype.forEach.call(menu.querySelectorAll(".m395MenuGroup"), function (group) {
+      var title = group.querySelector(".m395MenuGroupTitle");
+      if (!title || !/^Cloud$/i.test(text(title.textContent))) return;
+      if (!keep || !group.contains(keep)) {
+        if (group.parentNode) group.parentNode.removeChild(group);
+      }
+    });
+
+    var oldModal = byId("m399CloudModal");
+    if (oldModal && oldModal.parentNode) oldModal.parentNode.removeChild(oldModal);
+    return keep && keep.isConnected ? keep : null;
+  }
+
   function installCloudButton() {
     var menu = byId("menuModal"); if (!menu) return false;
-    ["m399CloudSyncButton"].forEach(function (id) { var old = byId(id); if (old && old.parentNode) { var group = old.closest ? old.closest(".m395MenuGroup") : null; if (group && group.parentNode) group.parentNode.removeChild(group); else old.parentNode.removeChild(old); } });
-    var oldModal = byId("m399CloudModal"); if (oldModal && oldModal.parentNode) oldModal.parentNode.removeChild(oldModal);
-    if (byId("m400CloudSyncButton")) return true;
+    var existing = removeDuplicateCloudControls();
+    if (existing) return true;
     var stack = menu.querySelector(".m395MenuStack"), target = stack || menu.querySelector(".menuGrid");
     if (!target) return false;
     var button = document.createElement("button");
@@ -994,6 +1027,7 @@
       group.className = "m395MenuGroup"; title.className = "m395MenuGroupTitle"; title.textContent = "Cloud"; grid.className = "m395ActionGrid";
       grid.appendChild(button); group.appendChild(title); group.appendChild(grid); stack.appendChild(group);
     } else { button.className = "wide"; target.appendChild(button); }
+    removeDuplicateCloudControls();
     return true;
   }
 
@@ -1025,7 +1059,7 @@
         script.id = CHILD_SCRIPT_ID;
         script.src = CHILD_SCRIPT_SRC;
         doc.head.appendChild(script);
-      } catch (error) { console.warn("MITHRIL m40.0 could not attach the standardized document layer to the Shot Diagram.", error); }
+      } catch (error) { console.warn("MITHRIL m40.0.1 could not attach the standardized document layer to the Shot Diagram.", error); }
     }
     frame.addEventListener("load", function () { setTimeout(inject, 80); });
     setTimeout(inject, 120);
@@ -1040,6 +1074,7 @@
       else if (old.parentNode) old.parentNode.removeChild(old);
     });
     ["m398DrillTransferModal", "m398ShotImportModal", "m399CloudModal", "m398ImportSuccess"].forEach(function (id) { var node = byId(id); if (node && node.parentNode) node.parentNode.removeChild(node); });
+    removeDuplicateCloudControls();
   }
 
   function bootDocument() {
