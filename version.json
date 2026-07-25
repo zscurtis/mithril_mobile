@@ -1,14 +1,14 @@
 {
-  "version": "m40.0.2",
-  "title": "Standardized JSON Backups",
+  "version": "m40.0.3",
+  "title": "8 ms Timing Separation Check",
   "released": "2026-07-25",
   "minimumOfflineVersion": "m39.6.3",
   "notes": [
-    "Standardizes manually saved Drill Log and Shot Diagram JSON files under one documented MITHRIL backup format.",
-    "Adds explicit document type, template identity, schema version, document-contract version, creation time, source MITHRIL version, title, and complete document state.",
-    "Keeps older Drill Log and Shot Diagram backups loadable through backward-compatible legacy detection.",
-    "Keeps new backups readable by older rollback versions by preserving the legacy top-level pages, header, page-position, view, shot-info, and Drill Log calibration fields.",
-    "Prevents a Drill Log backup from being restored into the Shot Diagram, and vice versa, with a clear instruction to open the correct tool.",
-    "Includes standardized JSON when the Drill Log creates its PDF and JSON sharing package."
+    "Adds an 8 ms timing-separation check to the Shot Diagram Timing Sequence tool.",
+    "Flags every pair of eligible timed holes that is less than 8 ms apart; a difference of exactly 8 ms is accepted.",
+    "Shows the exact page, hole, timing values, and separation for each conflict.",
+    "Reports timed holes checked, eligible untimed holes, non-numeric timing values, and dirt or bad holes excluded.",
+    "Adds the check both to the active Timing Fill bar and to the Timing Sequence setup window.",
+    "Preserves the standardized cloud sync, JSON backup compatibility, Drill Log conversion, page renumbering, and existing timing-fill behavior."
   ]
 }

@@ -1,9 +1,9 @@
 (function () {
   "use strict";
 
-  var RELEASE_VERSION = "m40.0.2";
+  var RELEASE_VERSION = "m40.0.3";
   var CHILD_SCRIPT_ID = "mithrilCoreM400ChildLoader";
-  var CHILD_SCRIPT_SRC = "./mithril-core-m400.js?rev=4002-frame";
+  var CHILD_SCRIPT_SRC = "./mithril-core-m400.js?rev=4003-frame";
   var TRANSFER_KEY = "mithrilDrillToShotTransferM400";
   var UNDO_KEY = "mithrilDrillToShotUndoM400";
   var DEVICE_KEY = "mithrilCloudDeviceNameM399";
@@ -1007,7 +1007,7 @@
     modal.className = "m400Modal";
     modal.innerHTML = [
       '<div class="m400Box">',
-      '<div class="m400Head"><strong>MITHRIL Cloud Sync · Shared Contract v2 · m40.0.1</strong><button type="button" id="m400CloudClose">Close</button></div>',
+      '<div class="m400Head"><strong>MITHRIL Cloud Sync · Shared Contract v2 · m40.0.3</strong><button type="button" id="m400CloudClose">Close</button></div>',
       '<div id="m400CloudOut">',
       '<div class="m400Note">Sign in with the Firebase account. Cloud Sync now reads and writes through the same MITHRIL document interface for Drill Logs and Shot Diagrams.</div>',
       '<div class="m400Grid"><label>Email<input type="email" id="m400Email" autocomplete="username"></label><label>Password<input type="password" id="m400Password" autocomplete="current-password"></label><label class="m400Wide">Device name<input id="m400DeviceOut" type="text"></label><button type="button" class="primary m400Wide" id="m400SignIn">Sign In</button></div>',
@@ -1223,6 +1223,267 @@
   }
 
   // ---------------------------------------------------------------------------
+  // m40.0.3 Shot Diagram 8 ms timing-separation check
+  // ---------------------------------------------------------------------------
+
+  function timingCheckNumber(value) {
+    var raw = String(value == null ? "" : value).trim().replace(/\s*ms\s*$/i, "");
+    if (!/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(raw)) return null;
+    var number = Number(raw);
+    return isFinite(number) && number >= 0 ? number : null;
+  }
+
+  function timingCheckFormat(value) {
+    var number = Number(value);
+    if (!isFinite(number)) return "";
+    var rounded = Math.round(number * 1000) / 1000;
+    return String(rounded);
+  }
+
+  function timingCheckHoleParts(holeId) {
+    var match = String(holeId || "").toUpperCase().match(/^([A-Z]+)(\d+)$/);
+    if (!match) return { row: String(holeId || ""), col: 0 };
+    var row = 0;
+    for (var i = 0; i < match[1].length; i += 1) row = row * 26 + (match[1].charCodeAt(i) - 64);
+    return { row: row, col: Number(match[2]) };
+  }
+
+  function timingCheckLocationCompare(left, right) {
+    var pageDifference = Number(left.pageNum || 0) - Number(right.pageNum || 0);
+    if (pageDifference) return pageDifference;
+    var a = timingCheckHoleParts(left.holeId), b = timingCheckHoleParts(right.holeId);
+    if (a.row !== b.row) return a.row - b.row;
+    if (a.col !== b.col) return a.col - b.col;
+    return String(left.holeId || "").localeCompare(String(right.holeId || ""));
+  }
+
+  function collectTimingCheckData(pageSource) {
+    var source = pageSource || {};
+    var result = { entries: [], untimed: 0, invalid: 0, excluded: 0, savedEligible: 0 };
+    numericKeys(source).forEach(function (pageKey) {
+      var page = source[String(pageKey)] || {};
+      Object.keys(page).forEach(function (holeId) {
+        var record = page[holeId];
+        if (!meaningfulRecord(record)) return;
+        if (flagYes(record.BadHole) || flagYes(record.DirtHole)) {
+          result.excluded += 1;
+          return;
+        }
+        result.savedEligible += 1;
+        var raw = String(record.Timing == null ? "" : record.Timing).trim();
+        if (!raw) {
+          result.untimed += 1;
+          return;
+        }
+        var timing = timingCheckNumber(raw);
+        if (timing === null) {
+          result.invalid += 1;
+          return;
+        }
+        result.entries.push({
+          pageNum: Number(pageKey),
+          holeId: String(holeId),
+          timing: timing
+        });
+      });
+    });
+    result.entries.sort(function (a, b) {
+      return a.timing - b.timing || timingCheckLocationCompare(a, b);
+    });
+    return result;
+  }
+
+  function findTimingConflicts(entries, minimumSeparation) {
+    var minimum = Number(minimumSeparation);
+    if (!isFinite(minimum) || minimum <= 0) minimum = 8;
+    var sorted = (entries || []).slice().sort(function (a, b) {
+      return Number(a.timing) - Number(b.timing) || timingCheckLocationCompare(a, b);
+    });
+    var conflicts = [];
+    for (var i = 0; i < sorted.length; i += 1) {
+      for (var j = i + 1; j < sorted.length; j += 1) {
+        var difference = Number(sorted[j].timing) - Number(sorted[i].timing);
+        // Exactly 8 ms is permitted. Only a difference below 8 ms is flagged.
+        if (difference >= minimum - 0.000000001) break;
+        conflicts.push({ first: sorted[i], second: sorted[j], difference: difference });
+      }
+    }
+    return conflicts;
+  }
+
+  function ensureTimingSeparationStyles() {
+    if (byId("m400TimingCheckStyles")) return;
+    var style = document.createElement("style");
+    style.id = "m400TimingCheckStyles";
+    style.textContent = [
+      ".m400TimingSummary{padding:12px;border:2px solid #999;border-radius:10px;font-size:15px;font-weight:900;line-height:1.4;margin:8px 0}",
+      ".m400TimingSummary.pass{background:#e9f8ec;border-color:#4f9a61;color:#173d20}",
+      ".m400TimingSummary.fail{background:#ffeaea;border-color:#c44;color:#720000}",
+      ".m400TimingSummary.empty{background:#fff7d8;border-color:#c7aa45;color:#624b00}",
+      ".m400TimingCheckMeta{font-size:12px;font-weight:750;line-height:1.45;color:#555;margin:8px 0}",
+      ".m400TimingConflictList{display:grid;gap:7px;max-height:52vh;overflow:auto;margin-top:10px;padding-right:2px}",
+      ".m400TimingConflict{border:1px solid #c77;border-left:7px solid #c22;border-radius:8px;background:#fff7f7;padding:9px;font-size:13px;font-weight:800;line-height:1.35}",
+      ".m400TimingConflict strong{font-size:14px}",
+      "#m400TimingCheckButton.m400TimingFailButton,#m400TimingModalCheckButton.m400TimingFailButton{background:#ffeaea;border-color:#c44;color:#720000}"
+    ].join("");
+    document.head.appendChild(style);
+  }
+
+  function ensureTimingSeparationModal() {
+    var modal = byId("m400TimingCheckModal");
+    if (modal) return modal;
+    ensureStyles();
+    ensureTimingSeparationStyles();
+    modal = document.createElement("div");
+    modal.id = "m400TimingCheckModal";
+    modal.className = "m400Modal";
+    modal.innerHTML = [
+      '<div class="m400Box">',
+      '<div class="m400Head"><strong>8 ms Timing Check</strong><button type="button" id="m400TimingCheckClose">Close</button></div>',
+      '<div class="m400Note">Any two eligible holes less than 8 ms apart are flagged. A difference of exactly 8 ms is acceptable. Dirt and bad holes are excluded, matching Timing Fill.</div>',
+      '<div id="m400TimingCheckSummary" class="m400TimingSummary empty"></div>',
+      '<div id="m400TimingCheckMeta" class="m400TimingCheckMeta"></div>',
+      '<div id="m400TimingConflictList" class="m400TimingConflictList"></div>',
+      '<div class="m400Actions"><button type="button" class="primary m400Wide" id="m400TimingCheckDone">Done</button></div>',
+      '</div>'
+    ].join("");
+    document.body.appendChild(modal);
+    function close() { modal.classList.remove("show"); }
+    byId("m400TimingCheckClose").addEventListener("click", close);
+    byId("m400TimingCheckDone").addEventListener("click", close);
+    return modal;
+  }
+
+  function timingCheckLocationLabel(entry) {
+    return "P" + Number(entry.pageNum) + " " + String(entry.holeId);
+  }
+
+  function runTimingSeparationCheck() {
+    if (!isShot() || typeof pagesData === "undefined") {
+      alert("Open the Shot Diagram before running the 8 ms timing check.");
+      return null;
+    }
+    try { if (typeof saveData === "function") saveData(); } catch (error) {}
+    var scan = collectTimingCheckData(pagesData || {});
+    var conflicts = findTimingConflicts(scan.entries, 8);
+    var modal = ensureTimingSeparationModal();
+    var summary = byId("m400TimingCheckSummary");
+    var meta = byId("m400TimingCheckMeta");
+    var list = byId("m400TimingConflictList");
+    var unique = {};
+    for (var i = 0; i < conflicts.length; i += 1) {
+      unique[timingCheckLocationLabel(conflicts[i].first)] = true;
+      unique[timingCheckLocationLabel(conflicts[i].second)] = true;
+    }
+
+    if (!scan.entries.length) {
+      summary.className = "m400TimingSummary empty";
+      summary.textContent = "No numeric timing values were found to check.";
+    } else if (!conflicts.length) {
+      summary.className = "m400TimingSummary pass";
+      summary.textContent = "PASS — all " + scan.entries.length + " timed eligible hole" + (scan.entries.length === 1 ? " is" : "s are") + " separated by at least 8 ms.";
+    } else {
+      summary.className = "m400TimingSummary fail";
+      summary.textContent = "CONFLICT — " + conflicts.length + " timing pair" + (conflicts.length === 1 ? " is" : "s are") + " less than 8 ms apart, involving " + Object.keys(unique).length + " hole" + (Object.keys(unique).length === 1 ? "" : "s") + ".";
+    }
+
+    var details = [
+      "Timed eligible holes checked: " + scan.entries.length,
+      "Eligible saved holes without timing: " + scan.untimed,
+      "Non-numeric timing values: " + scan.invalid,
+      "Dirt or bad holes excluded: " + scan.excluded
+    ];
+    meta.textContent = details.join(" • ");
+    list.innerHTML = "";
+    var shown = Math.min(conflicts.length, 100);
+    for (var c = 0; c < shown; c += 1) {
+      var conflict = conflicts[c];
+      var row = document.createElement("div");
+      row.className = "m400TimingConflict";
+      row.innerHTML = '<strong>' + escapeHtml(timingCheckLocationLabel(conflict.first)) + ' — ' + escapeHtml(timingCheckFormat(conflict.first.timing)) + ' ms</strong><br>' +
+        '<strong>' + escapeHtml(timingCheckLocationLabel(conflict.second)) + ' — ' + escapeHtml(timingCheckFormat(conflict.second.timing)) + ' ms</strong><br>' +
+        escapeHtml(timingCheckFormat(conflict.difference)) + ' ms apart';
+      list.appendChild(row);
+    }
+    if (conflicts.length > shown) {
+      var more = document.createElement("div");
+      more.className = "m400Note m400Danger";
+      more.textContent = (conflicts.length - shown) + " additional conflict pairs were not displayed.";
+      list.appendChild(more);
+    }
+
+    var activeButton = byId("m400TimingCheckButton");
+    var modalButton = byId("m400TimingModalCheckButton");
+    [activeButton, modalButton].forEach(function (button) {
+      if (!button) return;
+      button.classList.toggle("m400TimingFailButton", conflicts.length > 0);
+      button.textContent = conflicts.length ? "8 ms Check — " + conflicts.length + " Conflict" + (conflicts.length === 1 ? "" : "s") : "8 ms Check — PASS";
+    });
+    modal.classList.add("show");
+    return { scan: scan, conflicts: conflicts };
+  }
+
+  function resetTimingCheckButtonLabels() {
+    var activeButton = byId("m400TimingCheckButton");
+    var modalButton = byId("m400TimingModalCheckButton");
+    [activeButton, modalButton].forEach(function (button) {
+      if (!button) return;
+      button.classList.remove("m400TimingFailButton");
+      button.textContent = button.id === "m400TimingModalCheckButton" ? "Check Existing Timings — 8 ms" : "Check 8 ms";
+    });
+  }
+
+  function installTimingSeparationCheck() {
+    if (!isShot()) return true;
+    ensureTimingSeparationStyles();
+    var foundTimingUi = false;
+    var bar = byId("m397TimingBar");
+    var actions = bar ? bar.querySelector(".m397TimingActions") : null;
+    if (actions) {
+      foundTimingUi = true;
+      if (!byId("m400TimingCheckButton")) {
+        var button = document.createElement("button");
+        button.id = "m400TimingCheckButton";
+        button.type = "button";
+        button.textContent = "Check 8 ms";
+        button.addEventListener("click", runTimingSeparationCheck);
+        var selectButton = byId("m397TimingEditHoles");
+        if (selectButton && selectButton.parentNode === actions) actions.insertBefore(button, selectButton);
+        else actions.appendChild(button);
+      }
+    }
+
+    var timingModal = byId("m397TimingModal");
+    var modalActions = timingModal ? timingModal.querySelector(".buttonGrid") : null;
+    if (modalActions) {
+      foundTimingUi = true;
+      if (!byId("m400TimingModalCheckButton")) {
+        var modalButton = document.createElement("button");
+        modalButton.id = "m400TimingModalCheckButton";
+        modalButton.type = "button";
+        modalButton.className = "wide";
+        modalButton.textContent = "Check Existing Timings — 8 ms";
+        modalButton.addEventListener("click", runTimingSeparationCheck);
+        modalActions.appendChild(modalButton);
+      }
+    }
+
+    if (foundTimingUi && !window.__mithrilM400TimingCheckDirtyListener) {
+      window.__mithrilM400TimingCheckDirtyListener = true;
+      var canvas = byId("shotCanvas");
+      if (canvas) canvas.addEventListener("pointerup", function () { window.setTimeout(resetTimingCheckButtonLabels, 0); }, true);
+      document.addEventListener("click", function (event) {
+        var target = event && event.target;
+        if (!target || target.id === "m400TimingCheckButton" || target.id === "m400TimingModalCheckButton") return;
+        if (target.closest && (target.closest("#m397TimingBar") || target.closest("#m397TimingModal") || target.closest("#holeModal"))) {
+          window.setTimeout(resetTimingCheckButtonLabels, 0);
+        }
+      }, true);
+    }
+    return foundTimingUi;
+  }
+
+  // ---------------------------------------------------------------------------
   // Versioning and wrapper bridge
   // ---------------------------------------------------------------------------
 
@@ -1250,7 +1511,7 @@
         script.id = CHILD_SCRIPT_ID;
         script.src = CHILD_SCRIPT_SRC;
         doc.head.appendChild(script);
-      } catch (error) { console.warn("MITHRIL m40.0.2 could not attach the standardized document layer to the Shot Diagram.", error); }
+      } catch (error) { console.warn("MITHRIL m40.0.3 could not attach the standardized document layer to the Shot Diagram.", error); }
     }
     frame.addEventListener("load", function () { setTimeout(inject, 80); });
     setTimeout(inject, 120);
@@ -1278,6 +1539,7 @@
     cleanupLegacyUI();
     installTransferButtons();
     installCloudButton();
+    installTimingSeparationCheck();
     if (isShot()) setTimeout(openImportReview, 100);
     var attempts = 0;
     var timer = setInterval(function () {
@@ -1285,6 +1547,7 @@
       cleanupLegacyUI();
       installTransferButtons();
       installCloudButton();
+      installTimingSeparationCheck();
       updateUndoButton();
       if (attempts >= 40) clearInterval(timer);
     }, 150);
@@ -1303,6 +1566,9 @@
     normalizedSnapshot: normalizedSnapshot,
     detectBackupType: detectBackupType,
     inspectManualBackup: inspectManualBackup,
-    buildManualBackup: buildManualBackup
+    buildManualBackup: buildManualBackup,
+    timingCheckNumber: timingCheckNumber,
+    collectTimingCheckData: collectTimingCheckData,
+    findTimingConflicts: findTimingConflicts
   };
 })();
