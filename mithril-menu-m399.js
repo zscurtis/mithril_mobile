@@ -1,9 +1,9 @@
 (function () {
   "use strict";
 
-  var RELEASE_VERSION = "m39.9";
+  var RELEASE_VERSION = "m39.9.1";
   var SCRIPT_ID = "mithrilMenuM399ChildLoader";
-  var SCRIPT_SRC = "./mithril-menu-m399.js?rev=399-frame";
+  var SCRIPT_SRC = "./mithril-menu-m399.js?rev=3991-frame";
   var DEVICE_KEY = "mithrilCloudDeviceNameM399";
   var FIREBASE_VERSION = "12.16.0";
   var firebaseConfig = {
@@ -313,7 +313,7 @@
     var keys = Object.keys(pagesData || {}).sort(function(a,b){ return Number(a)-Number(b); });
     currentPage = Number(p.currentPage) || Number(keys[0]) || 1;
     if (!pagesData[String(currentPage)]) currentPage = Number(keys[0]) || 1;
-    holeData = pagesData[String(currentPage)] || {};
+    if (isShot()) holeData = pagesData[String(currentPage)] || {};
     if (p.view && typeof view !== "undefined") view = clone(p.view);
     if (typeof saveState === "function") saveState();
   }

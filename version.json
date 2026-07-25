@@ -1,16 +1,13 @@
 {
-  "version": "m39.9",
-  "title": "Cloud Sync Prototype 1",
+  "version": "m39.9.1",
+  "title": "Cloud Download Compatibility Fix",
   "released": "2026-07-25",
   "minimumOfflineVersion": "m39.6.3",
   "notes": [
-    "Adds private Firebase email/password sign-in to Drill Log and Shot Diagram menus.",
-    "Adds manual upload of the current Drill Log or Shot Diagram while preserving all existing local saving.",
-    "Lists only the signed-in user's cloud documents of the currently open document type.",
-    "Downloads a selected cloud document only after a replacement warning and confirmation.",
-    "Tracks revision number, updated time, signed-in account, source device, MITHRIL version, and populated-hole count.",
-    "Allows deleting a cloud copy without deleting the local document.",
-    "Does not add automatic synchronization, live collaboration, PDFs, attachments, or company-wide sharing yet.",
-    "Preserves m39.8 Drill Log to Shot Diagram import and all m39.7 field-entry, timing, export, backup, and offline workflows."
+    "Fixes the holeData is not defined error when opening a cloud Drill Log on another device.",
+    "Keeps the Shot Diagram download path unchanged while allowing the Drill Log to restore directly from pagesData.",
+    "Preserves the successfully uploaded m39.9 cloud records, Firebase sign-in, private document listing, revisions, and device names.",
+    "No re-upload is required before retrying Open on This Device.",
+    "Preserves all existing local/offline saving, m39.8 Drill Log-to-Shot Diagram import, and m39.7 field workflows."
   ]
 }
