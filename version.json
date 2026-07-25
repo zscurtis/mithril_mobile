@@ -1,13 +1,14 @@
 {
-  "version": "m39.9.3",
-  "title": "Shot Diagram Cloud Restore Fix",
+  "version": "m40.0",
+  "title": "Standardized Documents and Compact Shot Conversion",
   "released": "2026-07-25",
   "minimumOfflineVersion": "m39.6.3",
   "notes": [
-    "Fixes Shot Diagram cloud downloads that reported success but reopened with blank local data.",
-    "Persists downloaded Shot Diagram pages, page positions, header information, view state, and sent status to the Shot Diagram's actual local-storage keys before refreshing the inner document.",
-    "Saves the active Shot Diagram page into the cloud payload before upload.",
-    "Keeps the user inside the Shot Diagram wrapper and shows the loaded cloud revision after the inner diagram refreshes.",
-    "Preserves the proven m39.9.2 Drill Log in-place cloud workflow, private Firebase sign-in, revisions, device names, and offline local saving."
+    "Adds one shared MithrilDocument contract for Drill Log and Shot Diagram snapshots, saving, restoring, refreshing, page numbering, and cloud synchronization.",
+    "Moves cloud upload and download through the shared document contract while remaining compatible with existing Firebase cloud records.",
+    "Removes the blue A-P and 1-34 coordinate labels from exported Drill Log PDF pages while keeping them visible inside the field application.",
+    "Adds Auto, keep, rotate right, rotate left, and rotate 180-degree choices when converting a Drill Log into a Shot Diagram, with page-count previews for each orientation.",
+    "Tiles only populated holes into the converted Shot Diagram, removes empty result pages, and numbers all resulting pages consecutively.",
+    "Renumbers remaining Drill Log and Shot Diagram pages after a page is deleted so page numbering never contains gaps."
   ]
 }

@@ -1,4 +1,4 @@
-const CACHE_NAME = "mithril-mobile-m39-9-3-shot-cloud-restore-fix-v1";
+const CACHE_NAME = "mithril-mobile-m40-0-standard-document-architecture-v1";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -7,6 +7,7 @@ const APP_SHELL = [
   "./mithril-menu-m397.js",
   "./mithril-menu-m398.js",
   "./mithril-menu-m399.js",
+  "./mithril-core-m400.js",
   "./mithril-update.js",
   "./manifest.webmanifest",
   "./icons/mithril-192.png",
@@ -25,11 +26,13 @@ function patchHTMLResponse(response, requestUrl) {
     let patched = html
       .replace(/<script[^>]+mithril-menu-m397\.js[^>]*><\/script>/gi, "")
       .replace(/<script[^>]+mithril-menu-m398\.js[^>]*><\/script>/gi, "")
-      .replace(/<script[^>]+mithril-menu-m399\.js[^>]*><\/script>/gi, "");
+      .replace(/<script[^>]+mithril-menu-m399\.js[^>]*><\/script>/gi, "")
+      .replace(/<script[^>]+mithril-core-m400\.js[^>]*><\/script>/gi, "");
     const scriptTags = [
       '<script src="./mithril-menu-m397.js?v=39.7"></script>',
       '<script src="./mithril-menu-m398.js?v=39.8"></script>',
-      '<script src="./mithril-menu-m399.js?v=39.9.3"></script>'
+      '<script src="./mithril-menu-m399.js?v=39.9.3"></script>',
+      '<script src="./mithril-core-m400.js?v=40.0"></script>'
     ].join("");
     if (/<\/body>/i.test(patched)) patched = patched.replace(/<\/body>/i, scriptTags + "</body>"); else patched += scriptTags;
     const headers = new Headers(response.headers); headers.set("Content-Type", "text/html; charset=utf-8"); headers.delete("Content-Length");
