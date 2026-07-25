@@ -1,9 +1,9 @@
 (function () {
   "use strict";
 
-  var RELEASE_VERSION = "m40.0.3";
+  var RELEASE_VERSION = "m40.0.4";
   var CHILD_SCRIPT_ID = "mithrilCoreM400ChildLoader";
-  var CHILD_SCRIPT_SRC = "./mithril-core-m400.js?rev=4003-frame";
+  var CHILD_SCRIPT_SRC = "./mithril-core-m400.js?rev=4004-frame";
   var TRANSFER_KEY = "mithrilDrillToShotTransferM400";
   var UNDO_KEY = "mithrilDrillToShotUndoM400";
   var DEVICE_KEY = "mithrilCloudDeviceNameM399";
@@ -1007,7 +1007,7 @@
     modal.className = "m400Modal";
     modal.innerHTML = [
       '<div class="m400Box">',
-      '<div class="m400Head"><strong>MITHRIL Cloud Sync · Shared Contract v2 · m40.0.3</strong><button type="button" id="m400CloudClose">Close</button></div>',
+      '<div class="m400Head"><strong>MITHRIL Cloud Sync · Shared Contract v2 · m40.0.4</strong><button type="button" id="m400CloudClose">Close</button></div>',
       '<div id="m400CloudOut">',
       '<div class="m400Note">Sign in with the Firebase account. Cloud Sync now reads and writes through the same MITHRIL document interface for Drill Logs and Shot Diagrams.</div>',
       '<div class="m400Grid"><label>Email<input type="email" id="m400Email" autocomplete="username"></label><label>Password<input type="password" id="m400Password" autocomplete="current-password"></label><label class="m400Wide">Device name<input id="m400DeviceOut" type="text"></label><button type="button" class="primary m400Wide" id="m400SignIn">Sign In</button></div>',
@@ -1223,7 +1223,7 @@
   }
 
   // ---------------------------------------------------------------------------
-  // m40.0.3 Shot Diagram 8 ms timing-separation check
+  // m40.0.4 Shot Diagram maximum holes-per-delay timing check
   // ---------------------------------------------------------------------------
 
   function timingCheckNumber(value) {
@@ -1311,16 +1311,33 @@
     return conflicts;
   }
 
+  function maximumHolesPerDelay(entries, minimumSeparation) {
+    var minimum = Number(minimumSeparation);
+    if (!isFinite(minimum) || minimum <= 0) minimum = 8;
+    var sorted = (entries || []).slice().sort(function (a, b) {
+      return Number(a.timing) - Number(b.timing) || timingCheckLocationCompare(a, b);
+    });
+    if (!sorted.length) return 0;
+    var left = 0;
+    var maximum = 1;
+    for (var right = 0; right < sorted.length; right += 1) {
+      while (left < right && Number(sorted[right].timing) - Number(sorted[left].timing) >= minimum - 0.000000001) left += 1;
+      maximum = Math.max(maximum, right - left + 1);
+    }
+    return maximum;
+  }
+
   function ensureTimingSeparationStyles() {
     if (byId("m400TimingCheckStyles")) return;
     var style = document.createElement("style");
     style.id = "m400TimingCheckStyles";
     style.textContent = [
-      ".m400TimingSummary{padding:12px;border:2px solid #999;border-radius:10px;font-size:15px;font-weight:900;line-height:1.4;margin:8px 0}",
+      ".m400TimingSummary{padding:18px 12px;border:2px solid #999;border-radius:10px;font-size:28px;font-weight:950;line-height:1.2;margin:10px 0;text-align:center}",
       ".m400TimingSummary.pass{background:#e9f8ec;border-color:#4f9a61;color:#173d20}",
       ".m400TimingSummary.fail{background:#ffeaea;border-color:#c44;color:#720000}",
       ".m400TimingSummary.empty{background:#fff7d8;border-color:#c7aa45;color:#624b00}",
       ".m400TimingCheckMeta{font-size:12px;font-weight:750;line-height:1.45;color:#555;margin:8px 0}",
+      ".m400TimingDetails{display:none;margin-top:8px}",
       ".m400TimingConflictList{display:grid;gap:7px;max-height:52vh;overflow:auto;margin-top:10px;padding-right:2px}",
       ".m400TimingConflict{border:1px solid #c77;border-left:7px solid #c22;border-radius:8px;background:#fff7f7;padding:9px;font-size:13px;font-weight:800;line-height:1.35}",
       ".m400TimingConflict strong{font-size:14px}",
@@ -1340,10 +1357,13 @@
     modal.innerHTML = [
       '<div class="m400Box">',
       '<div class="m400Head"><strong>8 ms Timing Check</strong><button type="button" id="m400TimingCheckClose">Close</button></div>',
-      '<div class="m400Note">Any two eligible holes less than 8 ms apart are flagged. A difference of exactly 8 ms is acceptable. Dirt and bad holes are excluded, matching Timing Fill.</div>',
+      '<div class="m400Note">Shows the maximum number of eligible holes within any timing window shorter than 8 ms. Exactly 8 ms apart is acceptable.</div>',
       '<div id="m400TimingCheckSummary" class="m400TimingSummary empty"></div>',
-      '<div id="m400TimingCheckMeta" class="m400TimingCheckMeta"></div>',
-      '<div id="m400TimingConflictList" class="m400TimingConflictList"></div>',
+      '<div class="m400Actions" id="m400TimingToggleRow" style="display:none"><button type="button" class="m400Wide" id="m400TimingToggleConflicts">Show Timing Conflicts</button></div>',
+      '<div id="m400TimingDetails" class="m400TimingDetails">',
+      '  <div id="m400TimingCheckMeta" class="m400TimingCheckMeta"></div>',
+      '  <div id="m400TimingConflictList" class="m400TimingConflictList"></div>',
+      '</div>',
       '<div class="m400Actions"><button type="button" class="primary m400Wide" id="m400TimingCheckDone">Done</button></div>',
       '</div>'
     ].join("");
@@ -1351,6 +1371,13 @@
     function close() { modal.classList.remove("show"); }
     byId("m400TimingCheckClose").addEventListener("click", close);
     byId("m400TimingCheckDone").addEventListener("click", close);
+    byId("m400TimingToggleConflicts").addEventListener("click", function () {
+      var details = byId("m400TimingDetails");
+      var expanded = details && details.style.display === "block";
+      if (details) details.style.display = expanded ? "none" : "block";
+      var count = Number(this.getAttribute("data-conflict-count") || 0);
+      this.textContent = (expanded ? "Show" : "Hide") + " Timing Conflicts" + (count ? " (" + count + ")" : "");
+    });
     return modal;
   }
 
@@ -1366,34 +1393,36 @@
     try { if (typeof saveData === "function") saveData(); } catch (error) {}
     var scan = collectTimingCheckData(pagesData || {});
     var conflicts = findTimingConflicts(scan.entries, 8);
+    var maxHoles = maximumHolesPerDelay(scan.entries, 8);
     var modal = ensureTimingSeparationModal();
     var summary = byId("m400TimingCheckSummary");
     var meta = byId("m400TimingCheckMeta");
     var list = byId("m400TimingConflictList");
-    var unique = {};
-    for (var i = 0; i < conflicts.length; i += 1) {
-      unique[timingCheckLocationLabel(conflicts[i].first)] = true;
-      unique[timingCheckLocationLabel(conflicts[i].second)] = true;
-    }
+    var detailsBox = byId("m400TimingDetails");
+    var toggleRow = byId("m400TimingToggleRow");
+    var toggleButton = byId("m400TimingToggleConflicts");
 
     if (!scan.entries.length) {
       summary.className = "m400TimingSummary empty";
-      summary.textContent = "No numeric timing values were found to check.";
-    } else if (!conflicts.length) {
-      summary.className = "m400TimingSummary pass";
-      summary.textContent = "PASS — all " + scan.entries.length + " timed eligible hole" + (scan.entries.length === 1 ? " is" : "s are") + " separated by at least 8 ms.";
+      summary.textContent = "No timed holes found";
     } else {
-      summary.className = "m400TimingSummary fail";
-      summary.textContent = "CONFLICT — " + conflicts.length + " timing pair" + (conflicts.length === 1 ? " is" : "s are") + " less than 8 ms apart, involving " + Object.keys(unique).length + " hole" + (Object.keys(unique).length === 1 ? "" : "s") + ".";
+      summary.className = "m400TimingSummary " + (maxHoles > 1 ? "fail" : "pass");
+      summary.textContent = maxHoles + " hole" + (maxHoles === 1 ? "" : "s") + " per delay";
     }
 
-    var details = [
+    var detailLines = [
       "Timed eligible holes checked: " + scan.entries.length,
       "Eligible saved holes without timing: " + scan.untimed,
       "Non-numeric timing values: " + scan.invalid,
       "Dirt or bad holes excluded: " + scan.excluded
     ];
-    meta.textContent = details.join(" • ");
+    meta.textContent = detailLines.join(" • ");
+    if (detailsBox) detailsBox.style.display = "none";
+    if (toggleRow) toggleRow.style.display = conflicts.length ? "grid" : "none";
+    if (toggleButton) {
+      toggleButton.setAttribute("data-conflict-count", String(conflicts.length));
+      toggleButton.textContent = "Show Timing Conflicts" + (conflicts.length ? " (" + conflicts.length + ")" : "");
+    }
     list.innerHTML = "";
     var shown = Math.min(conflicts.length, 100);
     for (var c = 0; c < shown; c += 1) {
@@ -1416,11 +1445,11 @@
     var modalButton = byId("m400TimingModalCheckButton");
     [activeButton, modalButton].forEach(function (button) {
       if (!button) return;
-      button.classList.toggle("m400TimingFailButton", conflicts.length > 0);
-      button.textContent = conflicts.length ? "8 ms Check — " + conflicts.length + " Conflict" + (conflicts.length === 1 ? "" : "s") : "8 ms Check — PASS";
+      button.classList.toggle("m400TimingFailButton", maxHoles > 1);
+      button.textContent = scan.entries.length ? "8 ms Check — " + maxHoles + " hole" + (maxHoles === 1 ? "" : "s") + "/delay" : "8 ms Check — no timings";
     });
     modal.classList.add("show");
-    return { scan: scan, conflicts: conflicts };
+    return { scan: scan, conflicts: conflicts, maxHolesPerDelay: maxHoles };
   }
 
   function resetTimingCheckButtonLabels() {
@@ -1511,7 +1540,7 @@
         script.id = CHILD_SCRIPT_ID;
         script.src = CHILD_SCRIPT_SRC;
         doc.head.appendChild(script);
-      } catch (error) { console.warn("MITHRIL m40.0.3 could not attach the standardized document layer to the Shot Diagram.", error); }
+      } catch (error) { console.warn("MITHRIL m40.0.4 could not attach the standardized document layer to the Shot Diagram.", error); }
     }
     frame.addEventListener("load", function () { setTimeout(inject, 80); });
     setTimeout(inject, 120);
@@ -1569,6 +1598,7 @@
     buildManualBackup: buildManualBackup,
     timingCheckNumber: timingCheckNumber,
     collectTimingCheckData: collectTimingCheckData,
-    findTimingConflicts: findTimingConflicts
+    findTimingConflicts: findTimingConflicts,
+    maximumHolesPerDelay: maximumHolesPerDelay
   };
 })();

@@ -1,14 +1,13 @@
 {
-  "version": "m40.0.3",
-  "title": "8 ms Timing Separation Check",
+  "version": "m40.0.4",
+  "title": "Maximum Holes per Delay Summary",
   "released": "2026-07-25",
   "minimumOfflineVersion": "m39.6.3",
   "notes": [
-    "Adds an 8 ms timing-separation check to the Shot Diagram Timing Sequence tool.",
-    "Flags every pair of eligible timed holes that is less than 8 ms apart; a difference of exactly 8 ms is accepted.",
-    "Shows the exact page, hole, timing values, and separation for each conflict.",
-    "Reports timed holes checked, eligible untimed holes, non-numeric timing values, and dirt or bad holes excluded.",
-    "Adds the check both to the active Timing Fill bar and to the Timing Sequence setup window.",
-    "Preserves the standardized cloud sync, JSON backup compatibility, Drill Log conversion, page renumbering, and existing timing-fill behavior."
+    "Simplifies the 8 ms timing result to the maximum holes per delay across the full Shot Diagram.",
+    "Shows a clear headline such as 1 hole per delay, 2 holes per delay, or 3 holes per delay.",
+    "Calculates the maximum number of eligible timed holes within any timing window shorter than 8 ms; exactly 8 ms remains acceptable.",
+    "Keeps the detailed timing-pair list collapsed until Show Timing Conflicts is selected.",
+    "Preserves the existing conflict details, exclusions, cloud sync, standardized JSON backups, Drill Log conversion, and timing-fill behavior."
   ]
 }
