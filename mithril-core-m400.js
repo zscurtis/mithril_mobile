@@ -1,9 +1,9 @@
 (function () {
   "use strict";
 
-  var RELEASE_VERSION = "m40.0.1";
+  var RELEASE_VERSION = "m40.0.2";
   var CHILD_SCRIPT_ID = "mithrilCoreM400ChildLoader";
-  var CHILD_SCRIPT_SRC = "./mithril-core-m400.js?rev=4001-frame";
+  var CHILD_SCRIPT_SRC = "./mithril-core-m400.js?rev=4002-frame";
   var TRANSFER_KEY = "mithrilDrillToShotTransferM400";
   var UNDO_KEY = "mithrilDrillToShotUndoM400";
   var DEVICE_KEY = "mithrilCloudDeviceNameM399";
@@ -122,15 +122,18 @@
   function normalizedSnapshot(snapshot) {
     var src = snapshot || {};
     if (src.payload && !src.pagesData) src = src.payload;
+    var extras = clone(src.extras || {});
+    if (!extras.headerCalibration && src.headerCalibration) extras.headerCalibration = clone(src.headerCalibration);
+    if (!extras.timingSequence && src.timingSequence) extras.timingSequence = clone(src.timingSequence);
     return {
       schemaVersion: Number(src.schemaVersion || 1),
       type: src.type || docType(),
       pagesData: clone(src.pagesData || src.pages || { "1": {} }),
       pageMeta: clone(src.pageMeta || { "1": { gx: 0, gy: 0, name: "Page 1" } }),
-      headerData: clone(src.headerData || src.header || {}),
+      headerData: clone(src.headerData || src.shotInfo || src.header || {}),
       currentPage: Number(src.currentPage || 1),
       view: src.view ? clone(src.view) : null,
-      extras: clone(src.extras || {})
+      extras: extras
     };
   }
 
@@ -171,6 +174,8 @@
       var extras = {};
       if (type === "shotDiagram") {
         try { extras.timingSequence = JSON.parse(localStorage.getItem("mithrilCanvasTimingSequenceM397") || "null"); } catch (error) { extras.timingSequence = null; }
+      } else {
+        try { extras.headerCalibration = typeof headerCalibration !== "undefined" ? clone(headerCalibration) : null; } catch (error2) { extras.headerCalibration = null; }
       }
       return {
         schemaVersion: 2,
@@ -224,10 +229,20 @@
         try { hasUnsentChanges = options.markDirty === true; } catch (error1) {}
         localStorage.setItem("mithrilCanvasUnsentM01", options.markDirty === true ? "true" : "false");
       } else {
+        if (next.extras && next.extras.headerCalibration) {
+          try {
+            headerCalibration = typeof normalizeHeaderCalibration === "function"
+              ? normalizeHeaderCalibration(next.extras.headerCalibration)
+              : clone(next.extras.headerCalibration);
+          } catch (error2) {}
+          try {
+            if (typeof KEYS !== "undefined" && KEYS.headerCalibration) localStorage.setItem(KEYS.headerCalibration, JSON.stringify(headerCalibration));
+          } catch (error3) {}
+        }
         if (typeof saveState === "function") saveState();
         try {
           if (typeof KEYS !== "undefined" && KEYS.dirty) localStorage.setItem(KEYS.dirty, options.markDirty === true ? "true" : "false");
-        } catch (error2) {}
+        } catch (error4) {}
       }
       refresh({ fitAll: !!options.fitAll, fitCurrent: !!options.fitCurrent });
       return next;
@@ -279,6 +294,182 @@
     window.MithrilDocument = adapter;
     window.dispatchEvent(new CustomEvent("mithril-document-ready", { detail: { type: adapter.type, contractVersion: adapter.contractVersion } }));
     return adapter;
+  }
+
+
+  // ---------------------------------------------------------------------------
+  // Standardized manual JSON backup files
+  // ---------------------------------------------------------------------------
+
+  var MANUAL_BACKUP_FORMAT = "MITHRIL_DOCUMENT_BACKUP";
+  var MANUAL_BACKUP_FORMAT_VERSION = 1;
+
+  function backupTemplateId(type) {
+    if (type === "drillLog") {
+      try { if (typeof TEMPLATE_ID !== "undefined" && text(TEMPLATE_ID)) return text(TEMPLATE_ID); } catch (error) {}
+      return "mithril-drill-log-16x34";
+    }
+    return "mithril-shot-diagram-16x15";
+  }
+
+  function backupTemplateName(type) {
+    return type === "drillLog" ? "Drill Log 16x34 Construction" : "Shot Diagram 16x15";
+  }
+
+  function buildManualBackup(adapter) {
+    if (!adapter) throw new Error("The MITHRIL document interface is not available.");
+    var info = adapter.getInfo();
+    var snapshot = adapter.getSnapshot();
+    var out = {
+      format: MANUAL_BACKUP_FORMAT,
+      backupFormatVersion: MANUAL_BACKUP_FORMAT_VERSION,
+      schemaVersion: Number(snapshot.schemaVersion || 2),
+      documentContractVersion: Number(adapter.contractVersion || 2),
+      type: adapter.type,
+      templateId: backupTemplateId(adapter.type),
+      templateName: backupTemplateName(adapter.type),
+      version: RELEASE_VERSION,
+      createdByVersion: RELEASE_VERSION,
+      createdAt: new Date().toISOString(),
+      app: "MITHRIL Mobile",
+      title: info.title,
+      pagesData: clone(snapshot.pagesData || { "1": {} }),
+      pageMeta: clone(snapshot.pageMeta || { "1": { gx: 0, gy: 0, name: "Page 1" } }),
+      headerData: clone(snapshot.headerData || {}),
+      currentPage: Number(snapshot.currentPage || 1),
+      view: snapshot.view ? clone(snapshot.view) : null,
+      extras: clone(snapshot.extras || {})
+    };
+
+    // Keep these legacy mirrors so a new backup can still be opened after a
+    // rollback to the older Drill Log or Shot Diagram loader.
+    if (adapter.type === "drillLog") {
+      out.headerCalibration = clone((snapshot.extras || {}).headerCalibration || null);
+    } else {
+      out.shotInfo = clone(snapshot.headerData || {});
+    }
+    return out;
+  }
+
+  function backupHeader(value) {
+    value = value || {};
+    var src = value.payload && !value.pagesData ? value.payload : value;
+    return src.headerData || src.shotInfo || src.header || value.headerData || value.shotInfo || {};
+  }
+
+  function detectBackupType(value, fallbackType) {
+    value = value || {};
+    var nested = value.payload && typeof value.payload === "object" ? value.payload : {};
+    var explicit = text(value.type || value.documentType || nested.type);
+    if (explicit === "drillLog" || explicit === "shotDiagram") return explicit;
+
+    var templateText = [value.templateId, value.templateName, nested.templateId, nested.templateName].map(text).join(" ").toLowerCase();
+    if (/drill|16\s*[x×]\s*34/.test(templateText)) return "drillLog";
+    if (/shot|16\s*[x×]\s*15/.test(templateText)) return "shotDiagram";
+
+    var header = backupHeader(value);
+    if (header && (header.ShotID != null || header.JobName != null || header.Blaster != null || header.EnteredByDefault != null)) return "shotDiagram";
+    if (header && (header.DrillLogNumber != null || header.Employee != null || (header.Job != null && header.JobName == null))) return "drillLog";
+    if (value.shotInfo || nested.shotInfo) return "shotDiagram";
+
+    var src = value.payload && !value.pagesData ? value.payload : value;
+    // Old Shot Diagram backups had pagesData but no type or template ID.
+    // Accept that ambiguous legacy shape only while the Shot Diagram is open.
+    if (fallbackType === "shotDiagram" && src.pagesData) return "shotDiagram";
+    return "";
+  }
+
+  function inspectManualBackup(value, fallbackType) {
+    var type = detectBackupType(value, fallbackType || docType());
+    var snapshot = normalizedSnapshot(value);
+    snapshot.type = type || snapshot.type;
+    if (!snapshot.pagesData || typeof snapshot.pagesData !== "object") throw new Error("This file does not contain MITHRIL page data.");
+    return {
+      type: type,
+      legacy: value && value.format !== MANUAL_BACKUP_FORMAT,
+      snapshot: snapshot,
+      title: text(value && value.title) || "",
+      sourceVersion: text(value && (value.createdByVersion || value.version))
+    };
+  }
+
+  function backupFileBaseName(adapter) {
+    var base = "";
+    try {
+      if (adapter.type === "drillLog" && typeof exportBaseName === "function") base = text(exportBaseName());
+      if (adapter.type === "shotDiagram" && typeof getExportBaseName === "function") base = text(getExportBaseName());
+    } catch (error) {}
+    if (!base) base = text(adapter.getInfo().title) || docTypeLabel(adapter.type);
+    var suffix = adapter.type === "drillLog" ? "Drill Log" : "Shot Diagram";
+    if (base.toLowerCase().indexOf(suffix.toLowerCase()) < 0) base += " - " + suffix;
+    return base.replace(/[\\/:*?"<>|]/g, "-").replace(/\s+/g, " ").trim();
+  }
+
+  function downloadManualBackup(adapter) {
+    try {
+      var backup = buildManualBackup(adapter);
+      var blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
+      var link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = backupFileBaseName(adapter) + ".json";
+      document.body.appendChild(link);
+      link.click();
+      setTimeout(function () { URL.revokeObjectURL(link.href); if (link.parentNode) link.parentNode.removeChild(link); }, 900);
+      showToast(docTypeLabel(adapter.type) + " backup saved in the standardized MITHRIL JSON format.");
+      return backup;
+    } catch (error) {
+      alert(error && error.message ? error.message : "MITHRIL could not create the backup file.");
+      return null;
+    }
+  }
+
+  function loadManualBackupEvent(event) {
+    var adapter = window.MithrilDocument;
+    var input = event && event.target;
+    var file = input && input.files && input.files[0];
+    if (!adapter || !file) return;
+    var reader = new FileReader();
+    reader.onload = function (readEvent) {
+      try {
+        var raw = JSON.parse(readEvent.target.result);
+        var inspected = inspectManualBackup(raw, adapter.type);
+        if (!inspected.type) throw new Error("MITHRIL could not determine whether this is a Drill Log or Shot Diagram backup.");
+        if (inspected.type !== adapter.type) {
+          throw new Error("This backup contains a " + docTypeLabel(inspected.type) + ". Open the " + docTypeLabel(inspected.type) + " before restoring it.");
+        }
+        var pages = Object.keys(inspected.snapshot.pagesData || {}).length;
+        var holes = countHoles(inspected.snapshot.pagesData || {});
+        var legacyNote = inspected.legacy ? "\n\nThis is an older MITHRIL backup. It will be converted safely when loaded." : "";
+        if (!confirm("Load this " + docTypeLabel(adapter.type) + " backup and replace the current local data?\n\nPages: " + pages + "\nPopulated holes: " + holes + legacyNote)) return;
+        adapter.applySnapshot(inspected.snapshot, { markDirty: true, fitAll: adapter.type === "shotDiagram", fitCurrent: adapter.type === "drillLog" });
+        closeMenu();
+        showToast((inspected.legacy ? "Legacy " : "") + docTypeLabel(adapter.type) + " backup loaded successfully.");
+      } catch (error) {
+        alert(error && error.message ? error.message : "MITHRIL could not load this backup file.");
+      } finally {
+        if (input) input.value = "";
+      }
+    };
+    reader.onerror = function () { alert("MITHRIL could not read this backup file."); if (input) input.value = ""; };
+    reader.readAsText(file);
+  }
+
+  function installManualBackupStandardization(adapter) {
+    if (!adapter) return;
+    window.downloadJSON = function () { return downloadManualBackup(adapter); };
+    if (adapter.type === "drillLog") {
+      window.buildBackupPayload = function () { return buildManualBackup(adapter); };
+      window.getJSONText = function () { return JSON.stringify(buildManualBackup(adapter), null, 2); };
+      window.loadJSON = loadManualBackupEvent;
+    } else {
+      window.loadJSONBackup = loadManualBackupEvent;
+    }
+    window.MithrilBackup = {
+      format: MANUAL_BACKUP_FORMAT,
+      formatVersion: MANUAL_BACKUP_FORMAT_VERSION,
+      build: function () { return buildManualBackup(adapter); },
+      inspect: function (value) { return inspectManualBackup(value, adapter.type); }
+    };
   }
 
   // ---------------------------------------------------------------------------
@@ -1059,7 +1250,7 @@
         script.id = CHILD_SCRIPT_ID;
         script.src = CHILD_SCRIPT_SRC;
         doc.head.appendChild(script);
-      } catch (error) { console.warn("MITHRIL m40.0.1 could not attach the standardized document layer to the Shot Diagram.", error); }
+      } catch (error) { console.warn("MITHRIL m40.0.2 could not attach the standardized document layer to the Shot Diagram.", error); }
     }
     frame.addEventListener("load", function () { setTimeout(inject, 80); });
     setTimeout(inject, 120);
@@ -1081,6 +1272,7 @@
     ensureStyles();
     updateVersionLabels();
     var adapter = installAdapter();
+    installManualBackupStandardization(adapter);
     installPageDeletionPatch(adapter);
     installDrillPdfPatch();
     cleanupLegacyUI();
@@ -1108,6 +1300,9 @@
     transformPoints: transformPoints,
     buildShotImport: buildShotImport,
     orientationCounts: orientationCounts,
-    normalizedSnapshot: normalizedSnapshot
+    normalizedSnapshot: normalizedSnapshot,
+    detectBackupType: detectBackupType,
+    inspectManualBackup: inspectManualBackup,
+    buildManualBackup: buildManualBackup
   };
 })();

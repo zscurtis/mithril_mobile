@@ -1,13 +1,14 @@
 {
-  "version": "m40.0.1",
-  "title": "Single Cloud Sync Control Fix",
+  "version": "m40.0.2",
+  "title": "Standardized JSON Backups",
   "released": "2026-07-25",
   "minimumOfflineVersion": "m39.6.3",
   "notes": [
-    "Fixes duplicate Cloud Sync sections appearing in both the Drill Log and Shot Diagram menus.",
-    "Stops the retired m39.8 transfer helper and m39.9 cloud helper from loading alongside the m40 standardized document layer.",
-    "Makes m40 the single owner of Drill Log transfer and Cloud Sync controls.",
-    "Removes any stale or duplicate Cloud Sync buttons and Cloud menu groups left by an older cached page.",
-    "Preserves the m40 shared document contract, cloud data compatibility, PDF cleanup, rotation-aware conversion, and automatic page renumbering."
+    "Standardizes manually saved Drill Log and Shot Diagram JSON files under one documented MITHRIL backup format.",
+    "Adds explicit document type, template identity, schema version, document-contract version, creation time, source MITHRIL version, title, and complete document state.",
+    "Keeps older Drill Log and Shot Diagram backups loadable through backward-compatible legacy detection.",
+    "Keeps new backups readable by older rollback versions by preserving the legacy top-level pages, header, page-position, view, shot-info, and Drill Log calibration fields.",
+    "Prevents a Drill Log backup from being restored into the Shot Diagram, and vice versa, with a clear instruction to open the correct tool.",
+    "Includes standardized JSON when the Drill Log creates its PDF and JSON sharing package."
   ]
 }
