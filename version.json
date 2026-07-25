@@ -1,14 +1,13 @@
 {
-  "version": "m39.9.2",
-  "title": "Cloud Download In-Place Refresh",
+  "version": "m39.9.3",
+  "title": "Shot Diagram Cloud Restore Fix",
   "released": "2026-07-25",
   "minimumOfflineVersion": "m39.6.3",
   "notes": [
-    "Keeps users inside the open Drill Log after downloading a cloud revision instead of returning to the MITHRIL landing screen.",
-    "Refreshes Drill Log pages, page navigation, cached rendering, and the visible canvas immediately after the cloud data is applied.",
-    "Shows a clear loaded-successfully confirmation with the cloud revision number.",
-    "Keeps the Shot Diagram inside its existing wrapper while refreshing its inner document after a cloud download.",
-    "Adds the active cloud-sync helper version to the Cloud Sync window for easier cache troubleshooting.",
-    "Preserves private Firebase sign-in, revisions, device names, local/offline saving, and all m39.8 and m39.7 workflows."
+    "Fixes Shot Diagram cloud downloads that reported success but reopened with blank local data.",
+    "Persists downloaded Shot Diagram pages, page positions, header information, view state, and sent status to the Shot Diagram's actual local-storage keys before refreshing the inner document.",
+    "Saves the active Shot Diagram page into the cloud payload before upload.",
+    "Keeps the user inside the Shot Diagram wrapper and shows the loaded cloud revision after the inner diagram refreshes.",
+    "Preserves the proven m39.9.2 Drill Log in-place cloud workflow, private Firebase sign-in, revisions, device names, and offline local saving."
   ]
 }

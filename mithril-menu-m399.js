@@ -1,9 +1,9 @@
 (function () {
   "use strict";
 
-  var RELEASE_VERSION = "m39.9.2";
+  var RELEASE_VERSION = "m39.9.3";
   var SCRIPT_ID = "mithrilMenuM399ChildLoader";
-  var SCRIPT_SRC = "./mithril-menu-m399.js?rev=3992-frame";
+  var SCRIPT_SRC = "./mithril-menu-m399.js?rev=3993-frame";
   var DEVICE_KEY = "mithrilCloudDeviceNameM399";
   var FIREBASE_VERSION = "12.16.0";
   var firebaseConfig = {
@@ -137,7 +137,7 @@
     modal.id = "m399CloudModal"; modal.className = "m399CloudModal";
     modal.innerHTML = [
       '<div class="m399CloudBox">',
-      '<div class="m399CloudHead"><strong>MITHRIL Cloud Sync — Prototype 1 · m39.9.2</strong><button type="button" id="m399CloudClose">Close</button></div>',
+      '<div class="m399CloudHead"><strong>MITHRIL Cloud Sync — Prototype 1 · m39.9.3</strong><button type="button" id="m399CloudClose">Close</button></div>',
       '<div id="m399CloudSignedOut">',
       '<div class="m399CloudNote">Sign in with the Firebase test account you created. Your password is sent directly to Firebase and is not stored by MITHRIL.</div>',
       '<div class="m399CloudLogin"><label>Email<input type="email" id="m399CloudEmail" autocomplete="username"></label><label>Password<input type="password" id="m399CloudPassword" autocomplete="current-password"></label><label class="m399CloudWide">Device name<input type="text" id="m399CloudDeviceOut" placeholder="Example: Zach Field iPad"></label><button type="button" class="primary m399CloudWide" id="m399CloudSignIn">Sign In</button></div>',
@@ -205,9 +205,12 @@
   }
 
   function currentPayload() {
-    try { if (typeof saveState === "function") saveState(); } catch (error) {}
     var type = docType();
     if (!type) return null;
+    try {
+      if (type === "drillLog" && typeof saveState === "function") saveState();
+      if (type === "shotDiagram" && typeof saveData === "function") saveData();
+    } catch (error) {}
     var pages = typeof pagesData !== "undefined" ? clone(pagesData) : {};
     var meta = typeof pageMeta !== "undefined" ? clone(pageMeta) : {};
     var header = typeof headerData !== "undefined" ? clone(headerData) : {};
@@ -314,8 +317,19 @@
     var keys = Object.keys(pagesData || {}).sort(function(a,b){ return Number(a)-Number(b); });
     currentPage = Number(p.currentPage) || Number(keys[0]) || 1;
     if (!pagesData[String(currentPage)]) currentPage = Number(keys[0]) || 1;
-    if (isShot()) holeData = pagesData[String(currentPage)] || {};
     if (p.view && typeof view !== "undefined") view = clone(p.view);
+
+    if (isShot()) {
+      holeData = pagesData[String(currentPage)] || {};
+      localStorage.setItem("mithrilCanvasPagesM01", JSON.stringify(pagesData));
+      localStorage.setItem("mithrilCanvasPageMetaM03", JSON.stringify(pageMeta));
+      localStorage.setItem("mithrilCanvasHeaderM01", JSON.stringify(headerData));
+      if (typeof view !== "undefined") localStorage.setItem("mithrilCanvasViewM01", JSON.stringify(view));
+      try { hasUnsentChanges = false; } catch (error1) {}
+      localStorage.setItem("mithrilCanvasUnsentM01", "false");
+      return;
+    }
+
     if (typeof saveState === "function") saveState();
   }
   function showCloudToast(message) {
@@ -393,7 +407,7 @@
       try {
         var doc = frame.contentDocument; if (!doc || !doc.head || doc.getElementById(SCRIPT_ID)) return;
         var script = doc.createElement("script"); script.id = SCRIPT_ID; script.src = SCRIPT_SRC; doc.head.appendChild(script);
-      } catch (error) { console.warn("MITHRIL m39.9 could not inject Cloud Sync into the Shot Diagram frame.", error); }
+      } catch (error) { console.warn("MITHRIL m39.9.3 could not inject Cloud Sync into the Shot Diagram frame.", error); }
     }
     frame.addEventListener("load", function(){ setTimeout(inject, 80); });
     setTimeout(inject, 150);
