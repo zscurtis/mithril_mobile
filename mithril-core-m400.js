@@ -1,12 +1,14 @@
 (function () {
   "use strict";
 
-  var RELEASE_VERSION = "m40.0.4";
+  var RELEASE_VERSION = "m40.1";
   var CHILD_SCRIPT_ID = "mithrilCoreM400ChildLoader";
   var CHILD_SCRIPT_SRC = "./mithril-core-m400.js?rev=4004-frame";
   var TRANSFER_KEY = "mithrilDrillToShotTransferM400";
   var UNDO_KEY = "mithrilDrillToShotUndoM400";
   var DEVICE_KEY = "mithrilCloudDeviceNameM399";
+  var SYNC_META_PREFIX = "mithrilCloudSyncMetaM401:";
+  var RECOVERY_PREFIX = "mithrilCloudRecoveryM401:";
   var FIREBASE_VERSION = "12.16.0";
   var firebaseConfig = {
     apiKey: ["AIzaSyBOb0pXdI", "DMqr5mMKdKOCpP84jSRjyjnhY"].join(""),
@@ -28,6 +30,7 @@
   var fbPromise = null;
   var currentUser = null;
   var authUnsubscribe = null;
+  var cloudItems = [];
 
   function byId(id) { return document.getElementById(id); }
   function text(value) { return String(value == null ? "" : value).trim(); }
@@ -107,9 +110,10 @@
       ".m400Stat{background:#eef4ff;border:1px solid #98b9e7;border-radius:9px;padding:8px;min-height:58px}.m400Stat b{display:block;font-size:21px;color:#173f70}.m400Stat span{font-size:11px;font-weight:800;color:#4d6075}",
       ".m400Status{margin:9px 0;padding:9px;border:1px solid #aaa;border-radius:8px;background:#f5f5f5;font-size:13px;font-weight:800;line-height:1.35}.m400Status.good{background:#e9f8ec;border-color:#61a86e}.m400Status.bad{background:#ffeaea;border-color:#c66}.m400Status.wait{background:#fff7d8;border-color:#c7aa45}",
       ".m400Identity{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;padding:9px;border-radius:8px;background:#eef4ff;border:1px solid #9ab8df;margin-bottom:9px;font-size:13px;font-weight:800}",
+      ".m401Compare{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:10px 0}.m401Side{border:1px solid #9ab8df;border-radius:9px;padding:10px;background:#f7faff}.m401Side.cloud{border-color:#8dbb96;background:#f3fbf4}.m401Side h3{margin:0 0 6px;font-size:13px;letter-spacing:.08em}.m401Side b{display:block;font-size:16px;margin-bottom:4px}.m401Side span{display:block;font-size:12px;line-height:1.4;color:#4d5866;font-weight:750}",
       ".m400Docs{display:grid;gap:8px;margin-top:10px}.m400Doc{border:1px solid #aaa;border-radius:9px;padding:9px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:9px;align-items:center}.m400DocTitle{font-size:15px;font-weight:900}.m400Meta{font-size:12px;color:#555;font-weight:750;line-height:1.35;margin-top:3px}.m400DocActions{display:grid;gap:6px}",
       ".m400Toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:22000;max-width:min(720px,calc(100vw - 24px));padding:12px 16px;border:2px solid #4f9a61;border-radius:10px;background:#e9f8ec;color:#173d20;font-size:14px;font-weight:900;line-height:1.35;box-shadow:0 8px 28px rgba(0,0,0,.35);text-align:center}.m400Toast.bad{background:#ffeaea;border-color:#c66;color:#720000}",
-      "@media(max-width:600px){.m400Grid,.m400Actions{grid-template-columns:1fr}.m400Wide{grid-column:auto}.m400Stats{grid-template-columns:1fr 1fr}.m400Doc{grid-template-columns:1fr}.m400DocActions{grid-template-columns:1fr 1fr}}"
+      "@media(max-width:600px){.m400Grid,.m400Actions,.m401Compare{grid-template-columns:1fr}.m400Wide{grid-column:auto}.m400Stats{grid-template-columns:1fr 1fr}.m400Doc{grid-template-columns:1fr}.m400DocActions{grid-template-columns:1fr 1fr}}"
     ].join("");
     document.head.appendChild(style);
   }
@@ -972,6 +976,49 @@
     try { localStorage.setItem(DEVICE_KEY, value); } catch (error) {}
     return value;
   }
+  function snapshotFingerprint(snapshot) {
+    var value = normalizedSnapshot(snapshot || {});
+    return JSON.stringify({ type: value.type, pagesData: value.pagesData, pageMeta: value.pageMeta, headerData: value.headerData, extras: value.extras });
+  }
+  function syncStorageKey(id) { return SYNC_META_PREFIX + (currentUser ? currentUser.uid : "signed-out") + ":" + id; }
+  function recoveryStorageKey(id) { return RECOVERY_PREFIX + (currentUser ? currentUser.uid : "signed-out") + ":" + id; }
+  function readJsonStorage(key) { try { return JSON.parse(localStorage.getItem(key) || "null"); } catch (error) { return null; } }
+  function writeJsonStorage(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); return true; } catch (error) { return false; } }
+  function readSyncMeta(id) { return readJsonStorage(syncStorageKey(id)); }
+  function writeSyncMeta(id, revision, snapshot, cloudData) {
+    var meta = { revision: Number(revision || 0), fingerprint: snapshotFingerprint(snapshot), syncedAt: new Date().toISOString(), sourceDevice: cloudData && cloudData.sourceDevice || deviceName() };
+    writeJsonStorage(syncStorageKey(id), meta);
+    return meta;
+  }
+  function currentSyncState(cloudData) {
+    var data = cloudRecord(), id = logicalId(data), snapshot = data.payload;
+    var meta = readSyncMeta(id), fingerprint = snapshotFingerprint(snapshot);
+    var cloudRevision = cloudData ? Number(cloudData.revision || 1) : 0;
+    var cloudFingerprint = cloudData ? snapshotFingerprint(cloudData.payload || cloudData) : "";
+    if (cloudData && !meta && fingerprint === cloudFingerprint) meta = writeSyncMeta(id, cloudRevision, snapshot, cloudData);
+    return { data: data, id: id, snapshot: snapshot, meta: meta, fingerprint: fingerprint, dirty: !meta || meta.fingerprint !== fingerprint, lastRevision: meta ? Number(meta.revision || 0) : 0, cloudRevision: cloudRevision, cloudFingerprint: cloudFingerprint };
+  }
+  function matchingCloudItem() {
+    var record = cloudRecord(), id = record && logicalId(record);
+    for (var i = 0; id && i < cloudItems.length; i += 1) if (cloudItems[i].id === id) return cloudItems[i];
+    return null;
+  }
+  function saveRecovery(id, adapter, meta) {
+    return writeJsonStorage(recoveryStorageKey(id), { savedAt: new Date().toISOString(), snapshot: adapter.getSnapshot(), syncMeta: meta || null });
+  }
+  function updateUndoCloudButton() {
+    var button = byId("m401UndoCloud"), record = window.MithrilDocument && cloudRecord();
+    if (button) button.disabled = !record || !readJsonStorage(recoveryStorageKey(logicalId(record)));
+  }
+  function renderLocalCloudStatus() {
+    var local = byId("m401LocalStatus"), cloud = byId("m401CloudStatus");
+    if (!local || !cloud || !window.MithrilDocument) return;
+    var item = matchingCloudItem(), d = item && item.data, state = currentSyncState(d);
+    var localLabel = state.dirty ? "Modified on this device" : (state.meta ? "Matches last sync" : "Not yet linked to cloud");
+    local.innerHTML = "<h3>LOCAL</h3><b>" + escapeHtml(localLabel) + "</b><span>" + escapeHtml(state.data.holeCount || 0) + " populated holes<br>Last synced revision: " + escapeHtml(state.lastRevision || "None") + "</span>";
+    cloud.innerHTML = "<h3>CLOUD</h3>" + (d ? "<b>Revision " + escapeHtml(d.revision || 1) + "</b><span>" + escapeHtml(d.holeCount || 0) + " populated holes<br>" + escapeHtml(formatTime(d.updatedAt)) + "<br>" + escapeHtml(d.sourceDevice || "Unknown device") + "</span>" : "<b>No matching cloud copy</b><span>Smart Sync will upload this document.</span>");
+    updateUndoCloudButton();
+  }
   function loadFirebase() {
     if (fbPromise) return fbPromise;
     fbPromise = Promise.all([
@@ -1007,7 +1054,7 @@
     modal.className = "m400Modal";
     modal.innerHTML = [
       '<div class="m400Box">',
-      '<div class="m400Head"><strong>MITHRIL Cloud Sync · Shared Contract v2 · m40.0.4</strong><button type="button" id="m400CloudClose">Close</button></div>',
+      '<div class="m400Head"><strong>MITHRIL Cloud Sync · Safety Status · m40.1</strong><button type="button" id="m400CloudClose">Close</button></div>',
       '<div id="m400CloudOut">',
       '<div class="m400Note">Sign in with the Firebase account. Cloud Sync now reads and writes through the same MITHRIL document interface for Drill Logs and Shot Diagrams.</div>',
       '<div class="m400Grid"><label>Email<input type="email" id="m400Email" autocomplete="username"></label><label>Password<input type="password" id="m400Password" autocomplete="current-password"></label><label class="m400Wide">Device name<input id="m400DeviceOut" type="text"></label><button type="button" class="primary m400Wide" id="m400SignIn">Sign In</button></div>',
@@ -1015,8 +1062,10 @@
       '<div id="m400CloudIn" style="display:none">',
       '<div class="m400Identity"><span id="m400Identity"></span><button type="button" id="m400SignOut">Sign Out</button></div>',
       '<div class="m400Grid"><label class="m400Wide">Device name<input id="m400DeviceIn" type="text"></label></div>',
-      '<div class="m400Actions"><button type="button" class="primary" id="m400Upload">Upload Current <span id="m400TypeLabel"></span></button><button type="button" id="m400Refresh">Refresh Cloud List</button></div>',
-      '<div class="m400Note">Manual sync remains user-controlled. Downloading replaces only the open document type and refreshes it in place.</div>',
+      '<div class="m401Compare"><div id="m401LocalStatus" class="m401Side"></div><div id="m401CloudStatus" class="m401Side cloud"></div></div>',
+      '<div class="m400Actions"><button type="button" class="primary" id="m401SmartSync">Sync Current Document</button><button type="button" id="m401UndoCloud">Undo Cloud Download</button></div>',
+      '<div class="m400Actions"><button type="button" id="m400Upload">Manual Upload Current <span id="m400TypeLabel"></span></button><button type="button" id="m400Refresh">Refresh Cloud List</button></div>',
+      '<div class="m400Note">Smart Sync uploads local changes, downloads a newer unchanged cloud copy, and stops when both sides changed. Manual upload and download controls remain available.</div>',
       '<div id="m400Docs" class="m400Docs"></div>',
       '</div>',
       '<div id="m400CloudStatus" class="m400Status">Cloud sync is ready.</div>',
@@ -1028,6 +1077,8 @@
     byId("m400SignOut").addEventListener("click", cloudSignOut);
     byId("m400Upload").addEventListener("click", uploadCurrent);
     byId("m400Refresh").addEventListener("click", refreshCloudList);
+    byId("m401SmartSync").addEventListener("click", smartSync);
+    byId("m401UndoCloud").addEventListener("click", undoCloudDownload);
     byId("m400DeviceIn").addEventListener("change", function () { saveDeviceName(this.value); });
     return modal;
   }
@@ -1040,6 +1091,7 @@
     if (byId("m400DeviceIn")) byId("m400DeviceIn").value = deviceName();
     if (byId("m400TypeLabel") && window.MithrilDocument) byId("m400TypeLabel").textContent = docTypeLabel(window.MithrilDocument.type);
     if (currentUser && byId("m400Identity")) byId("m400Identity").textContent = "Signed in: " + (currentUser.email || currentUser.uid);
+    if (currentUser) renderLocalCloudStatus();
   }
   function openCloud() {
     closeMenu();
@@ -1091,7 +1143,8 @@
     var slug = raw.replace(/[^a-z0-9_-]+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "").slice(0, 120);
     return slug || (data.type + "__untitled");
   }
-  function uploadCurrent() {
+  function uploadCurrent(options) {
+    options = options || {};
     if (!currentUser) { setCloudStatus("Sign in before uploading.", "bad"); return; }
     var data = cloudRecord();
     if (!data) { setCloudStatus("MITHRIL could not read the current document through the shared document interface.", "bad"); return; }
@@ -1102,8 +1155,10 @@
       var ref = fb.storeMod.doc(fb.db, "users", currentUser.uid, "documents", id);
       return fb.storeMod.getDoc(ref).then(function (snap) {
         var existing = snap.exists() ? snap.data() : null;
+        var state = currentSyncState(existing);
+        if (existing && state.cloudRevision > state.lastRevision && state.dirty) throw { conflict: true, state: state };
         var revision = existing && Number(existing.revision) ? Number(existing.revision) + 1 : 1;
-        if (existing) {
+        if (existing && !options.skipConfirm) {
           var when = existing.updatedAt && existing.updatedAt.toDate ? existing.updatedAt.toDate().toLocaleString() : "an earlier time";
           if (!confirm("A cloud copy already exists.\n\nCloud revision: " + (existing.revision || 1) + "\nSaved from: " + (existing.sourceDevice || "Unknown device") + "\nUpdated: " + when + "\n\nUpload this device as revision " + revision + "?")) throw { cancelled: true };
         }
@@ -1114,13 +1169,19 @@
         record.updatedBy = currentUser.email || currentUser.uid;
         record.updatedAt = fb.storeMod.serverTimestamp();
         record.createdAt = existing && existing.createdAt ? existing.createdAt : fb.storeMod.serverTimestamp();
-        return fb.storeMod.setDoc(ref, record).then(function () { return revision; });
+        return fb.storeMod.setDoc(ref, record).then(function () { return { revision: revision, record: record, id: id }; });
       });
-    }).then(function (revision) {
-      setCloudStatus(data.title + " uploaded as revision " + revision + ".", "good");
+    }).then(function (result) {
+      writeSyncMeta(result.id, result.revision, data.payload, result.record);
+      setCloudStatus(data.title + " uploaded as revision " + result.revision + ".", "good");
       return refreshCloudList();
     }).catch(function (error) {
       if (error && error.cancelled) { setCloudStatus("Upload cancelled. Nothing was changed.", ""); return; }
+      if (error && error.conflict) {
+        setCloudStatus("Upload blocked: cloud revision " + error.state.cloudRevision + " is newer than this device's last synced revision " + (error.state.lastRevision || "none") + ", and this device also has local changes.", "bad");
+        alert("SYNC CONFLICT\n\nThe cloud is revision " + error.state.cloudRevision + ", but this device last synced revision " + (error.state.lastRevision || "none") + " and has local changes.\n\nNothing was uploaded. Download the newer cloud revision, or save a manual JSON backup before resolving the conflict.");
+        return;
+      }
       setCloudStatus(friendlyError(error), "bad");
     });
   }
@@ -1135,7 +1196,9 @@
         var docs = [];
         snap.forEach(function (item) { var d = item.data(); if (d && d.type === type) docs.push({ id: item.id, data: d }); });
         docs.sort(function (a, b) { var at = a.data.updatedAt && a.data.updatedAt.seconds || 0, bt = b.data.updatedAt && b.data.updatedAt.seconds || 0; return bt - at; });
+        cloudItems = docs;
         renderCloudDocs(docs);
+        renderLocalCloudStatus();
         setCloudStatus(docs.length ? docs.length + " cloud " + docTypeLabel(type) + (docs.length === 1 ? "" : "s") + " found." : "No cloud " + docTypeLabel(type) + "s have been uploaded yet.", docs.length ? "good" : "");
       });
     }).catch(function (error) { setCloudStatus(friendlyError(error), "bad"); });
@@ -1160,10 +1223,57 @@
     if (!confirm(warning)) { setCloudStatus("Download cancelled. Nothing was changed.", ""); return; }
     setCloudStatus("Downloading and applying the cloud document through the shared document interface…", "wait");
     try {
+      var priorMeta = readSyncMeta(id);
+      saveRecovery(id, adapter, priorMeta);
       adapter.applySnapshot(data.payload || data, { markDirty: false, fitAll: adapter.type === "shotDiagram" });
+      writeSyncMeta(id, Number(data.revision || 1), data.payload || data, data);
       var modal = byId("m400CloudModal"); if (modal) modal.classList.remove("show");
-      showToast((data.title || docTypeLabel(data.type)) + " — cloud revision " + (data.revision || 1) + " loaded successfully.");
+      showToast((data.title || docTypeLabel(data.type)) + " — cloud revision " + (data.revision || 1) + " loaded. Undo Cloud Download is available.");
     } catch (error) { setCloudStatus(friendlyError(error), "bad"); }
+  }
+  function undoCloudDownload() {
+    var adapter = window.MithrilDocument, record = cloudRecord();
+    if (!adapter || !record) return;
+    var id = logicalId(record), recovery = readJsonStorage(recoveryStorageKey(id));
+    if (!recovery || !recovery.snapshot) { setCloudStatus("No cloud-download recovery snapshot is available for this document.", "bad"); return; }
+    if (!confirm("Restore the local document as it was before the last cloud download?")) return;
+    try {
+      adapter.applySnapshot(recovery.snapshot, { markDirty: true, fitAll: adapter.type === "shotDiagram" });
+      if (recovery.syncMeta) writeJsonStorage(syncStorageKey(id), recovery.syncMeta);
+      else try { localStorage.removeItem(syncStorageKey(id)); } catch (error1) {}
+      try { localStorage.removeItem(recoveryStorageKey(id)); } catch (error2) {}
+      renderLocalCloudStatus();
+      setCloudStatus("Previous local document restored. Its LOCAL sync status has been recalculated.", "good");
+      showToast("Undo Cloud Download completed.");
+    } catch (error) { setCloudStatus(friendlyError(error), "bad"); }
+  }
+  function smartSync() {
+    if (!currentUser) { setCloudStatus("Sign in before syncing.", "bad"); return; }
+    setCloudStatus("Comparing local and cloud revisions…", "wait");
+    var data = cloudRecord(), id = logicalId(data);
+    loadFirebase().then(function (fb) {
+      var ref = fb.storeMod.doc(fb.db, "users", currentUser.uid, "documents", id);
+      return fb.storeMod.getDoc(ref).then(function (snap) {
+        var cloud = snap.exists() ? snap.data() : null, state = currentSyncState(cloud);
+        if (!cloud) { uploadCurrent({ skipConfirm: true }); return; }
+        if (state.fingerprint === state.cloudFingerprint) {
+          writeSyncMeta(id, state.cloudRevision, state.snapshot, cloud);
+          setCloudStatus("Local and cloud copies already match revision " + state.cloudRevision + ".", "good");
+          return refreshCloudList();
+        }
+        if (state.cloudRevision > state.lastRevision) {
+          if (state.dirty) {
+            setCloudStatus("Conflict: both this device and the cloud changed. Nothing was overwritten.", "bad");
+            alert("SYNC CONFLICT\n\nCloud revision " + state.cloudRevision + " is newer, and this device also has local changes.\n\nNothing was changed. Preserve the local work with a JSON backup before downloading the cloud copy.");
+            return;
+          }
+          downloadCloud(id, cloud);
+          return;
+        }
+        if (state.dirty) { uploadCurrent({ skipConfirm: true }); return; }
+        setCloudStatus("This document is already synchronized.", "good");
+      });
+    }).catch(function (error) { setCloudStatus(friendlyError(error), "bad"); });
   }
   function deleteCloud(id, data) {
     if (!confirm("Delete this cloud copy?\n\n" + (data.title || docTypeLabel(data.type)) + "\n\nThe local copy on this device will not be deleted.")) return;
@@ -1540,7 +1650,7 @@
         script.id = CHILD_SCRIPT_ID;
         script.src = CHILD_SCRIPT_SRC;
         doc.head.appendChild(script);
-      } catch (error) { console.warn("MITHRIL m40.0.4 could not attach the standardized document layer to the Shot Diagram.", error); }
+      } catch (error) { console.warn("MITHRIL m40.1 could not attach the standardized document layer to the Shot Diagram.", error); }
     }
     frame.addEventListener("load", function () { setTimeout(inject, 80); });
     setTimeout(inject, 120);

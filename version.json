@@ -1,13 +1,14 @@
 {
-  "version": "m40.0.4",
-  "title": "Maximum Holes per Delay Summary",
-  "released": "2026-07-25",
+  "version": "m40.1",
+  "title": "Sync Safety and Document Status",
+  "released": "2026-07-26",
   "minimumOfflineVersion": "m39.6.3",
   "notes": [
-    "Simplifies the 8 ms timing result to the maximum holes per delay across the full Shot Diagram.",
-    "Shows a clear headline such as 1 hole per delay, 2 holes per delay, or 3 holes per delay.",
-    "Calculates the maximum number of eligible timed holes within any timing window shorter than 8 ms; exactly 8 ms remains acceptable.",
-    "Keeps the detailed timing-pair list collapsed until Show Timing Conflicts is selected.",
-    "Preserves the existing conflict details, exclusions, cloud sync, standardized JSON backups, Drill Log conversion, and timing-fill behavior."
+    "Tracks the last synced cloud revision and local modification status per document.",
+    "Blocks uploads when a newer cloud revision and unsynced local changes would conflict.",
+    "Creates a local recovery snapshot before every cloud download and supports Undo Cloud Download.",
+    "Shows clear LOCAL and CLOUD status in Cloud Sync.",
+    "Adds Smart Sync while retaining manual upload, download, refresh, and delete controls.",
+    "Preserves legacy Firebase records and all m40.0.4 timing, backup, conversion, PDF, and document behavior."
   ]
 }
