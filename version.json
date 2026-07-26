@@ -1,13 +1,13 @@
 {
-  "version": "m40.1.1",
-  "title": "Desktop Edit Holes Selection Highlight Fix",
+  "version": "m40.1.2",
+  "title": "Landing Screen Version Label Fix",
   "released": "2026-07-26",
   "minimumOfflineVersion": "m39.6.3",
   "notes": [
-    "Keeps the purple Edit Holes selection border visible after desktop mouse and pen selection.",
-    "Redraws the selection overlay after desktop pointer handling finishes so it remains the final canvas layer.",
-    "Preserves iPad touch selection behavior.",
-    "Preserves all m40.1 sync safety, recovery, status, and manual cloud controls.",
-    "Preserves all m40.0.4 timing, backup, conversion, PDF, pattern, page, and document behavior."
+    "Prevents the delayed m39.7 helper startup from overwriting the current landing-screen version label.",
+    "Reapplies the current version after DOM startup and page load.",
+    "Shows m40.1.2 consistently in the landing description, installed-version line, title, and update configuration.",
+    "Preserves the m40.1.1 desktop Edit Holes selection highlight fix.",
+    "Preserves all m40.1 cloud safety and all m40.0.4 timing, backup, conversion, PDF, pattern, page, and document behavior."
   ]
 }
