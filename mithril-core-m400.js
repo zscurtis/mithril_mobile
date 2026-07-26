@@ -1,9 +1,9 @@
 (function () {
   "use strict";
 
-  var RELEASE_VERSION = "m40.1";
+  var RELEASE_VERSION = "m40.1.1";
   var CHILD_SCRIPT_ID = "mithrilCoreM400ChildLoader";
-  var CHILD_SCRIPT_SRC = "./mithril-core-m400.js?rev=4004-frame";
+  var CHILD_SCRIPT_SRC = "./mithril-core-m400.js?rev=4011-frame";
   var TRANSFER_KEY = "mithrilDrillToShotTransferM400";
   var UNDO_KEY = "mithrilDrillToShotUndoM400";
   var DEVICE_KEY = "mithrilCloudDeviceNameM399";
@@ -1622,6 +1622,25 @@
     return foundTimingUi;
   }
 
+  // Desktop browsers finish their normal mouse pointer-up bookkeeping after the
+  // Edit Holes selection handler. Redraw on the next frame so the selection
+  // overlay is the final canvas layer, matching the iPad touch behavior.
+  function installDesktopSelectionRedraw() {
+    if (!isShot()) return true;
+    var canvas = byId("shotCanvas");
+    if (!canvas || canvas.getAttribute("data-m4011-selection-redraw") === "true") return !!canvas;
+    canvas.setAttribute("data-m4011-selection-redraw", "true");
+    canvas.addEventListener("pointerup", function (event) {
+      var bar = byId("m395ShotEditBar");
+      if (!bar || !bar.classList.contains("show")) return;
+      if (event.pointerType && event.pointerType !== "mouse" && event.pointerType !== "pen") return;
+      (window.requestAnimationFrame || function (callback) { return window.setTimeout(callback, 16); })(function () {
+        try { if (typeof window.draw === "function") window.draw(); } catch (error) {}
+      });
+    }, false);
+    return true;
+  }
+
   // ---------------------------------------------------------------------------
   // Versioning and wrapper bridge
   // ---------------------------------------------------------------------------
@@ -1650,7 +1669,7 @@
         script.id = CHILD_SCRIPT_ID;
         script.src = CHILD_SCRIPT_SRC;
         doc.head.appendChild(script);
-      } catch (error) { console.warn("MITHRIL m40.1 could not attach the standardized document layer to the Shot Diagram.", error); }
+      } catch (error) { console.warn("MITHRIL m40.1.1 could not attach the standardized document layer to the Shot Diagram.", error); }
     }
     frame.addEventListener("load", function () { setTimeout(inject, 80); });
     setTimeout(inject, 120);
@@ -1679,6 +1698,7 @@
     installTransferButtons();
     installCloudButton();
     installTimingSeparationCheck();
+    installDesktopSelectionRedraw();
     if (isShot()) setTimeout(openImportReview, 100);
     var attempts = 0;
     var timer = setInterval(function () {
@@ -1687,6 +1707,7 @@
       installTransferButtons();
       installCloudButton();
       installTimingSeparationCheck();
+      installDesktopSelectionRedraw();
       updateUndoButton();
       if (attempts >= 40) clearInterval(timer);
     }, 150);

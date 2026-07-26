@@ -1,14 +1,13 @@
 {
-  "version": "m40.1",
-  "title": "Sync Safety and Document Status",
+  "version": "m40.1.1",
+  "title": "Desktop Edit Holes Selection Highlight Fix",
   "released": "2026-07-26",
   "minimumOfflineVersion": "m39.6.3",
   "notes": [
-    "Tracks the last synced cloud revision and local modification status per document.",
-    "Blocks uploads when a newer cloud revision and unsynced local changes would conflict.",
-    "Creates a local recovery snapshot before every cloud download and supports Undo Cloud Download.",
-    "Shows clear LOCAL and CLOUD status in Cloud Sync.",
-    "Adds Smart Sync while retaining manual upload, download, refresh, and delete controls.",
-    "Preserves legacy Firebase records and all m40.0.4 timing, backup, conversion, PDF, and document behavior."
+    "Keeps the purple Edit Holes selection border visible after desktop mouse and pen selection.",
+    "Redraws the selection overlay after desktop pointer handling finishes so it remains the final canvas layer.",
+    "Preserves iPad touch selection behavior.",
+    "Preserves all m40.1 sync safety, recovery, status, and manual cloud controls.",
+    "Preserves all m40.0.4 timing, backup, conversion, PDF, pattern, page, and document behavior."
   ]
 }
