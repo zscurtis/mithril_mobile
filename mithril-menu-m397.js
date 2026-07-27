@@ -3281,6 +3281,8 @@
     var bar = byId("m395DrillEditBar");
     var arrows = bar ? bar.querySelectorAll("[data-m395-drill-shift]") : [];
     for (var a = 0; a < arrows.length; a += 1) arrows[a].disabled = !hasSelection;
+    var rotations = bar ? bar.querySelectorAll("[data-m395-drill-rotate]") : [];
+    for (var r = 0; r < rotations.length; r += 1) rotations[r].disabled = count < 2;
     var undoButton = byId("m395DrillUndo");
     if (undoButton) undoButton.disabled = !drillEditUndoHistory.length;
   }
@@ -3300,6 +3302,8 @@
       ".m395DrillEditModes button.active{background:#8a4fff;color:#fff;border-color:#6f35da}",
       ".m395DrillEditDirections{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}",
       ".m395DrillEditDirections button{min-height:45px;font-size:18px;padding:4px}",
+      ".m395DrillEditRotations{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}",
+      ".m395DrillEditRotations button{min-height:43px;padding:5px;font-size:13px}",
       ".m395DrillEditHint{min-height:17px;font-size:11px;line-height:1.25;font-weight:800;color:#444}",
       ".m395DrillEditDone{min-width:76px;background:#1f6feb;color:#fff;border-color:#1f6feb}",
       "@media(max-width:520px){.m395DrillEditModes,.m395DrillEditActions{grid-template-columns:repeat(2,1fr)}.m395DrillEditDirections{grid-template-columns:repeat(5,1fr)}.m395DrillEditDirections button{font-size:17px}.m395DrillEditHead{grid-template-columns:1fr auto}}"
@@ -3337,6 +3341,11 @@
       '  <button type="button" data-m395-drill-shift="down" aria-label="Shift down">↓</button>',
       '  <button type="button" data-m395-drill-shift="right" aria-label="Shift right">→</button>',
       '</div>',
+      '<div class="m395DrillEditRotations">',
+      '  <button type="button" data-m395-drill-rotate="left" aria-label="Rotate selection left 90 degrees">↶ Rotate Left</button>',
+      '  <button type="button" data-m395-drill-rotate="180" aria-label="Rotate selection 180 degrees">↕ Rotate 180°</button>',
+      '  <button type="button" data-m395-drill-rotate="right" aria-label="Rotate selection right 90 degrees">↷ Rotate Right</button>',
+      '</div>',
       '<div id="m395DrillEditHint" class="m395DrillEditHint">Tap saved holes to select them. Pan and pinch zoom still work.</div>'
     ].join("");
     document.body.appendChild(bar);
@@ -3359,6 +3368,10 @@
     var arrows = bar.querySelectorAll("[data-m395-drill-shift]");
     for (var i = 0; i < arrows.length; i += 1) {
       arrows[i].addEventListener("click", function () { drillShiftSelection(this.getAttribute("data-m395-drill-shift")); });
+    }
+    var rotations = bar.querySelectorAll("[data-m395-drill-rotate]");
+    for (var r = 0; r < rotations.length; r += 1) {
+      rotations[r].addEventListener("click", function () { drillRotateSelection(this.getAttribute("data-m395-drill-rotate")); });
     }
     return bar;
   }
@@ -3601,6 +3614,71 @@
     drillEditClipboard = null;
     drillEditPasteArmed = false;
     drillCommitWorkingState(workingPages, workingMeta, destinations, "Shifted " + direction);
+  }
+
+  function drillRotateSelection(direction) {
+    var selected = drillEditSortedSelection();
+    if (selected.length < 2) {
+      drillEditSetHint("Select at least two saved holes to rotate.");
+      return;
+    }
+
+    var globals = selected.map(function (entry) { return drillLocationToGlobal(entry.pageNum, entry.holeId); });
+    var minRow = Math.min.apply(Math, globals.map(function (g) { return g.row; }));
+    var maxRow = Math.max.apply(Math, globals.map(function (g) { return g.row; }));
+    var minCol = Math.min.apply(Math, globals.map(function (g) { return g.col; }));
+    var maxCol = Math.max.apply(Math, globals.map(function (g) { return g.col; }));
+    var workingPages = deepClone(pagesData);
+    var workingMeta = deepClone(pageMeta);
+    var counter = { next: drillNextPageNumber(workingPages) };
+    var sourceKeys = {};
+    var moves = [];
+
+    for (var i = 0; i < selected.length; i += 1) {
+      var source = selected[i];
+      var record = (pagesData[String(source.pageNum)] || {})[source.holeId];
+      if (!drillRecordHasData(record)) continue;
+      sourceKeys[drillEditKey(source.pageNum, source.holeId)] = true;
+      var global = globals[i];
+      var rotatedRow;
+      var rotatedCol;
+      if (direction === "right") {
+        rotatedRow = minRow + (global.col - minCol);
+        rotatedCol = minCol + (maxRow - global.row);
+      } else if (direction === "left") {
+        rotatedRow = minRow + (maxCol - global.col);
+        rotatedCol = minCol + (global.row - minRow);
+      } else {
+        rotatedRow = minRow + (maxRow - global.row);
+        rotatedCol = minCol + (maxCol - global.col);
+      }
+      var destination = drillGlobalDestination(rotatedRow, rotatedCol, workingPages, workingMeta, counter);
+      moves.push({ source: source, destination: destination, record: record });
+    }
+
+    var collisions = [];
+    for (var c = 0; c < moves.length; c += 1) {
+      var dest = moves[c].destination;
+      if (drillRecordExists(dest.pageNum, dest.holeId, workingPages) && !sourceKeys[drillEditKey(dest.pageNum, dest.holeId)]) collisions.push(dest);
+    }
+    if (collisions.length && !confirm("Rotation would replace " + collisions.length + " occupied destination hole(s):\n\n" + drillCollisionMessage(collisions) + "\n\nReplace the existing data?")) {
+      drillEditSetHint("Rotation canceled. No data changed.");
+      return;
+    }
+
+    var label = direction === "180" ? "rotate selection 180°" : "rotate selection " + direction + " 90°";
+    drillPushUndo(label);
+    for (var d = 0; d < moves.length; d += 1) delete workingPages[String(moves[d].source.pageNum)][moves[d].source.holeId];
+    var destinations = [];
+    for (var m = 0; m < moves.length; m += 1) {
+      var move = moves[m];
+      if (!workingPages[String(move.destination.pageNum)]) workingPages[String(move.destination.pageNum)] = {};
+      workingPages[String(move.destination.pageNum)][move.destination.holeId] = drillPrepareMovedRecord(move.record, move.destination.pageNum, move.destination.holeId, false);
+      destinations.push(move.destination);
+    }
+    drillEditClipboard = null;
+    drillEditPasteArmed = false;
+    drillCommitWorkingState(workingPages, workingMeta, destinations, direction === "180" ? "Rotated 180°" : "Rotated " + direction + " 90°");
   }
 
   function drillPasteAt(hit) {
@@ -4004,6 +4082,8 @@
     if (pasteButton) pasteButton.disabled = !(shotEditClipboard && shotEditClipboard.items && shotEditClipboard.items.length);
     var arrows = document.querySelectorAll("[data-m395-edit-shift]");
     for (var a = 0; a < arrows.length; a += 1) arrows[a].disabled = !hasSelection;
+    var rotations = document.querySelectorAll("[data-m395-edit-rotate]");
+    for (var r = 0; r < rotations.length; r += 1) rotations[r].disabled = count < 2;
     var undoButton = byId("m395ShotUndo");
     if (undoButton) undoButton.disabled = !shotEditUndoHistory.length;
   }
@@ -4023,6 +4103,8 @@
       ".m395ShotEditModes button.active{background:#8a4fff;color:#fff;border-color:#6f35da}",
       ".m395ShotEditDirections{display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:6px}",
       ".m395ShotEditDirections button{min-height:45px;font-size:18px;padding:4px}",
+      ".m395ShotEditRotations{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}",
+      ".m395ShotEditRotations button{min-height:43px;padding:5px;font-size:13px}",
       ".m395ShotEditHint{min-height:17px;font-size:11px;line-height:1.25;font-weight:800;color:#444}",
       ".m395ShotEditDone{min-width:76px;background:#1f6feb;color:#fff;border-color:#1f6feb}",
       "@media(max-width:520px){.m395ShotEditModes,.m395ShotEditActions{grid-template-columns:repeat(2,1fr)}.m395ShotEditDirections{grid-template-columns:repeat(5,1fr)}.m395ShotEditDirections button{font-size:17px}.m395ShotEditHead{grid-template-columns:1fr auto}}"
@@ -4060,6 +4142,11 @@
       '  <button type="button" data-m395-edit-shift="down" aria-label="Shift down">↓</button>',
       '  <button type="button" data-m395-edit-shift="right" aria-label="Shift right">→</button>',
       '</div>',
+      '<div class="m395ShotEditRotations">',
+      '  <button type="button" data-m395-edit-rotate="left" aria-label="Rotate selection left 90 degrees">↶ Rotate Left</button>',
+      '  <button type="button" data-m395-edit-rotate="180" aria-label="Rotate selection 180 degrees">↕ Rotate 180°</button>',
+      '  <button type="button" data-m395-edit-rotate="right" aria-label="Rotate selection right 90 degrees">↷ Rotate Right</button>',
+      '</div>',
       '<div id="m395ShotEditHint" class="m395ShotEditHint">Tap saved holes to select them. Pan and pinch zoom still work.</div>'
     ].join("");
     document.body.appendChild(bar);
@@ -4082,6 +4169,10 @@
     var arrows = bar.querySelectorAll("[data-m395-edit-shift]");
     for (var i = 0; i < arrows.length; i += 1) {
       arrows[i].addEventListener("click", function () { shotShiftSelection(this.getAttribute("data-m395-edit-shift")); });
+    }
+    var rotations = bar.querySelectorAll("[data-m395-edit-rotate]");
+    for (var r = 0; r < rotations.length; r += 1) {
+      rotations[r].addEventListener("click", function () { shotRotateSelection(this.getAttribute("data-m395-edit-rotate")); });
     }
     return bar;
   }
@@ -4311,6 +4402,71 @@
     shotEditClipboard = null;
     shotEditPasteArmed = false;
     shotCommitWorkingState(workingPages, workingMeta, destinations, "Shifted " + direction);
+  }
+
+  function shotRotateSelection(direction) {
+    var selected = shotEditSortedSelection();
+    if (selected.length < 2) {
+      shotEditSetHint("Select at least two saved holes to rotate.");
+      return;
+    }
+
+    var globals = selected.map(function (entry) { return shotLocationToGlobal(entry.pageNum, entry.holeId); });
+    var minRow = Math.min.apply(Math, globals.map(function (g) { return g.row; }));
+    var maxRow = Math.max.apply(Math, globals.map(function (g) { return g.row; }));
+    var minCol = Math.min.apply(Math, globals.map(function (g) { return g.col; }));
+    var maxCol = Math.max.apply(Math, globals.map(function (g) { return g.col; }));
+    var workingPages = deepClone(pagesData);
+    var workingMeta = deepClone(pageMeta);
+    var counter = { next: shotNextPageNumber(workingPages) };
+    var sourceKeys = {};
+    var moves = [];
+
+    for (var i = 0; i < selected.length; i += 1) {
+      var source = selected[i];
+      var record = (pagesData[String(source.pageNum)] || {})[source.holeId];
+      if (!record) continue;
+      sourceKeys[shotEditKey(source.pageNum, source.holeId)] = true;
+      var global = globals[i];
+      var rotatedRow;
+      var rotatedCol;
+      if (direction === "right") {
+        rotatedRow = minRow + (global.col - minCol);
+        rotatedCol = minCol + (maxRow - global.row);
+      } else if (direction === "left") {
+        rotatedRow = minRow + (maxCol - global.col);
+        rotatedCol = minCol + (global.row - minRow);
+      } else {
+        rotatedRow = minRow + (maxRow - global.row);
+        rotatedCol = minCol + (maxCol - global.col);
+      }
+      var destination = shotGlobalDestination(rotatedRow, rotatedCol, workingPages, workingMeta, counter);
+      moves.push({ source: source, destination: destination, record: record });
+    }
+
+    var collisions = [];
+    for (var c = 0; c < moves.length; c += 1) {
+      var dest = moves[c].destination;
+      if (shotRecordExists(dest.pageNum, dest.holeId, workingPages) && !sourceKeys[shotEditKey(dest.pageNum, dest.holeId)]) collisions.push(dest);
+    }
+    if (collisions.length && !confirm("Rotation would replace " + collisions.length + " occupied destination hole(s):\n\n" + shotCollisionMessage(collisions) + "\n\nReplace the existing data?")) {
+      shotEditSetHint("Rotation canceled. No data changed.");
+      return;
+    }
+
+    var label = direction === "180" ? "rotate selection 180°" : "rotate selection " + direction + " 90°";
+    shotPushUndo(label);
+    for (var d = 0; d < moves.length; d += 1) delete workingPages[String(moves[d].source.pageNum)][moves[d].source.holeId];
+    var destinations = [];
+    for (var m = 0; m < moves.length; m += 1) {
+      var move = moves[m];
+      if (!workingPages[String(move.destination.pageNum)]) workingPages[String(move.destination.pageNum)] = {};
+      workingPages[String(move.destination.pageNum)][move.destination.holeId] = shotPrepareMovedRecord(move.record, move.destination.pageNum, move.destination.holeId, false);
+      destinations.push(move.destination);
+    }
+    shotEditClipboard = null;
+    shotEditPasteArmed = false;
+    shotCommitWorkingState(workingPages, workingMeta, destinations, direction === "180" ? "Rotated 180°" : "Rotated " + direction + " 90°");
   }
 
   function shotPasteAt(hit) {

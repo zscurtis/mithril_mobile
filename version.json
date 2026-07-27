@@ -1,13 +1,14 @@
 {
-  "version": "m40.1.3",
-  "title": "Desktop Hole Selection Highlight Fix",
+  "version": "m40.2.0",
+  "title": "Hole Edit Selection Rotation",
   "released": "2026-07-26",
   "minimumOfflineVersion": "m39.6.3",
   "notes": [
-    "Keeps the purple Edit Holes selection outline visible on desktop browsers.",
-    "Draws the selection overlay after the Shot Diagram's queued canvas repaint instead of immediately before it.",
-    "Eliminates the select-then-disappear flicker reported on desktop.",
-    "Preserves the m40.1.2 landing-screen version label fix.",
+    "Adds Rotate Left 90°, Rotate 180°, and Rotate Right 90° to Hole Edit.",
+    "Makes selection rotation available in both Drill Logs and Shot Diagrams, including independently created Shot Diagrams.",
+    "Rotates the selected hole layout around its top-left bounding-box anchor and keeps the rotated holes selected.",
+    "Warns before rotation replaces occupied destination holes and supports Undo.",
+    "Preserves the m40.1.3 desktop purple selection highlight fix.",
     "Preserves all m40.1 cloud safety and all m40.0.4 timing, backup, conversion, PDF, pattern, page, and document behavior."
   ]
 }
