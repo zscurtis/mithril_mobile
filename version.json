@@ -1,14 +1,14 @@
 {
-  "version": "m40.2.0",
-  "title": "Hole Edit Selection Rotation",
-  "released": "2026-07-26",
+  "version": "m40.3.0",
+  "title": "Permanent Document Identity",
+  "released": "2026-07-27",
   "minimumOfflineVersion": "m39.6.3",
   "notes": [
-    "Adds Rotate Left 90°, Rotate 180°, and Rotate Right 90° to Hole Edit.",
-    "Makes selection rotation available in both Drill Logs and Shot Diagrams, including independently created Shot Diagrams.",
-    "Rotates the selected hole layout around its top-left bounding-box anchor and keeps the rotated holes selected.",
-    "Warns before rotation replaces occupied destination holes and supports Undo.",
-    "Preserves the m40.1.3 desktop purple selection highlight fix.",
-    "Preserves all m40.1 cloud safety and all m40.0.4 timing, backup, conversion, PDF, pattern, page, and document behavior."
+    "Assigns every Drill Log and Shot Diagram a permanent internal document UUID.",
+    "Keeps cloud identity unchanged when job names, dates, Shot IDs, Drill Log numbers, blasters, or employees are edited.",
+    "Migrates older local and cloud documents through their legacy cloud identity without abandoning existing records.",
+    "Stores permanent identity in JSON backups and restores it with the document.",
+    "Gives a Shot Diagram created from a Drill Log its own identity while recording the source Drill Log ID.",
+    "Preserves m40.2 Hole Edit rotation, the m40.1.3 desktop selection fix, and all existing cloud safety behavior."
   ]
 }

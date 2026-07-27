@@ -1,9 +1,9 @@
 (function () {
   "use strict";
 
-  var RELEASE_VERSION = "m40.2.0";
+  var RELEASE_VERSION = "m40.3.0";
   var CHILD_SCRIPT_ID = "mithrilCoreM400ChildLoader";
-  var CHILD_SCRIPT_SRC = "./mithril-core-m400.js?rev=4020-frame";
+  var CHILD_SCRIPT_SRC = "./mithril-core-m400.js?rev=4030-frame";
   var TRANSFER_KEY = "mithrilDrillToShotTransferM400";
   var UNDO_KEY = "mithrilDrillToShotUndoM400";
   var DEVICE_KEY = "mithrilCloudDeviceNameM399";
@@ -48,6 +48,96 @@
     });
   }
   function flagYes(value) { return value === true || /^(?:yes|true|1)$/i.test(text(value)); }
+  var IDENTITY_FIELDS = {
+    documentId: "MithrilDocumentId",
+    createdAt: "MithrilIdentityCreatedAt",
+    legacyCloudId: "MithrilLegacyCloudId",
+    sourceDocumentId: "MithrilSourceDocumentId",
+    origin: "MithrilIdentityOrigin"
+  };
+  function legacyLogicalId(data) {
+    data = data || {};
+    var raw = [data.type || docType(), data.jobName || "no-job", data.documentNumber || data.fieldDate || "untitled"].join("__").toLowerCase();
+    var slug = raw.replace(/[^a-z0-9_-]+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "").slice(0, 120);
+    return slug || ((data.type || docType() || "document") + "__untitled");
+  }
+  function identityInfo(type, header) {
+    header = header || {};
+    return {
+      type: type,
+      jobName: type === "drillLog" ? text(header.Job) : text(header.JobName),
+      documentNumber: type === "drillLog" ? text(header.DrillLogNumber) : text(header.ShotID),
+      fieldDate: type === "drillLog" ? text(header.Date) : text(header.FieldDate)
+    };
+  }
+  function hasDocumentContent(type, header) {
+    var info = identityInfo(type, header || {});
+    if (info.jobName || info.documentNumber || info.fieldDate) return true;
+    try { return countHoles(typeof pagesData !== "undefined" ? pagesData : {}) > 0; } catch (error) { return false; }
+  }
+  function uuidFromSeed(seed) {
+    var value = String(seed || "mithril-document"), hashes = [2166136261, 2246822507, 3266489909, 668265263];
+    for (var i = 0; i < value.length; i += 1) {
+      for (var h = 0; h < hashes.length; h += 1) {
+        hashes[h] ^= value.charCodeAt(i) + h * 31;
+        hashes[h] = Math.imul(hashes[h], 16777619 + h * 2) >>> 0;
+      }
+    }
+    var hex = hashes.map(function (n) { return ("00000000" + n.toString(16)).slice(-8); }).join("");
+    return hex.slice(0, 8) + "-" + hex.slice(8, 12) + "-5" + hex.slice(13, 16) + "-a" + hex.slice(17, 20) + "-" + hex.slice(20, 32);
+  }
+  function randomUuid() {
+    try { if (window.crypto && typeof window.crypto.randomUUID === "function") return window.crypto.randomUUID(); } catch (error) {}
+    var bytes = new Uint8Array(16);
+    try { window.crypto.getRandomValues(bytes); } catch (error2) { for (var i = 0; i < bytes.length; i += 1) bytes[i] = Math.floor(Math.random() * 256); }
+    bytes[6] = (bytes[6] & 15) | 64;
+    bytes[8] = (bytes[8] & 63) | 128;
+    var hex = Array.prototype.map.call(bytes, function (b) { return ("0" + b.toString(16)).slice(-2); }).join("");
+    return hex.slice(0, 8) + "-" + hex.slice(8, 12) + "-" + hex.slice(12, 16) + "-" + hex.slice(16, 20) + "-" + hex.slice(20);
+  }
+  function readIdentity(header) {
+    header = header || {};
+    return {
+      documentId: text(header[IDENTITY_FIELDS.documentId]),
+      createdAt: text(header[IDENTITY_FIELDS.createdAt]),
+      legacyCloudId: text(header[IDENTITY_FIELDS.legacyCloudId]),
+      sourceDocumentId: text(header[IDENTITY_FIELDS.sourceDocumentId]),
+      origin: text(header[IDENTITY_FIELDS.origin])
+    };
+  }
+  function writeIdentity(header, identity) {
+    header = header || {};
+    identity = identity || {};
+    if (identity.documentId) header[IDENTITY_FIELDS.documentId] = identity.documentId;
+    if (identity.createdAt) header[IDENTITY_FIELDS.createdAt] = identity.createdAt;
+    if (identity.legacyCloudId) header[IDENTITY_FIELDS.legacyCloudId] = identity.legacyCloudId;
+    else delete header[IDENTITY_FIELDS.legacyCloudId];
+    if (identity.sourceDocumentId) header[IDENTITY_FIELDS.sourceDocumentId] = identity.sourceDocumentId;
+    else delete header[IDENTITY_FIELDS.sourceDocumentId];
+    if (identity.origin) header[IDENTITY_FIELDS.origin] = identity.origin;
+    return header;
+  }
+  function stripIdentity(header) {
+    var clean = clone(header || {});
+    Object.keys(IDENTITY_FIELDS).forEach(function (key) { delete clean[IDENTITY_FIELDS[key]]; });
+    return clean;
+  }
+  function ensureDocumentIdentity(type, header, options) {
+    options = options || {};
+    header = header || {};
+    var identity = readIdentity(header);
+    if (identity.documentId) return identity;
+    var info = identityInfo(type, header);
+    var legacyId = text(options.legacyCloudId) || legacyLogicalId(info);
+    var oldDocument = options.forceLegacy === true || (options.forceNew !== true && hasDocumentContent(type, header));
+    identity.documentId = oldDocument ? uuidFromSeed("MITHRIL|" + legacyId) : randomUuid();
+    identity.createdAt = new Date().toISOString();
+    identity.legacyCloudId = oldDocument ? legacyId : "";
+    identity.sourceDocumentId = text(options.sourceDocumentId);
+    identity.origin = oldDocument ? "legacy-derived" : "new";
+    writeIdentity(header, identity);
+    return identity;
+  }
   function escapeHtml(value) {
     return String(value == null ? "" : value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\"/g, "&quot;").replace(/'/g, "&#39;");
   }
@@ -129,12 +219,26 @@
     var extras = clone(src.extras || {});
     if (!extras.headerCalibration && src.headerCalibration) extras.headerCalibration = clone(src.headerCalibration);
     if (!extras.timingSequence && src.timingSequence) extras.timingSequence = clone(src.timingSequence);
+    var header = clone(src.headerData || src.shotInfo || src.header || {});
+    var suppliedIdentity = {
+      documentId: text(src.documentId || header[IDENTITY_FIELDS.documentId]),
+      createdAt: text(src.identityCreatedAt || header[IDENTITY_FIELDS.createdAt]),
+      legacyCloudId: text(src.legacyCloudId || header[IDENTITY_FIELDS.legacyCloudId]),
+      sourceDocumentId: text(src.sourceDocumentId || header[IDENTITY_FIELDS.sourceDocumentId]),
+      origin: text(src.identityOrigin || header[IDENTITY_FIELDS.origin])
+    };
+    if (suppliedIdentity.documentId) writeIdentity(header, suppliedIdentity);
     return {
       schemaVersion: Number(src.schemaVersion || 1),
       type: src.type || docType(),
+      documentId: suppliedIdentity.documentId,
+      identityCreatedAt: suppliedIdentity.createdAt,
+      legacyCloudId: suppliedIdentity.legacyCloudId,
+      sourceDocumentId: suppliedIdentity.sourceDocumentId,
+      identityOrigin: suppliedIdentity.origin,
       pagesData: clone(src.pagesData || src.pages || { "1": {} }),
       pageMeta: clone(src.pageMeta || { "1": { gx: 0, gy: 0, name: "Page 1" } }),
-      headerData: clone(src.headerData || src.shotInfo || src.header || {}),
+      headerData: header,
       currentPage: Number(src.currentPage || 1),
       view: src.view ? clone(src.view) : null,
       extras: extras
@@ -175,6 +279,9 @@
 
     function getSnapshot() {
       save();
+      var identity = ensureDocumentIdentity(type, headerData || {});
+      writeIdentity(headerData, identity);
+      save();
       var extras = {};
       if (type === "shotDiagram") {
         try { extras.timingSequence = JSON.parse(localStorage.getItem("mithrilCanvasTimingSequenceM397") || "null"); } catch (error) { extras.timingSequence = null; }
@@ -182,8 +289,13 @@
         try { extras.headerCalibration = typeof headerCalibration !== "undefined" ? clone(headerCalibration) : null; } catch (error2) { extras.headerCalibration = null; }
       }
       return {
-        schemaVersion: 2,
+        schemaVersion: 3,
         type: type,
+        documentId: identity.documentId,
+        identityCreatedAt: identity.createdAt,
+        legacyCloudId: identity.legacyCloudId,
+        sourceDocumentId: identity.sourceDocumentId,
+        identityOrigin: identity.origin,
         pagesData: typeof pagesData !== "undefined" ? clone(pagesData) : { "1": {} },
         pageMeta: typeof pageMeta !== "undefined" ? clone(pageMeta) : { "1": { gx: 0, gy: 0, name: "Page 1" } },
         headerData: typeof headerData !== "undefined" ? clone(headerData) : {},
@@ -218,6 +330,15 @@
       pagesData = clone(next.pagesData);
       pageMeta = clone(next.pageMeta || {});
       headerData = clone(next.headerData || {});
+      var incomingIdentity = {
+        documentId: text(next.documentId),
+        createdAt: text(next.identityCreatedAt),
+        legacyCloudId: text(next.legacyCloudId),
+        sourceDocumentId: text(next.sourceDocumentId),
+        origin: text(next.identityOrigin)
+      };
+      if (!incomingIdentity.documentId) incomingIdentity = ensureDocumentIdentity(type, headerData, { forceLegacy: true });
+      else writeIdentity(headerData, incomingIdentity);
       var keys = numericKeys(pagesData);
       currentPage = Number(next.currentPage) || Number(keys[0]) || 1;
       if (!pagesData[String(currentPage)]) currentPage = Number(keys[0]) || 1;
@@ -279,7 +400,7 @@
     }
 
     return {
-      contractVersion: 2,
+      contractVersion: 3,
       release: RELEASE_VERSION,
       type: type,
       getInfo: info,
@@ -298,6 +419,56 @@
     window.MithrilDocument = adapter;
     window.dispatchEvent(new CustomEvent("mithril-document-ready", { detail: { type: adapter.type, contractVersion: adapter.contractVersion } }));
     return adapter;
+  }
+
+  function installIdentityGuards() {
+    if (window.__mithrilM403IdentityGuards || (!isDrill() && !isShot())) return;
+    window.__mithrilM403IdentityGuards = true;
+
+    function capture() {
+      var header = typeof headerData !== "undefined" ? headerData || {} : {};
+      return ensureDocumentIdentity(docType(), header);
+    }
+    function persist(identity) {
+      if (typeof headerData === "undefined") return;
+      writeIdentity(headerData, identity);
+      try {
+        localStorage.setItem(isDrill() && typeof KEYS !== "undefined" && KEYS.header ? KEYS.header : "mithrilCanvasHeaderM01", JSON.stringify(headerData));
+      } catch (error) {}
+    }
+    function guardFunction(name) {
+      var original = window[name];
+      if (typeof original !== "function" || original.__mithrilM403IdentityGuard) return;
+      var guarded = function () {
+        var identity = capture();
+        var result = original.apply(this, arguments);
+        persist(identity);
+        return result;
+      };
+      guarded.__mithrilM403IdentityGuard = true;
+      window[name] = guarded;
+    }
+
+    guardFunction("saveInfo");
+    guardFunction("saveHeaderData");
+    var originalClear = window.clearAll;
+    if (typeof originalClear === "function" && !originalClear.__mithrilM403IdentityGuard) {
+      var guardedClear = function () {
+        var result = originalClear.apply(this, arguments);
+        var header = typeof headerData !== "undefined" ? headerData || {} : {};
+        var info = identityInfo(docType(), header);
+        var holes = 0;
+        try { holes = countHoles(typeof pagesData !== "undefined" ? pagesData : {}); } catch (error) {}
+        if (!info.jobName && !info.documentNumber && !info.fieldDate && !holes) {
+          Object.keys(IDENTITY_FIELDS).forEach(function (key) { delete header[IDENTITY_FIELDS[key]]; });
+          persist(ensureDocumentIdentity(docType(), header, { forceNew: true }));
+        }
+        return result;
+      };
+      guardedClear.__mithrilM403IdentityGuard = true;
+      window.clearAll = guardedClear;
+    }
+    persist(capture());
   }
 
 
@@ -337,6 +508,11 @@
       createdAt: new Date().toISOString(),
       app: "MITHRIL Mobile",
       title: info.title,
+      documentId: snapshot.documentId,
+      identityCreatedAt: snapshot.identityCreatedAt,
+      legacyCloudId: snapshot.legacyCloudId || "",
+      sourceDocumentId: snapshot.sourceDocumentId || "",
+      identityOrigin: snapshot.identityOrigin || "",
       pagesData: clone(snapshot.pagesData || { "1": {} }),
       pageMeta: clone(snapshot.pageMeta || { "1": { gx: 0, gy: 0, name: "Page 1" } }),
       headerData: clone(snapshot.headerData || {}),
@@ -387,6 +563,20 @@
     var type = detectBackupType(value, fallbackType || docType());
     var snapshot = normalizedSnapshot(value);
     snapshot.type = type || snapshot.type;
+    if (!snapshot.documentId) {
+      var info = identityInfo(snapshot.type, snapshot.headerData || {});
+      snapshot.legacyCloudId = legacyLogicalId(info);
+      snapshot.documentId = uuidFromSeed("MITHRIL|" + snapshot.legacyCloudId);
+      snapshot.identityCreatedAt = new Date().toISOString();
+      snapshot.identityOrigin = "legacy-derived";
+      writeIdentity(snapshot.headerData, {
+        documentId: snapshot.documentId,
+        createdAt: snapshot.identityCreatedAt,
+        legacyCloudId: snapshot.legacyCloudId,
+        sourceDocumentId: snapshot.sourceDocumentId,
+        origin: snapshot.identityOrigin
+      });
+    }
     if (!snapshot.pagesData || typeof snapshot.pagesData !== "object") throw new Error("This file does not contain MITHRIL page data.");
     return {
       type: type,
@@ -692,7 +882,7 @@
         holeCount += 1;
       });
     });
-    var header = clone(payload.sourceHeader || payload.headerData || {}) || {};
+    var header = stripIdentity(payload.sourceHeader || payload.headerData || {});
     header.FieldDate = info.FieldDate || text(header.Date);
     header.ShotID = info.ShotID || text(header.DrillLogNumber);
     header.JobName = info.JobName || text(header.Job);
@@ -703,6 +893,13 @@
     header.DrillLogImportRelease = RELEASE_VERSION;
     header.DrillLogImportOrientation = orientation;
     header.DrillLogImportedAt = new Date().toISOString();
+    writeIdentity(header, {
+      documentId: randomUuid(),
+      createdAt: new Date().toISOString(),
+      legacyCloudId: "",
+      sourceDocumentId: text(payload.sourceDocumentId),
+      origin: "converted"
+    });
     return { pages: pages, pageMeta: pageMeta, headerData: header, pageCount: ordered.length, holeCount: holeCount, orientation: orientation };
   }
 
@@ -777,7 +974,8 @@
       createdAt: new Date().toISOString(),
       pages: snap.pagesData,
       pageMeta: snap.pageMeta,
-      sourceHeader: snap.headerData
+      sourceHeader: snap.headerData,
+      sourceDocumentId: snap.documentId
     };
     var modal = ensureTransferModal(), info = orientationCounts(payload), defaults = defaultShotInfo(snap.headerData);
     modal.__payload = payload;
@@ -978,7 +1176,7 @@
   }
   function snapshotFingerprint(snapshot) {
     var value = normalizedSnapshot(snapshot || {});
-    return JSON.stringify({ type: value.type, pagesData: value.pagesData, pageMeta: value.pageMeta, headerData: value.headerData, extras: value.extras });
+    return JSON.stringify({ type: value.type, pagesData: value.pagesData, pageMeta: value.pageMeta, headerData: stripIdentity(value.headerData), extras: value.extras });
   }
   function syncStorageKey(id) { return SYNC_META_PREFIX + (currentUser ? currentUser.uid : "signed-out") + ":" + id; }
   function recoveryStorageKey(id) { return RECOVERY_PREFIX + (currentUser ? currentUser.uid : "signed-out") + ":" + id; }
@@ -990,17 +1188,22 @@
     writeJsonStorage(syncStorageKey(id), meta);
     return meta;
   }
-  function currentSyncState(cloudData) {
+  function currentSyncState(cloudData, cloudPathId) {
     var data = cloudRecord(), id = logicalId(data), snapshot = data.payload;
-    var meta = readSyncMeta(id), fingerprint = snapshotFingerprint(snapshot);
+    var meta = readSyncMeta(id);
+    if (!meta && cloudPathId && cloudPathId !== id) meta = readSyncMeta(cloudPathId);
+    var fingerprint = snapshotFingerprint(snapshot);
     var cloudRevision = cloudData ? Number(cloudData.revision || 1) : 0;
     var cloudFingerprint = cloudData ? snapshotFingerprint(cloudData.payload || cloudData) : "";
     if (cloudData && !meta && fingerprint === cloudFingerprint) meta = writeSyncMeta(id, cloudRevision, snapshot, cloudData);
-    return { data: data, id: id, snapshot: snapshot, meta: meta, fingerprint: fingerprint, dirty: !meta || meta.fingerprint !== fingerprint, lastRevision: meta ? Number(meta.revision || 0) : 0, cloudRevision: cloudRevision, cloudFingerprint: cloudFingerprint };
+    return { data: data, id: id, cloudPathId: cloudPathId || id, snapshot: snapshot, meta: meta, fingerprint: fingerprint, dirty: !meta || meta.fingerprint !== fingerprint, lastRevision: meta ? Number(meta.revision || 0) : 0, cloudRevision: cloudRevision, cloudFingerprint: cloudFingerprint };
   }
   function matchingCloudItem() {
     var record = cloudRecord(), id = record && logicalId(record);
-    for (var i = 0; id && i < cloudItems.length; i += 1) if (cloudItems[i].id === id) return cloudItems[i];
+    var legacyId = record && text(record.legacyCloudId);
+    for (var i = 0; id && i < cloudItems.length; i += 1) {
+      if (cloudItems[i].id === id || text(cloudItems[i].data && cloudItems[i].data.documentId) === id || (legacyId && cloudItems[i].id === legacyId)) return cloudItems[i];
+    }
     return null;
   }
   function saveRecovery(id, adapter, meta) {
@@ -1013,7 +1216,7 @@
   function renderLocalCloudStatus() {
     var local = byId("m401LocalStatus"), cloud = byId("m401CloudStatus");
     if (!local || !cloud || !window.MithrilDocument) return;
-    var item = matchingCloudItem(), d = item && item.data, state = currentSyncState(d);
+    var item = matchingCloudItem(), d = item && item.data, state = currentSyncState(d, item && item.id);
     var localLabel = state.dirty ? "Modified on this device" : (state.meta ? "Matches last sync" : "Not yet linked to cloud");
     local.innerHTML = "<h3>LOCAL</h3><b>" + escapeHtml(localLabel) + "</b><span>" + escapeHtml(state.data.holeCount || 0) + " populated holes<br>Last synced revision: " + escapeHtml(state.lastRevision || "None") + "</span>";
     cloud.innerHTML = "<h3>CLOUD</h3>" + (d ? "<b>Revision " + escapeHtml(d.revision || 1) + "</b><span>" + escapeHtml(d.holeCount || 0) + " populated holes<br>" + escapeHtml(formatTime(d.updatedAt)) + "<br>" + escapeHtml(d.sourceDevice || "Unknown device") + "</span>" : "<b>No matching cloud copy</b><span>Smart Sync will upload this document.</span>");
@@ -1054,7 +1257,7 @@
     modal.className = "m400Modal";
     modal.innerHTML = [
       '<div class="m400Box">',
-      '<div class="m400Head"><strong>MITHRIL Cloud Sync · Safety Status · m40.1.2</strong><button type="button" id="m400CloudClose">Close</button></div>',
+      '<div class="m400Head"><strong>MITHRIL Cloud Sync · Permanent Identity · m40.3</strong><button type="button" id="m400CloudClose">Close</button></div>',
       '<div id="m400CloudOut">',
       '<div class="m400Note">Sign in with the Firebase account. Cloud Sync now reads and writes through the same MITHRIL document interface for Drill Logs and Shot Diagrams.</div>',
       '<div class="m400Grid"><label>Email<input type="email" id="m400Email" autocomplete="username"></label><label>Password<input type="password" id="m400Password" autocomplete="current-password"></label><label class="m400Wide">Device name<input id="m400DeviceOut" type="text"></label><button type="button" class="primary m400Wide" id="m400SignIn">Sign In</button></div>',
@@ -1125,10 +1328,14 @@
     if (!adapter) return null;
     var info = adapter.getInfo(), snapshot = adapter.getSnapshot();
     return {
-      schemaVersion: 2,
+      schemaVersion: 3,
       mithrilVersion: RELEASE_VERSION,
       documentContractVersion: adapter.contractVersion,
       type: adapter.type,
+      documentId: snapshot.documentId,
+      identityCreatedAt: snapshot.identityCreatedAt,
+      legacyCloudId: snapshot.legacyCloudId || "",
+      sourceDocumentId: snapshot.sourceDocumentId || "",
       title: info.title,
       jobName: info.jobName,
       documentNumber: info.documentNumber,
@@ -1139,9 +1346,29 @@
     };
   }
   function logicalId(data) {
-    var raw = [data.type, data.jobName || "no-job", data.documentNumber || data.fieldDate || "untitled"].join("__").toLowerCase();
-    var slug = raw.replace(/[^a-z0-9_-]+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "").slice(0, 120);
-    return slug || (data.type + "__untitled");
+    data = data || {};
+    return text(data.documentId || (data.payload && data.payload.documentId)) || legacyLogicalId(data);
+  }
+  function resolveCloudDocument(fb, data) {
+    var permanentId = logicalId(data);
+    var candidates = [text(data.legacyCloudId), legacyLogicalId(data)].filter(function (id, index, all) {
+      return id && id !== permanentId && all.indexOf(id) === index;
+    });
+    var permanentRef = fb.storeMod.doc(fb.db, "users", currentUser.uid, "documents", permanentId);
+    return fb.storeMod.getDoc(permanentRef).then(function (snap) {
+      if (snap.exists()) return { id: permanentId, ref: permanentRef, data: snap.data(), isLegacy: false, permanentId: permanentId };
+      var sequence = Promise.resolve(null);
+      candidates.forEach(function (candidate) {
+        sequence = sequence.then(function (found) {
+          if (found) return found;
+          var ref = fb.storeMod.doc(fb.db, "users", currentUser.uid, "documents", candidate);
+          return fb.storeMod.getDoc(ref).then(function (legacySnap) {
+            return legacySnap.exists() ? { id: candidate, ref: ref, data: legacySnap.data(), isLegacy: true, permanentId: permanentId } : null;
+          });
+        });
+      });
+      return sequence.then(function (found) { return found || { id: permanentId, ref: permanentRef, data: null, isLegacy: false, permanentId: permanentId }; });
+    });
   }
   function uploadCurrent(options) {
     options = options || {};
@@ -1152,10 +1379,9 @@
     var id = logicalId(data);
     setCloudStatus("Checking the cloud revision…", "wait");
     loadFirebase().then(function (fb) {
-      var ref = fb.storeMod.doc(fb.db, "users", currentUser.uid, "documents", id);
-      return fb.storeMod.getDoc(ref).then(function (snap) {
-        var existing = snap.exists() ? snap.data() : null;
-        var state = currentSyncState(existing);
+      return resolveCloudDocument(fb, data).then(function (resolved) {
+        var existing = resolved.data;
+        var state = currentSyncState(existing, resolved.id);
         if (existing && state.cloudRevision > state.lastRevision && state.dirty) throw { conflict: true, state: state };
         var revision = existing && Number(existing.revision) ? Number(existing.revision) + 1 : 1;
         if (existing && !options.skipConfirm) {
@@ -1169,11 +1395,15 @@
         record.updatedBy = currentUser.email || currentUser.uid;
         record.updatedAt = fb.storeMod.serverTimestamp();
         record.createdAt = existing && existing.createdAt ? existing.createdAt : fb.storeMod.serverTimestamp();
-        return fb.storeMod.setDoc(ref, record).then(function () { return { revision: revision, record: record, id: id }; });
+        var permanentRef = fb.storeMod.doc(fb.db, "users", currentUser.uid, "documents", id);
+        return fb.storeMod.setDoc(permanentRef, record).then(function () {
+          if (!resolved.isLegacy) return null;
+          return fb.storeMod.deleteDoc(resolved.ref);
+        }).then(function () { return { revision: revision, record: record, id: id, migrated: resolved.isLegacy }; });
       });
     }).then(function (result) {
       writeSyncMeta(result.id, result.revision, data.payload, result.record);
-      setCloudStatus(data.title + " uploaded as revision " + result.revision + ".", "good");
+      setCloudStatus(data.title + " uploaded as revision " + result.revision + (result.migrated ? " and linked to its permanent document ID." : "."), "good");
       return refreshCloudList();
     }).catch(function (error) {
       if (error && error.cancelled) { setCloudStatus("Upload cancelled. Nothing was changed.", ""); return; }
@@ -1194,7 +1424,7 @@
       var col = fb.storeMod.collection(fb.db, "users", currentUser.uid, "documents");
       return fb.storeMod.getDocs(col).then(function (snap) {
         var docs = [];
-        snap.forEach(function (item) { var d = item.data(); if (d && d.type === type) docs.push({ id: item.id, data: d }); });
+        snap.forEach(function (item) { var d = item.data(); if (d && d.type === type && !d.migratedTo) docs.push({ id: item.id, data: d }); });
         docs.sort(function (a, b) { var at = a.data.updatedAt && a.data.updatedAt.seconds || 0, bt = b.data.updatedAt && b.data.updatedAt.seconds || 0; return bt - at; });
         cloudItems = docs;
         renderCloudDocs(docs);
@@ -1223,10 +1453,25 @@
     if (!confirm(warning)) { setCloudStatus("Download cancelled. Nothing was changed.", ""); return; }
     setCloudStatus("Downloading and applying the cloud document through the shared document interface…", "wait");
     try {
-      var priorMeta = readSyncMeta(id);
-      saveRecovery(id, adapter, priorMeta);
-      adapter.applySnapshot(data.payload || data, { markDirty: false, fitAll: adapter.type === "shotDiagram" });
-      writeSyncMeta(id, Number(data.revision || 1), data.payload || data, data);
+      var cloudSnapshot = normalizedSnapshot(data.payload || data);
+      if (!cloudSnapshot.documentId) {
+        cloudSnapshot.documentId = text(data.documentId) || uuidFromSeed("MITHRIL|" + id);
+        cloudSnapshot.identityCreatedAt = text(data.identityCreatedAt) || new Date().toISOString();
+        cloudSnapshot.legacyCloudId = id;
+        cloudSnapshot.identityOrigin = "legacy-derived";
+        writeIdentity(cloudSnapshot.headerData, {
+          documentId: cloudSnapshot.documentId,
+          createdAt: cloudSnapshot.identityCreatedAt,
+          legacyCloudId: cloudSnapshot.legacyCloudId,
+          sourceDocumentId: cloudSnapshot.sourceDocumentId,
+          origin: cloudSnapshot.identityOrigin
+        });
+      }
+      var targetId = cloudSnapshot.documentId;
+      var priorMeta = readSyncMeta(targetId) || readSyncMeta(id);
+      saveRecovery(targetId, adapter, priorMeta);
+      adapter.applySnapshot(cloudSnapshot, { markDirty: false, fitAll: adapter.type === "shotDiagram" });
+      writeSyncMeta(targetId, Number(data.revision || 1), cloudSnapshot, data);
       var modal = byId("m400CloudModal"); if (modal) modal.classList.remove("show");
       showToast((data.title || docTypeLabel(data.type)) + " — cloud revision " + (data.revision || 1) + " loaded. Undo Cloud Download is available.");
     } catch (error) { setCloudStatus(friendlyError(error), "bad"); }
@@ -1252,11 +1497,11 @@
     setCloudStatus("Comparing local and cloud revisions…", "wait");
     var data = cloudRecord(), id = logicalId(data);
     loadFirebase().then(function (fb) {
-      var ref = fb.storeMod.doc(fb.db, "users", currentUser.uid, "documents", id);
-      return fb.storeMod.getDoc(ref).then(function (snap) {
-        var cloud = snap.exists() ? snap.data() : null, state = currentSyncState(cloud);
+      return resolveCloudDocument(fb, data).then(function (resolved) {
+        var cloud = resolved.data, state = currentSyncState(cloud, resolved.id);
         if (!cloud) { uploadCurrent({ skipConfirm: true }); return; }
         if (state.fingerprint === state.cloudFingerprint) {
+          if (resolved.isLegacy) { uploadCurrent({ skipConfirm: true }); return; }
           writeSyncMeta(id, state.cloudRevision, state.snapshot, cloud);
           setCloudStatus("Local and cloud copies already match revision " + state.cloudRevision + ".", "good");
           return refreshCloudList();
@@ -1678,7 +1923,7 @@
         script.id = CHILD_SCRIPT_ID;
         script.src = CHILD_SCRIPT_SRC;
         doc.head.appendChild(script);
-      } catch (error) { console.warn("MITHRIL m40.2.0 could not attach the standardized document layer to the Shot Diagram.", error); }
+      } catch (error) { console.warn("MITHRIL m40.3.0 could not attach the standardized document layer to the Shot Diagram.", error); }
     }
     frame.addEventListener("load", function () { setTimeout(inject, 80); });
     setTimeout(inject, 120);
@@ -1699,6 +1944,7 @@
   function bootDocument() {
     ensureStyles();
     updateVersionLabels();
+    installIdentityGuards();
     var adapter = installAdapter();
     installManualBackupStandardization(adapter);
     installPageDeletionPatch(adapter);
@@ -1737,6 +1983,10 @@
     detectBackupType: detectBackupType,
     inspectManualBackup: inspectManualBackup,
     buildManualBackup: buildManualBackup,
+    legacyLogicalId: legacyLogicalId,
+    uuidFromSeed: uuidFromSeed,
+    logicalId: logicalId,
+    stripIdentity: stripIdentity,
     timingCheckNumber: timingCheckNumber,
     collectTimingCheckData: collectTimingCheckData,
     findTimingConflicts: findTimingConflicts,
