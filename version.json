@@ -1,13 +1,13 @@
 {
-  "version": "m40.1.2",
-  "title": "Landing Screen Version Label Fix",
+  "version": "m40.1.3",
+  "title": "Desktop Hole Selection Highlight Fix",
   "released": "2026-07-26",
   "minimumOfflineVersion": "m39.6.3",
   "notes": [
-    "Prevents the delayed m39.7 helper startup from overwriting the current landing-screen version label.",
-    "Reapplies the current version after DOM startup and page load.",
-    "Shows m40.1.2 consistently in the landing description, installed-version line, title, and update configuration.",
-    "Preserves the m40.1.1 desktop Edit Holes selection highlight fix.",
+    "Keeps the purple Edit Holes selection outline visible on desktop browsers.",
+    "Draws the selection overlay after the Shot Diagram's queued canvas repaint instead of immediately before it.",
+    "Eliminates the select-then-disappear flicker reported on desktop.",
+    "Preserves the m40.1.2 landing-screen version label fix.",
     "Preserves all m40.1 cloud safety and all m40.0.4 timing, backup, conversion, PDF, pattern, page, and document behavior."
   ]
 }

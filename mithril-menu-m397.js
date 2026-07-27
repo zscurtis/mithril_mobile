@@ -3803,6 +3803,7 @@
   var shotEditUndoHistory = [];
   var shotEditPointerStarts = {};
   var shotEditQuickWasEnabled = false;
+  var shotEditOverlayFramePending = false;
 
   function deepClone(value) {
     return JSON.parse(JSON.stringify(value));
@@ -4403,7 +4404,17 @@
     if (typeof originalDraw !== "function") return;
     window.draw = function () {
       var result = originalDraw.apply(this, arguments);
-      drawShotEditOverlay();
+      // The stable Shot Diagram draw() queues its actual canvas repaint with
+      // requestAnimationFrame. Drawing the selection synchronously here makes
+      // it flash briefly and then disappear when that queued repaint runs.
+      // Queue this overlay after the base repaint so it remains the top layer.
+      if (!shotEditOverlayFramePending) {
+        shotEditOverlayFramePending = true;
+        (window.requestAnimationFrame || function (callback) { return window.setTimeout(callback, 16); })(function () {
+          shotEditOverlayFramePending = false;
+          drawShotEditOverlay();
+        });
+      }
       return result;
     };
   }
