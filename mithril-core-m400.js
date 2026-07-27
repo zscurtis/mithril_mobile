@@ -1,9 +1,9 @@
 (function () {
   "use strict";
 
-  var RELEASE_VERSION = "m40.4.0";
+  var RELEASE_VERSION = "m40.5.0";
   var CHILD_SCRIPT_ID = "mithrilCoreM400ChildLoader";
-  var CHILD_SCRIPT_SRC = "./mithril-core-m400.js?rev=4040-frame";
+  var CHILD_SCRIPT_SRC = "./mithril-core-m400.js?rev=4050-frame";
   var TRANSFER_KEY = "mithrilDrillToShotTransferM400";
   var UNDO_KEY = "mithrilDrillToShotUndoM400";
   var DEVICE_KEY = "mithrilCloudDeviceNameM399";
@@ -11,6 +11,7 @@
   var RECOVERY_PREFIX = "mithrilCloudRecoveryM401:";
   var LAST_VERIFIED_USER_KEY = "mithrilLastVerifiedUserM404";
   var PROFILE_DOCUMENT_ID = "__mithril_user_profile__";
+  var PROFILE_COLLECTION = "userProfiles";
   var FIREBASE_VERSION = "12.16.0";
   var firebaseConfig = {
     apiKey: ["AIzaSyBOb0pXdI", "DMqr5mMKdKOCpP84jSRjyjnhY"].join(""),
@@ -37,6 +38,8 @@
   var profilePromiseUid = "";
   var authUnsubscribe = null;
   var cloudItems = [];
+  var accessObserver = null;
+  var accessNoticeShown = false;
 
   function byId(id) { return document.getElementById(id); }
   function text(value) { return String(value == null ? "" : value).trim(); }
@@ -210,7 +213,9 @@
       ".m400Docs{display:grid;gap:8px;margin-top:10px}.m400Doc{border:1px solid #aaa;border-radius:9px;padding:9px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:9px;align-items:center}.m400DocTitle{font-size:15px;font-weight:900}.m400Meta{font-size:12px;color:#555;font-weight:750;line-height:1.35;margin-top:3px}.m400DocActions{display:grid;gap:6px}",
       ".m400Toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:22000;max-width:min(720px,calc(100vw - 24px));padding:12px 16px;border:2px solid #4f9a61;border-radius:10px;background:#e9f8ec;color:#173d20;font-size:14px;font-weight:900;line-height:1.35;box-shadow:0 8px 28px rgba(0,0,0,.35);text-align:center}.m400Toast.bad{background:#ffeaea;border-color:#c66;color:#720000}",
       ".m404LandingAuth{margin:14px 0 16px;padding:14px;border:1px solid #666;border-radius:12px;background:rgba(255,255,255,.06);color:#fff}.m404LandingHead{display:flex;justify-content:space-between;gap:10px;align-items:center}.m404LandingHead strong{font-size:17px}.m404AuthState{font-size:12px;font-weight:900;color:#b9c7da}.m404AuthForm{display:grid;grid-template-columns:1fr 1fr auto;gap:9px;margin-top:10px}.m404AuthForm input{min-width:0;min-height:44px;border:1px solid #888;border-radius:8px;padding:9px;font-size:16px}.m404AuthForm button{min-width:105px;background:#1f6feb;border-color:#1f6feb;color:#fff}.m404SignedIn{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-top:10px;padding:10px;border:1px solid #477454;border-radius:9px;background:rgba(37,110,57,.24)}.m404UserName{font-size:15px;font-weight:950}.m404UserMeta{font-size:12px;color:#c9d7cc;font-weight:800;margin-top:3px}.m404AuthMessage{display:none;margin-top:9px;font-size:12px;line-height:1.35;font-weight:800;color:#ffd37a}.m404AuthMessage.show{display:block}.m404TemplateLocked{opacity:.42;pointer-events:none;filter:grayscale(.55)}",
-      "@media(max-width:600px){.m400Grid,.m400Actions,.m401Compare,.m404AuthForm{grid-template-columns:1fr}.m400Wide{grid-column:auto}.m400Stats{grid-template-columns:1fr 1fr}.m400Doc{grid-template-columns:1fr}.m400DocActions{grid-template-columns:1fr 1fr}.m404SignedIn{align-items:flex-start;flex-direction:column}.m404SignedIn button{width:100%}}"
+      ".m405UserActions{display:flex;gap:8px;flex-wrap:wrap}.m405AdminBox{width:min(900px,100%)}.m405AdminRows{display:grid;gap:8px;margin-top:10px}.m405AdminRow{display:grid;grid-template-columns:minmax(0,1fr) 150px 125px auto;gap:8px;align-items:center;border:1px solid #aaa;border-radius:9px;padding:9px}.m405AdminName{font-weight:900}.m405AdminMeta{font-size:11px;color:#555;font-weight:750;overflow-wrap:anywhere}.m405AccessBanner{position:fixed;left:50%;top:8px;transform:translateX(-50%);z-index:19000;padding:8px 13px;border:2px solid #9b71df;border-radius:10px;background:#f2eaff;color:#3d226d;font:900 13px Arial,sans-serif;box-shadow:0 5px 18px rgba(0,0,0,.28)}body.m405ReadOnly canvas{pointer-events:none!important}body.m405ReadOnly [data-m405-mutation=true]{display:none!important}",
+      "@media(max-width:700px){.m405AdminRow{grid-template-columns:1fr 1fr}.m405AdminIdentity{grid-column:1/-1}.m405AdminRow button{grid-column:1/-1}}",
+      "@media(max-width:600px){.m400Grid,.m400Actions,.m401Compare,.m404AuthForm{grid-template-columns:1fr}.m400Wide{grid-column:auto}.m400Stats{grid-template-columns:1fr 1fr}.m400Doc{grid-template-columns:1fr}.m400DocActions{grid-template-columns:1fr 1fr}.m404SignedIn{align-items:flex-start;flex-direction:column}.m404SignedIn button{width:100%}.m405UserActions{width:100%;display:grid}}"
     ].join("");
     document.head.appendChild(style);
   }
@@ -952,6 +957,7 @@
   }
 
   function openTransfer() {
+    if (!hasPermission("convert")) return restrictedMessage("Drill Log to Shot Diagram conversion");
     closeMenu();
     var adapter = window.MithrilDocument;
     if (!adapter || adapter.type !== "drillLog") { alert("Open the Drill Log before creating a Shot Diagram."); return; }
@@ -1050,6 +1056,7 @@
   }
 
   function openImportReview() {
+    if (!hasPermission("convert")) return;
     if (!isShot()) return;
     var payload = readPendingTransfer();
     if (!payload || payload.transferType !== "mithril-drill-log-to-shot-diagram-m400") return;
@@ -1104,6 +1111,13 @@
   }
 
   function installTransferButtons() {
+    if (currentProfile && !hasPermission("convert")) {
+      ["m400TransferButton", "m400ImportButton", "m400UndoImportButton"].forEach(function (id) {
+        var old = byId(id);
+        if (old && old.parentNode) old.parentNode.removeChild(old);
+      });
+      return false;
+    }
     var menu = byId("menuModal");
     if (!menu) return false;
     ["m398CreateShotFromDrill", "m398UndoDrillImportMenu"].forEach(function (id) { var old = byId(id); if (old && old.parentNode) old.parentNode.removeChild(old); });
@@ -1229,20 +1243,48 @@
   }
   function normalizeUserProfile(user, data) {
     var fallback = defaultUserProfile(user), source = data || {};
+    var allowedRoles = ["administrator", "blaster", "driller", "driver", "viewer", "member"];
+    var role = text(source.role).toLowerCase();
+    if (allowedRoles.indexOf(role) < 0) role = fallback.role;
+    var status = text(source.status).toLowerCase();
+    if (["active", "inactive", "disabled"].indexOf(status) < 0) status = fallback.status;
     return {
-      schemaVersion: Number(source.schemaVersion || fallback.schemaVersion),
+      schemaVersion: Math.max(2, Number(source.schemaVersion || fallback.schemaVersion)),
       type: "userProfile",
       uid: text(source.uid) || fallback.uid,
       email: text(source.email) || fallback.email,
       displayName: text(source.displayName) || fallback.displayName,
-      role: text(source.role) || fallback.role,
+      role: role,
       organizationId: text(source.organizationId) || fallback.organizationId,
-      status: text(source.status) || fallback.status
+      status: status
     };
   }
   function roleLabel(role) {
     var labels = { administrator: "Administrator", blaster: "Blaster", driller: "Driller", driver: "Driver", viewer: "Viewer", member: "Member" };
     return labels[text(role).toLowerCase()] || "Member";
+  }
+  var ROLE_PERMISSIONS = {
+    administrator: { drill: true, shot: true, edit: true, convert: true, export: true, cloudRead: true, cloudWrite: true, cloudDelete: true, userAdmin: true },
+    blaster:       { drill: true, shot: true, edit: true, convert: true, export: true, cloudRead: true, cloudWrite: true, cloudDelete: true, userAdmin: false },
+    driller:       { drill: true, shot: false, edit: true, convert: false, export: true, cloudRead: true, cloudWrite: true, cloudDelete: true, userAdmin: false },
+    driver:        { drill: false, shot: false, edit: false, convert: false, export: false, cloudRead: false, cloudWrite: false, cloudDelete: false, userAdmin: false },
+    viewer:        { drill: true, shot: true, edit: false, convert: false, export: true, cloudRead: true, cloudWrite: false, cloudDelete: false, userAdmin: false },
+    member:        { drill: true, shot: true, edit: true, convert: true, export: true, cloudRead: true, cloudWrite: true, cloudDelete: true, userAdmin: false }
+  };
+  function currentRole() {
+    return text(currentProfile && currentProfile.role || "member").toLowerCase();
+  }
+  function permissionsFor(role) {
+    return ROLE_PERMISSIONS[text(role).toLowerCase()] || ROLE_PERMISSIONS.member;
+  }
+  function hasPermission(name) {
+    if (!currentProfile || /^(?:disabled|inactive)$/i.test(text(currentProfile.status))) return false;
+    return !!permissionsFor(currentRole())[name];
+  }
+  function restrictedMessage(action) {
+    var message = action + " is not available to the " + roleLabel(currentRole()) + " role.";
+    alert("ACCESS RESTRICTED\n\n" + message + "\n\nContact a MITHRIL administrator if this access is required.");
+    return false;
   }
   function readVerifiedUser() {
     var cached = readJsonStorage(LAST_VERIFIED_USER_KEY);
@@ -1263,8 +1305,11 @@
   function clearVerifiedUser() {
     try { localStorage.removeItem(LAST_VERIFIED_USER_KEY); } catch (error) {}
   }
-  function profileDocumentRef(fb, uid) {
+  function legacyProfileDocumentRef(fb, uid) {
     return fb.storeMod.doc(fb.db, "users", uid, "documents", PROFILE_DOCUMENT_ID);
+  }
+  function profileDocumentRef(fb, uid) {
+    return fb.storeMod.doc(fb.db, PROFILE_COLLECTION, uid);
   }
   function loadUserProfile(fb, user) {
     if (profilePromise && profilePromiseUid === user.uid) return profilePromise;
@@ -1272,11 +1317,19 @@
     var ref = profileDocumentRef(fb, user.uid);
     profilePromise = fb.storeMod.getDoc(ref).then(function (snap) {
       if (snap.exists()) return normalizeUserProfile(user, snap.data());
-      var profile = defaultUserProfile(user);
-      var record = clone(profile);
-      record.createdAt = fb.storeMod.serverTimestamp();
-      record.updatedAt = fb.storeMod.serverTimestamp();
-      return fb.storeMod.setDoc(ref, record).then(function () { return profile; });
+      return fb.storeMod.getDoc(legacyProfileDocumentRef(fb, user.uid)).catch(function () { return null; }).then(function (legacySnap) {
+        var legacy = legacySnap && legacySnap.exists && legacySnap.exists() ? legacySnap.data() : null;
+        var profile = normalizeUserProfile(user, legacy || defaultUserProfile(user));
+        // The first secure self-created profile is deliberately non-privileged.
+        // Administrators assign elevated roles after registration.
+        profile.role = "member";
+        profile.status = "active";
+        profile.organizationId = text(profile.organizationId) || "personal";
+        var record = clone(profile);
+        record.createdAt = fb.storeMod.serverTimestamp();
+        record.updatedAt = fb.storeMod.serverTimestamp();
+        return fb.storeMod.setDoc(ref, record).then(function () { return profile; });
+      });
     }).catch(function () {
       // Authentication remains usable if existing rules have not yet been
       // expanded for the profile record. The safe member profile preserves the
@@ -1288,6 +1341,7 @@
       cacheVerifiedUser(profile);
       renderLandingAuth();
       refreshCloudAuth();
+      applyDocumentRoleUI();
       return profile;
     });
     return profilePromise;
@@ -1295,11 +1349,16 @@
   function setTemplateAccess(enabled) {
     var cards = document.querySelector(".templateCards");
     if (!cards) return;
-    cards.classList.toggle("m404TemplateLocked", !enabled);
-    Array.prototype.forEach.call(cards.querySelectorAll("button"), function (button) {
-      button.disabled = !enabled;
-      button.setAttribute("aria-disabled", enabled ? "false" : "true");
+    var buttons = cards.querySelectorAll("button");
+    var anyEnabled = false;
+    Array.prototype.forEach.call(buttons, function (button, index) {
+      var allowed = !!enabled && (index === 0 ? hasPermission("shot") : hasPermission("drill"));
+      button.disabled = !allowed;
+      button.classList.toggle("m404TemplateLocked", !allowed);
+      button.setAttribute("aria-disabled", allowed ? "false" : "true");
+      if (allowed) anyEnabled = true;
     });
+    cards.classList.toggle("m404TemplateLocked", !enabled || !anyEnabled);
   }
   function ensureLandingAuth() {
     var start = byId("templateStart"), box = start && start.querySelector(".startBox");
@@ -1315,13 +1374,14 @@
       '<div id="m404AuthOut">',
       '<div class="m404AuthForm"><input id="m404Email" type="email" autocomplete="username" placeholder="Email"><input id="m404Password" type="password" autocomplete="current-password" placeholder="Password"><button id="m404SignIn" type="button">Sign In</button></div>',
       '</div>',
-      '<div id="m404AuthIn" class="m404SignedIn" style="display:none"><div><div id="m404UserName" class="m404UserName"></div><div id="m404UserMeta" class="m404UserMeta"></div></div><button id="m404SignOut" type="button">Sign Out</button></div>',
+      '<div id="m404AuthIn" class="m404SignedIn" style="display:none"><div><div id="m404UserName" class="m404UserName"></div><div id="m404UserMeta" class="m404UserMeta"></div></div><div class="m405UserActions"><button id="m405ManageUsers" type="button" style="display:none">Manage Users</button><button id="m404SignOut" type="button">Sign Out</button></div></div>',
       '<div id="m404AuthMessage" class="m404AuthMessage"></div>'
     ].join("");
     var intro = box.querySelector(".startIntro");
     box.insertBefore(panel, intro || box.firstChild);
     byId("m404SignIn").addEventListener("click", landingSignIn);
     byId("m404SignOut").addEventListener("click", landingSignOut);
+    byId("m405ManageUsers").addEventListener("click", openUserAdmin);
     byId("m404Password").addEventListener("keydown", function (event) { if (event.key === "Enter") landingSignIn(); });
     setTemplateAccess(false);
     return panel;
@@ -1347,7 +1407,9 @@
       byId("m404UserName").textContent = profile.displayName || profile.email || "MITHRIL User";
       byId("m404UserMeta").textContent = (offlineUserSession ? "Offline access" : "Signed in") + " · " + roleLabel(profile.role) + (profile.organizationId && profile.organizationId !== "personal" ? " · " + profile.organizationId : "");
       state.textContent = offlineUserSession ? "OFFLINE" : (/^(?:disabled|inactive)$/i.test(text(profile.status)) ? "ACCESS DISABLED" : "SIGNED IN");
-      setLandingMessage(active ? (offlineUserSession ? "Using the last verified account on this device. Cloud Sync will reconnect when service returns." : "") : "This account is inactive. Contact a MITHRIL administrator.", active ? "" : "bad");
+      if (byId("m405ManageUsers")) byId("m405ManageUsers").style.display = !offlineUserSession && hasPermission("userAdmin") ? "block" : "none";
+      var noTemplates = active && !hasPermission("drill") && !hasPermission("shot");
+      setLandingMessage(active ? (offlineUserSession ? "Using the last verified account on this device. Cloud Sync will reconnect when service returns." : (noTemplates ? "No current field templates are assigned to this role yet." : "")) : "This account is inactive. Contact a MITHRIL administrator.", active && !noTemplates ? "" : "bad");
     } else {
       state.textContent = "SIGN IN REQUIRED";
     }
@@ -1361,6 +1423,22 @@
     renderLandingAuth();
     if (reason) setLandingMessage(reason, "");
     return true;
+  }
+  function installLandingActionGuards() {
+    if (window.__mithrilM405LandingGuards) return;
+    window.__mithrilM405LandingGuards = true;
+    var originalShot = window.openStableShotDiagram;
+    var originalDrill = window.openDrillLog;
+    if (typeof originalShot === "function") window.openStableShotDiagram = function () {
+      if (!hasPermission("shot")) return restrictedMessage("Shot Diagram");
+      return originalShot.apply(this, arguments);
+    };
+    if (typeof originalDrill === "function") window.openDrillLog = function () {
+      if (!hasPermission("drill")) return restrictedMessage("Drill Log");
+      var result = originalDrill.apply(this, arguments);
+      applyDocumentRoleUI();
+      return result;
+    };
   }
   function landingSignIn() {
     var email = text(byId("m404Email").value), password = byId("m404Password").value;
@@ -1397,6 +1475,7 @@
   }
   function bootLandingAuth() {
     if (!ensureLandingAuth()) return;
+    installLandingActionGuards();
     renderLandingAuth();
     loadFirebase().then(function (fb) {
       if (fb.auth.currentUser) return loadUserProfile(fb, fb.auth.currentUser);
@@ -1410,6 +1489,213 @@
         setLandingMessage("Sign-in could not be reached. Connect to the internet and try again.", "bad");
       }
     });
+  }
+
+  function ensureUserAdminModal() {
+    var modal = byId("m405UserAdminModal");
+    if (modal) return modal;
+    ensureStyles();
+    modal = document.createElement("div");
+    modal.id = "m405UserAdminModal";
+    modal.className = "m400Modal";
+    modal.innerHTML = [
+      '<div class="m400Box m405AdminBox">',
+      '<div class="m400Head"><strong>MITHRIL User Roles · m40.5</strong><button type="button" id="m405AdminClose">Close</button></div>',
+      '<div class="m400Note">Users appear here after they have registered through Firebase Authentication and signed in to MITHRIL at least once. Role and status changes take effect the next time that user connects online.</div>',
+      '<div class="m400Actions"><button type="button" id="m405AdminRefresh">Refresh Users</button><button type="button" id="m405AdminRules">Security Rules Status</button></div>',
+      '<div id="m405AdminStatus" class="m400Status">Ready.</div>',
+      '<div id="m405AdminRows" class="m405AdminRows"></div>',
+      '</div>'
+    ].join("");
+    document.body.appendChild(modal);
+    byId("m405AdminClose").addEventListener("click", function () { modal.classList.remove("show"); });
+    byId("m405AdminRefresh").addEventListener("click", refreshUserAdmin);
+    byId("m405AdminRules").addEventListener("click", function () {
+      alert("MITHRIL app permissions and Firebase security rules must both be installed.\n\nIf this screen can list users and save a role, the m40.5 profile rules are active.");
+    });
+    return modal;
+  }
+  function setAdminStatus(message, kind) {
+    var el = byId("m405AdminStatus");
+    if (!el) return;
+    el.textContent = message;
+    el.className = "m400Status " + (kind || "");
+  }
+  function openUserAdmin() {
+    if (offlineUserSession || !currentUser) return restrictedMessage("User management while offline");
+    if (!hasPermission("userAdmin")) return restrictedMessage("User management");
+    var modal = ensureUserAdminModal();
+    modal.classList.add("show");
+    refreshUserAdmin();
+  }
+  function refreshUserAdmin() {
+    if (!currentUser || !hasPermission("userAdmin")) return Promise.resolve();
+    setAdminStatus("Loading registered users…", "wait");
+    return loadFirebase().then(function (fb) {
+      return fb.storeMod.getDocs(fb.storeMod.collection(fb.db, PROFILE_COLLECTION)).then(function (snap) {
+        var profiles = [];
+        snap.forEach(function (item) { profiles.push(normalizeUserProfile({ uid: item.id }, item.data())); });
+        profiles.sort(function (a, b) { return (a.displayName || a.email).localeCompare(b.displayName || b.email); });
+        renderUserAdminRows(profiles);
+        setAdminStatus(profiles.length + " registered user" + (profiles.length === 1 ? "" : "s") + " found.", "good");
+      });
+    }).catch(function (error) { setAdminStatus(friendlyError(error), "bad"); });
+  }
+  function renderUserAdminRows(profiles) {
+    var box = byId("m405AdminRows");
+    if (!box) return;
+    box.innerHTML = "";
+    profiles.forEach(function (profile) {
+      var row = document.createElement("div");
+      row.className = "m405AdminRow";
+      var own = !!currentUser && profile.uid === currentUser.uid;
+      row.innerHTML = [
+        '<div class="m405AdminIdentity"><div class="m405AdminName">' + escapeHtml(profile.displayName || profile.email || "MITHRIL User") + (own ? " (you)" : "") + '</div><div class="m405AdminMeta">' + escapeHtml(profile.email || "No email") + '<br>' + escapeHtml(profile.uid) + '</div></div>',
+        '<select aria-label="Role"><option value="administrator">Administrator</option><option value="blaster">Blaster</option><option value="driller">Driller</option><option value="driver">Driver</option><option value="viewer">Viewer</option><option value="member">Member</option></select>',
+        '<select aria-label="Status"><option value="active">Active</option><option value="disabled">Disabled</option></select>',
+        '<button type="button" class="primary">Save</button>'
+      ].join("");
+      var selects = row.querySelectorAll("select"), button = row.querySelector("button");
+      selects[0].value = currentRoleValue(profile.role);
+      selects[1].value = /^(?:disabled|inactive)$/i.test(profile.status) ? "disabled" : "active";
+      if (own) {
+        selects[0].disabled = true;
+        selects[1].disabled = true;
+        button.disabled = true;
+        button.textContent = "Protected";
+        button.title = "An administrator cannot change or disable their own account here.";
+      } else {
+        button.addEventListener("click", function () { saveManagedProfile(profile, selects[0].value, selects[1].value, button); });
+      }
+      box.appendChild(row);
+    });
+  }
+  function currentRoleValue(role) {
+    role = text(role).toLowerCase();
+    return ROLE_PERMISSIONS[role] ? role : "member";
+  }
+  function saveManagedProfile(profile, role, status, button) {
+    if (!currentUser || !hasPermission("userAdmin")) return restrictedMessage("User management");
+    if (profile.uid === currentUser.uid) return restrictedMessage("Changing your own administrator access");
+    var oldText = button.textContent;
+    button.disabled = true;
+    button.textContent = "Saving…";
+    setAdminStatus("Saving " + (profile.displayName || profile.email) + "…", "wait");
+    loadFirebase().then(function (fb) {
+      return fb.storeMod.updateDoc(profileDocumentRef(fb, profile.uid), {
+        role: currentRoleValue(role),
+        status: status === "disabled" ? "disabled" : "active",
+        updatedAt: fb.storeMod.serverTimestamp(),
+        updatedBy: currentUser.uid
+      });
+    }).then(function () {
+      setAdminStatus((profile.displayName || profile.email) + " is now " + roleLabel(role) + " · " + (status === "disabled" ? "Disabled" : "Active") + ".", "good");
+      return refreshUserAdmin();
+    }).catch(function (error) {
+      button.disabled = false;
+      button.textContent = oldText;
+      setAdminStatus(friendlyError(error), "bad");
+    });
+  }
+
+  function isReadOnlyAllowedButton(button) {
+    if (!button) return false;
+    if (button.id === "m400CloudSyncButton" || button.id === "m400CloudClose" || button.id === "m400Refresh" || button.id === "m400SignOut") return true;
+    var label = text(button.textContent);
+    if (button.classList && (button.classList.contains("brandHome") || button.classList.contains("updateCheckButton"))) return true;
+    return /^(?:close|(?:☰\s*)?menu|fit(?: current page| all pages)?|check for updates|switch template|cloud sync|refresh cloud list|open on this device|sign out|download (?:pdf|csv|backup)|export (?:pdf|csv)|finish & export pdf|backup json|← back to menu|\+|-)$/i.test(label);
+  }
+  function markReadOnlyControls() {
+    if (!document.body || !document.body.classList) return;
+    var readOnly = currentRole() === "viewer" && !!currentProfile;
+    document.body.classList.toggle("m405ReadOnly", readOnly);
+    Array.prototype.forEach.call(document.querySelectorAll("button"), function (button) {
+      if (button.closest && button.closest("#m404LandingAuth")) return;
+      if (!readOnly) {
+        if (button.getAttribute("data-m405-role-hidden") === "true") {
+          button.removeAttribute("data-m405-mutation");
+          button.removeAttribute("data-m405-role-hidden");
+        }
+        return;
+      }
+      if (!isReadOnlyAllowedButton(button)) {
+        button.setAttribute("data-m405-mutation", "true");
+        button.setAttribute("data-m405-role-hidden", "true");
+      }
+    });
+    Array.prototype.forEach.call(document.querySelectorAll("input,textarea,select"), function (input) {
+      if (!readOnly) {
+        if (input.getAttribute("data-m405-role-disabled") === "true") {
+          input.disabled = false;
+          input.removeAttribute("data-m405-role-disabled");
+        }
+        return;
+      }
+      if (input.id === "pageSelect" || input.id === "zoomSlider" || input.closest && input.closest("#m400CloudModal")) return;
+      input.disabled = true;
+      input.setAttribute("data-m405-role-disabled", "true");
+    });
+  }
+  function ensureAccessBanner() {
+    var banner = byId("m405AccessBanner");
+    if (!currentProfile || currentRole() !== "viewer" || (!isDrill() && !isShot())) {
+      if (banner && banner.parentNode) banner.parentNode.removeChild(banner);
+      return;
+    }
+    if (!banner) {
+      banner = document.createElement("div");
+      banner.id = "m405AccessBanner";
+      banner.className = "m405AccessBanner";
+      document.body.appendChild(banner);
+    }
+    banner.textContent = "VIEWER · READ-ONLY";
+  }
+  function installMutationGuards() {
+    if (window.__mithrilM405MutationGuards) return;
+    window.__mithrilM405MutationGuards = true;
+    ["saveHole", "clearCurrentHole", "copyPrevious", "saveInfo", "enableQuickFill", "turnQuickOff", "addPageAtDirection", "deletePage", "loadJSON", "loadJSONBackup", "clearAll", "clearShotData", "startHeaderCalibration"].forEach(function (name) {
+      var original = window[name];
+      if (typeof original !== "function") return;
+      window[name] = function () {
+        if (!hasPermission("edit")) return restrictedMessage("Editing");
+        return original.apply(this, arguments);
+      };
+    });
+  }
+  function applyDocumentRoleUI() {
+    installMutationGuards();
+    markReadOnlyControls();
+    ensureAccessBanner();
+    if (!accessObserver && typeof MutationObserver !== "undefined" && document.body) {
+      accessObserver = new MutationObserver(function () { markReadOnlyControls(); });
+      accessObserver.observe(document.body, { childList: true, subtree: true });
+    }
+  }
+  function bootDocumentAccess() {
+    if (!isDrill() && !isShot()) return;
+    if (!currentProfile) {
+      var cached = readVerifiedUser();
+      if (cached) currentProfile = normalizeUserProfile({ uid: cached.uid, email: cached.email, displayName: cached.displayName }, cached);
+    }
+    var permissionName = isShot() ? "shot" : "drill";
+    if (currentProfile && !hasPermission(permissionName)) {
+      if (!accessNoticeShown) {
+        accessNoticeShown = true;
+        alert("ACCESS RESTRICTED\n\nThe " + roleLabel(currentRole()) + " role cannot open this template. MITHRIL will return to Home.");
+      }
+      window.location.href = "./index.html";
+      return;
+    }
+    applyDocumentRoleUI();
+    loadFirebase().then(function (fb) {
+      if (!fb.auth.currentUser) return;
+      return loadUserProfile(fb, fb.auth.currentUser).then(function () {
+        if (!hasPermission(permissionName)) {
+          alert("Your current role cannot open this template. MITHRIL will return to Home.");
+          window.location.href = "./index.html";
+        } else applyDocumentRoleUI();
+      });
+    }).catch(function () { applyDocumentRoleUI(); });
   }
 
   function loadFirebase() {
@@ -1452,7 +1738,7 @@
     modal.className = "m400Modal";
     modal.innerHTML = [
       '<div class="m400Box">',
-      '<div class="m400Head"><strong>MITHRIL Cloud Sync · User Access · m40.4</strong><button type="button" id="m400CloudClose">Close</button></div>',
+      '<div class="m400Head"><strong>MITHRIL Cloud Sync · Role Access · m40.5</strong><button type="button" id="m400CloudClose">Close</button></div>',
       '<div id="m400CloudOut">',
       '<div class="m400Note m400Warning">Cloud Sync uses the MITHRIL account from the Home screen. Return Home to sign in, then reopen Cloud Sync.</div>',
       '</div>',
@@ -1486,10 +1772,15 @@
     if (byId("m400DeviceIn")) byId("m400DeviceIn").value = deviceName();
     if (byId("m400TypeLabel") && window.MithrilDocument) byId("m400TypeLabel").textContent = docTypeLabel(window.MithrilDocument.type);
     if (currentUser && byId("m400Identity")) byId("m400Identity").textContent = "Signed in: " + (currentProfile && currentProfile.displayName || currentUser.email || currentUser.uid) + (currentProfile ? " · " + roleLabel(currentProfile.role) : "");
+    ["m401SmartSync", "m400Upload", "m401UndoCloud"].forEach(function (id) {
+      var button = byId(id);
+      if (button) button.style.display = hasPermission("cloudWrite") ? "" : "none";
+    });
     if (currentUser) renderLocalCloudStatus();
   }
   function openCloud() {
     closeMenu();
+    if (!hasPermission("cloudRead")) return restrictedMessage("Cloud Sync");
     if (!window.MithrilDocument) { alert("Open a Drill Log or Shot Diagram before using Cloud Sync."); return; }
     var modal = ensureCloudModal(); modal.classList.add("show");
     setCloudStatus("Connecting to Firebase…", "wait");
@@ -1555,6 +1846,7 @@
   }
   function uploadCurrent(options) {
     options = options || {};
+    if (!hasPermission("cloudWrite")) { setCloudStatus("Your role has read-only cloud access.", "bad"); return restrictedMessage("Cloud upload"); }
     if (!currentUser) { setCloudStatus("Sign in before uploading.", "bad"); return; }
     var data = cloudRecord();
     if (!data) { setCloudStatus("MITHRIL could not read the current document through the shared document interface.", "bad"); return; }
@@ -1600,6 +1892,7 @@
   }
   function formatTime(value) { try { if (value && value.toDate) return value.toDate().toLocaleString(); } catch (error) {} return "Pending server timestamp"; }
   function refreshCloudList() {
+    if (!hasPermission("cloudRead")) return Promise.resolve();
     if (!currentUser || !window.MithrilDocument) return Promise.resolve();
     var type = window.MithrilDocument.type;
     setCloudStatus("Loading private cloud documents…", "wait");
@@ -1622,14 +1915,15 @@
     items.forEach(function (item) {
       var d = item.data, row = document.createElement("div");
       row.className = "m400Doc";
-      row.innerHTML = '<div><div class="m400DocTitle">' + escapeHtml(d.title || docTypeLabel(d.type)) + '</div><div class="m400Meta">Revision ' + escapeHtml(d.revision || 1) + ' • ' + escapeHtml(d.holeCount || 0) + ' populated holes<br>' + escapeHtml(formatTime(d.updatedAt)) + ' • ' + escapeHtml(d.sourceDevice || "Unknown device") + '<br>Contract v' + escapeHtml(d.documentContractVersion || 1) + '</div></div><div class="m400DocActions"><button type="button" class="primary">Open on This Device</button><button type="button" class="danger">Delete Cloud Copy</button></div>';
+      row.innerHTML = '<div><div class="m400DocTitle">' + escapeHtml(d.title || docTypeLabel(d.type)) + '</div><div class="m400Meta">Revision ' + escapeHtml(d.revision || 1) + ' • ' + escapeHtml(d.holeCount || 0) + ' populated holes<br>' + escapeHtml(formatTime(d.updatedAt)) + ' • ' + escapeHtml(d.sourceDevice || "Unknown device") + '<br>Contract v' + escapeHtml(d.documentContractVersion || 1) + '</div></div><div class="m400DocActions"><button type="button" class="primary">Open on This Device</button>' + (hasPermission("cloudDelete") ? '<button type="button" class="danger">Delete Cloud Copy</button>' : "") + '</div>';
       var buttons = row.querySelectorAll("button");
       buttons[0].addEventListener("click", function () { downloadCloud(item.id, d); });
-      buttons[1].addEventListener("click", function () { deleteCloud(item.id, d); });
+      if (buttons[1]) buttons[1].addEventListener("click", function () { deleteCloud(item.id, d); });
       box.appendChild(row);
     });
   }
   function downloadCloud(id, data) {
+    if (!hasPermission("cloudRead")) return restrictedMessage("Cloud download");
     var adapter = window.MithrilDocument;
     if (!adapter) return;
     var warning = "Open cloud revision " + (data.revision || 1) + " of:\n\n" + (data.title || docTypeLabel(data.type)) + "\nSaved from " + (data.sourceDevice || "Unknown device") + "\n\nThis replaces the current local " + docTypeLabel(data.type) + " on this device.";
@@ -1676,6 +1970,7 @@
     } catch (error) { setCloudStatus(friendlyError(error), "bad"); }
   }
   function smartSync() {
+    if (!hasPermission("cloudWrite")) { setCloudStatus("Your role has read-only cloud access. Use Open on This Device to view a cloud document.", "bad"); return restrictedMessage("Cloud synchronization"); }
     if (!currentUser) { setCloudStatus("Sign in before syncing.", "bad"); return; }
     setCloudStatus("Comparing local and cloud revisions…", "wait");
     var data = cloudRecord(), id = logicalId(data);
@@ -1704,6 +1999,7 @@
     }).catch(function (error) { setCloudStatus(friendlyError(error), "bad"); });
   }
   function deleteCloud(id, data) {
+    if (!hasPermission("cloudDelete")) return restrictedMessage("Cloud deletion");
     if (!confirm("Delete this cloud copy?\n\n" + (data.title || docTypeLabel(data.type)) + "\n\nThe local copy on this device will not be deleted.")) return;
     setCloudStatus("Deleting cloud copy…", "wait");
     loadFirebase().then(function (fb) { return fb.storeMod.deleteDoc(fb.storeMod.doc(fb.db, "users", currentUser.uid, "documents", id)); })
@@ -2106,7 +2402,7 @@
         script.id = CHILD_SCRIPT_ID;
         script.src = CHILD_SCRIPT_SRC;
         doc.head.appendChild(script);
-      } catch (error) { console.warn("MITHRIL m40.4.0 could not attach the standardized document layer to the Shot Diagram.", error); }
+      } catch (error) { console.warn("MITHRIL m40.5.0 could not attach the standardized document layer to the Shot Diagram.", error); }
     }
     frame.addEventListener("load", function () { setTimeout(inject, 80); });
     setTimeout(inject, 120);
@@ -2154,6 +2450,7 @@
   updateVersionLabels();
   installVersionLabelGuard();
   if (byId("templateStart")) bootLandingAuth();
+  if (isDrill() || isShot()) bootDocumentAccess();
   if (isWrapper()) injectIntoShotFrame();
   if (isDrill() || isShot()) bootDocument();
 
@@ -2178,6 +2475,9 @@
     defaultUserProfile: defaultUserProfile,
     normalizeUserProfile: normalizeUserProfile,
     roleLabel: roleLabel,
+    permissionsFor: permissionsFor,
+    hasPermission: hasPermission,
+    currentRoleValue: currentRoleValue,
     readVerifiedUser: readVerifiedUser,
     cacheVerifiedUser: cacheVerifiedUser
   };

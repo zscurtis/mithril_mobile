@@ -1,14 +1,15 @@
 {
-  "version": "m40.4.0",
-  "title": "Landing Login and User Profile Foundation",
+  "version": "m40.5.0",
+  "title": "Role-Based Access Foundation",
   "released": "2026-07-27",
   "minimumOfflineVersion": "m39.6.3",
   "notes": [
-    "Moves Firebase email/password sign-in to the MITHRIL Home screen.",
-    "Requires a verified user before opening Drill Log or Shot Diagram templates.",
-    "Creates a persistent user-profile foundation with display name, role, organization, and account status.",
-    "Uses the same authenticated session for Home access and Cloud Sync.",
-    "Allows field access through the last verified account when Firebase is temporarily unreachable, while cloud operations remain unavailable offline.",
-    "Preserves permanent document identity, Hole Edit rotation, desktop selection highlighting, and existing cloud conflict safeguards."
+    "Adds centralized permissions for Administrator, Blaster, Driller, Driver, Viewer, and compatibility Member roles.",
+    "Restricts landing-page templates, conversion, editing, cloud writes, and cloud deletion by role.",
+    "Adds a read-only Viewer interface and direct-action access checks.",
+    "Adds an Administrator user-management screen for assigning roles and disabling accounts.",
+    "Moves secure profiles into a dedicated userProfiles collection while migrating existing member profiles.",
+    "Includes deployable Firebase rules so cloud permissions are enforced independently of hidden buttons.",
+    "Preserves landing login, offline verified-user access, permanent document identity, Hole Edit rotation, and cloud conflict safeguards."
   ]
 }
