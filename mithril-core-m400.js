@@ -1,14 +1,16 @@
 (function () {
   "use strict";
 
-  var RELEASE_VERSION = "m40.3.0";
+  var RELEASE_VERSION = "m40.4.0";
   var CHILD_SCRIPT_ID = "mithrilCoreM400ChildLoader";
-  var CHILD_SCRIPT_SRC = "./mithril-core-m400.js?rev=4030-frame";
+  var CHILD_SCRIPT_SRC = "./mithril-core-m400.js?rev=4040-frame";
   var TRANSFER_KEY = "mithrilDrillToShotTransferM400";
   var UNDO_KEY = "mithrilDrillToShotUndoM400";
   var DEVICE_KEY = "mithrilCloudDeviceNameM399";
   var SYNC_META_PREFIX = "mithrilCloudSyncMetaM401:";
   var RECOVERY_PREFIX = "mithrilCloudRecoveryM401:";
+  var LAST_VERIFIED_USER_KEY = "mithrilLastVerifiedUserM404";
+  var PROFILE_DOCUMENT_ID = "__mithril_user_profile__";
   var FIREBASE_VERSION = "12.16.0";
   var firebaseConfig = {
     apiKey: ["AIzaSyBOb0pXdI", "DMqr5mMKdKOCpP84jSRjyjnhY"].join(""),
@@ -29,6 +31,10 @@
 
   var fbPromise = null;
   var currentUser = null;
+  var currentProfile = null;
+  var offlineUserSession = false;
+  var profilePromise = null;
+  var profilePromiseUid = "";
   var authUnsubscribe = null;
   var cloudItems = [];
 
@@ -203,7 +209,8 @@
       ".m401Compare{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:10px 0}.m401Side{border:1px solid #9ab8df;border-radius:9px;padding:10px;background:#f7faff}.m401Side.cloud{border-color:#8dbb96;background:#f3fbf4}.m401Side h3{margin:0 0 6px;font-size:13px;letter-spacing:.08em}.m401Side b{display:block;font-size:16px;margin-bottom:4px}.m401Side span{display:block;font-size:12px;line-height:1.4;color:#4d5866;font-weight:750}",
       ".m400Docs{display:grid;gap:8px;margin-top:10px}.m400Doc{border:1px solid #aaa;border-radius:9px;padding:9px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:9px;align-items:center}.m400DocTitle{font-size:15px;font-weight:900}.m400Meta{font-size:12px;color:#555;font-weight:750;line-height:1.35;margin-top:3px}.m400DocActions{display:grid;gap:6px}",
       ".m400Toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:22000;max-width:min(720px,calc(100vw - 24px));padding:12px 16px;border:2px solid #4f9a61;border-radius:10px;background:#e9f8ec;color:#173d20;font-size:14px;font-weight:900;line-height:1.35;box-shadow:0 8px 28px rgba(0,0,0,.35);text-align:center}.m400Toast.bad{background:#ffeaea;border-color:#c66;color:#720000}",
-      "@media(max-width:600px){.m400Grid,.m400Actions,.m401Compare{grid-template-columns:1fr}.m400Wide{grid-column:auto}.m400Stats{grid-template-columns:1fr 1fr}.m400Doc{grid-template-columns:1fr}.m400DocActions{grid-template-columns:1fr 1fr}}"
+      ".m404LandingAuth{margin:14px 0 16px;padding:14px;border:1px solid #666;border-radius:12px;background:rgba(255,255,255,.06);color:#fff}.m404LandingHead{display:flex;justify-content:space-between;gap:10px;align-items:center}.m404LandingHead strong{font-size:17px}.m404AuthState{font-size:12px;font-weight:900;color:#b9c7da}.m404AuthForm{display:grid;grid-template-columns:1fr 1fr auto;gap:9px;margin-top:10px}.m404AuthForm input{min-width:0;min-height:44px;border:1px solid #888;border-radius:8px;padding:9px;font-size:16px}.m404AuthForm button{min-width:105px;background:#1f6feb;border-color:#1f6feb;color:#fff}.m404SignedIn{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-top:10px;padding:10px;border:1px solid #477454;border-radius:9px;background:rgba(37,110,57,.24)}.m404UserName{font-size:15px;font-weight:950}.m404UserMeta{font-size:12px;color:#c9d7cc;font-weight:800;margin-top:3px}.m404AuthMessage{display:none;margin-top:9px;font-size:12px;line-height:1.35;font-weight:800;color:#ffd37a}.m404AuthMessage.show{display:block}.m404TemplateLocked{opacity:.42;pointer-events:none;filter:grayscale(.55)}",
+      "@media(max-width:600px){.m400Grid,.m400Actions,.m401Compare,.m404AuthForm{grid-template-columns:1fr}.m400Wide{grid-column:auto}.m400Stats{grid-template-columns:1fr 1fr}.m400Doc{grid-template-columns:1fr}.m400DocActions{grid-template-columns:1fr 1fr}.m404SignedIn{align-items:flex-start;flex-direction:column}.m404SignedIn button{width:100%}}"
     ].join("");
     document.head.appendChild(style);
   }
@@ -451,23 +458,6 @@
 
     guardFunction("saveInfo");
     guardFunction("saveHeaderData");
-    var originalClear = window.clearAll;
-    if (typeof originalClear === "function" && !originalClear.__mithrilM403IdentityGuard) {
-      var guardedClear = function () {
-        var result = originalClear.apply(this, arguments);
-        var header = typeof headerData !== "undefined" ? headerData || {} : {};
-        var info = identityInfo(docType(), header);
-        var holes = 0;
-        try { holes = countHoles(typeof pagesData !== "undefined" ? pagesData : {}); } catch (error) {}
-        if (!info.jobName && !info.documentNumber && !info.fieldDate && !holes) {
-          Object.keys(IDENTITY_FIELDS).forEach(function (key) { delete header[IDENTITY_FIELDS[key]]; });
-          persist(ensureDocumentIdentity(docType(), header, { forceNew: true }));
-        }
-        return result;
-      };
-      guardedClear.__mithrilM403IdentityGuard = true;
-      window.clearAll = guardedClear;
-    }
     persist(capture());
   }
 
@@ -1222,6 +1212,206 @@
     cloud.innerHTML = "<h3>CLOUD</h3>" + (d ? "<b>Revision " + escapeHtml(d.revision || 1) + "</b><span>" + escapeHtml(d.holeCount || 0) + " populated holes<br>" + escapeHtml(formatTime(d.updatedAt)) + "<br>" + escapeHtml(d.sourceDevice || "Unknown device") + "</span>" : "<b>No matching cloud copy</b><span>Smart Sync will upload this document.</span>");
     updateUndoCloudButton();
   }
+
+  function defaultUserProfile(user) {
+    var email = text(user && user.email);
+    var name = text(user && user.displayName) || (email ? email.split("@")[0] : "MITHRIL User");
+    return {
+      schemaVersion: 1,
+      type: "userProfile",
+      uid: text(user && user.uid),
+      email: email,
+      displayName: name,
+      role: "member",
+      organizationId: "personal",
+      status: "active"
+    };
+  }
+  function normalizeUserProfile(user, data) {
+    var fallback = defaultUserProfile(user), source = data || {};
+    return {
+      schemaVersion: Number(source.schemaVersion || fallback.schemaVersion),
+      type: "userProfile",
+      uid: text(source.uid) || fallback.uid,
+      email: text(source.email) || fallback.email,
+      displayName: text(source.displayName) || fallback.displayName,
+      role: text(source.role) || fallback.role,
+      organizationId: text(source.organizationId) || fallback.organizationId,
+      status: text(source.status) || fallback.status
+    };
+  }
+  function roleLabel(role) {
+    var labels = { administrator: "Administrator", blaster: "Blaster", driller: "Driller", driver: "Driver", viewer: "Viewer", member: "Member" };
+    return labels[text(role).toLowerCase()] || "Member";
+  }
+  function readVerifiedUser() {
+    var cached = readJsonStorage(LAST_VERIFIED_USER_KEY);
+    return cached && cached.uid ? cached : null;
+  }
+  function cacheVerifiedUser(profile) {
+    if (!profile || !profile.uid) return false;
+    return writeJsonStorage(LAST_VERIFIED_USER_KEY, {
+      uid: profile.uid,
+      email: profile.email,
+      displayName: profile.displayName,
+      role: profile.role,
+      organizationId: profile.organizationId,
+      status: profile.status,
+      verifiedAt: new Date().toISOString()
+    });
+  }
+  function clearVerifiedUser() {
+    try { localStorage.removeItem(LAST_VERIFIED_USER_KEY); } catch (error) {}
+  }
+  function profileDocumentRef(fb, uid) {
+    return fb.storeMod.doc(fb.db, "users", uid, "documents", PROFILE_DOCUMENT_ID);
+  }
+  function loadUserProfile(fb, user) {
+    if (profilePromise && profilePromiseUid === user.uid) return profilePromise;
+    profilePromiseUid = user.uid;
+    var ref = profileDocumentRef(fb, user.uid);
+    profilePromise = fb.storeMod.getDoc(ref).then(function (snap) {
+      if (snap.exists()) return normalizeUserProfile(user, snap.data());
+      var profile = defaultUserProfile(user);
+      var record = clone(profile);
+      record.createdAt = fb.storeMod.serverTimestamp();
+      record.updatedAt = fb.storeMod.serverTimestamp();
+      return fb.storeMod.setDoc(ref, record).then(function () { return profile; });
+    }).catch(function () {
+      // Authentication remains usable if existing rules have not yet been
+      // expanded for the profile record. The safe member profile preserves the
+      // current feature set and can be persisted after the rules are updated.
+      return defaultUserProfile(user);
+    }).then(function (profile) {
+      currentProfile = profile;
+      offlineUserSession = false;
+      cacheVerifiedUser(profile);
+      renderLandingAuth();
+      refreshCloudAuth();
+      return profile;
+    });
+    return profilePromise;
+  }
+  function setTemplateAccess(enabled) {
+    var cards = document.querySelector(".templateCards");
+    if (!cards) return;
+    cards.classList.toggle("m404TemplateLocked", !enabled);
+    Array.prototype.forEach.call(cards.querySelectorAll("button"), function (button) {
+      button.disabled = !enabled;
+      button.setAttribute("aria-disabled", enabled ? "false" : "true");
+    });
+  }
+  function ensureLandingAuth() {
+    var start = byId("templateStart"), box = start && start.querySelector(".startBox");
+    if (!box) return null;
+    ensureStyles();
+    var panel = byId("m404LandingAuth");
+    if (panel) return panel;
+    panel = document.createElement("div");
+    panel.id = "m404LandingAuth";
+    panel.className = "m404LandingAuth";
+    panel.innerHTML = [
+      '<div class="m404LandingHead"><strong>User Access</strong><span id="m404AuthState" class="m404AuthState">Checking sign-in…</span></div>',
+      '<div id="m404AuthOut">',
+      '<div class="m404AuthForm"><input id="m404Email" type="email" autocomplete="username" placeholder="Email"><input id="m404Password" type="password" autocomplete="current-password" placeholder="Password"><button id="m404SignIn" type="button">Sign In</button></div>',
+      '</div>',
+      '<div id="m404AuthIn" class="m404SignedIn" style="display:none"><div><div id="m404UserName" class="m404UserName"></div><div id="m404UserMeta" class="m404UserMeta"></div></div><button id="m404SignOut" type="button">Sign Out</button></div>',
+      '<div id="m404AuthMessage" class="m404AuthMessage"></div>'
+    ].join("");
+    var intro = box.querySelector(".startIntro");
+    box.insertBefore(panel, intro || box.firstChild);
+    byId("m404SignIn").addEventListener("click", landingSignIn);
+    byId("m404SignOut").addEventListener("click", landingSignOut);
+    byId("m404Password").addEventListener("keydown", function (event) { if (event.key === "Enter") landingSignIn(); });
+    setTemplateAccess(false);
+    return panel;
+  }
+  function setLandingMessage(message, kind) {
+    var el = byId("m404AuthMessage");
+    if (!el) return;
+    el.textContent = message || "";
+    el.className = "m404AuthMessage" + (message ? " show" : "");
+    if (kind === "good") el.style.color = "#9de0ae";
+    else if (kind === "bad") el.style.color = "#ffadad";
+    else el.style.color = "#ffd37a";
+  }
+  function renderLandingAuth() {
+    if (!ensureLandingAuth()) return;
+    var out = byId("m404AuthOut"), inside = byId("m404AuthIn"), state = byId("m404AuthState");
+    var profile = currentProfile;
+    var active = !!profile && !/^(?:disabled|inactive)$/i.test(text(profile.status));
+    out.style.display = profile ? "none" : "block";
+    inside.style.display = profile ? "flex" : "none";
+    setTemplateAccess(active);
+    if (profile) {
+      byId("m404UserName").textContent = profile.displayName || profile.email || "MITHRIL User";
+      byId("m404UserMeta").textContent = (offlineUserSession ? "Offline access" : "Signed in") + " · " + roleLabel(profile.role) + (profile.organizationId && profile.organizationId !== "personal" ? " · " + profile.organizationId : "");
+      state.textContent = offlineUserSession ? "OFFLINE" : (/^(?:disabled|inactive)$/i.test(text(profile.status)) ? "ACCESS DISABLED" : "SIGNED IN");
+      setLandingMessage(active ? (offlineUserSession ? "Using the last verified account on this device. Cloud Sync will reconnect when service returns." : "") : "This account is inactive. Contact a MITHRIL administrator.", active ? "" : "bad");
+    } else {
+      state.textContent = "SIGN IN REQUIRED";
+    }
+  }
+  function useOfflineVerifiedUser(reason) {
+    var cached = readVerifiedUser();
+    if (!cached) return false;
+    currentUser = null;
+    currentProfile = normalizeUserProfile({ uid: cached.uid, email: cached.email, displayName: cached.displayName }, cached);
+    offlineUserSession = true;
+    renderLandingAuth();
+    if (reason) setLandingMessage(reason, "");
+    return true;
+  }
+  function landingSignIn() {
+    var email = text(byId("m404Email").value), password = byId("m404Password").value;
+    if (!email || !password) { setLandingMessage("Enter the account email and password.", "bad"); return; }
+    setTemplateAccess(false);
+    byId("m404AuthState").textContent = "SIGNING IN…";
+    setLandingMessage("", "");
+    loadFirebase().then(function (fb) {
+      return fb.authMod.signInWithEmailAndPassword(fb.auth, email, password).then(function (cred) {
+        currentUser = cred.user;
+        byId("m404Password").value = "";
+        return loadUserProfile(fb, cred.user);
+      });
+    }).catch(function (error) {
+      currentUser = null;
+      currentProfile = null;
+      renderLandingAuth();
+      setLandingMessage(friendlyError(error), "bad");
+    });
+  }
+  function landingSignOut() {
+    setTemplateAccess(false);
+    byId("m404AuthState").textContent = "SIGNING OUT…";
+    loadFirebase().then(function (fb) { return fb.authMod.signOut(fb.auth); }).then(function () {
+      currentUser = null;
+      currentProfile = null;
+      offlineUserSession = false;
+      profilePromise = null;
+      profilePromiseUid = "";
+      clearVerifiedUser();
+      renderLandingAuth();
+      setLandingMessage("Signed out. Local document data remains on this device.", "good");
+    }).catch(function (error) { setLandingMessage(friendlyError(error), "bad"); });
+  }
+  function bootLandingAuth() {
+    if (!ensureLandingAuth()) return;
+    renderLandingAuth();
+    loadFirebase().then(function (fb) {
+      if (fb.auth.currentUser) return loadUserProfile(fb, fb.auth.currentUser);
+      currentUser = null;
+      currentProfile = null;
+      offlineUserSession = false;
+      renderLandingAuth();
+    }).catch(function () {
+      if (!useOfflineVerifiedUser("Firebase could not be reached. Using the last verified account on this device.")) {
+        renderLandingAuth();
+        setLandingMessage("Sign-in could not be reached. Connect to the internet and try again.", "bad");
+      }
+    });
+  }
+
   function loadFirebase() {
     if (fbPromise) return fbPromise;
     fbPromise = Promise.all([
@@ -1236,6 +1426,11 @@
       try { authMod.setPersistence(auth, authMod.browserLocalPersistence); } catch (error2) {}
       if (!authUnsubscribe) authUnsubscribe = authMod.onAuthStateChanged(auth, function (user) {
         currentUser = user || null;
+        if (user) loadUserProfile({ auth: auth, db: db, authMod: authMod, storeMod: storeMod }, user);
+        else if (!offlineUserSession) {
+          currentProfile = null;
+          renderLandingAuth();
+        }
         refreshCloudAuth();
         var modal = byId("m400CloudModal");
         if (currentUser && modal && modal.classList.contains("show")) refreshCloudList();
@@ -1257,10 +1452,9 @@
     modal.className = "m400Modal";
     modal.innerHTML = [
       '<div class="m400Box">',
-      '<div class="m400Head"><strong>MITHRIL Cloud Sync · Permanent Identity · m40.3</strong><button type="button" id="m400CloudClose">Close</button></div>',
+      '<div class="m400Head"><strong>MITHRIL Cloud Sync · User Access · m40.4</strong><button type="button" id="m400CloudClose">Close</button></div>',
       '<div id="m400CloudOut">',
-      '<div class="m400Note">Sign in with the Firebase account. Cloud Sync now reads and writes through the same MITHRIL document interface for Drill Logs and Shot Diagrams.</div>',
-      '<div class="m400Grid"><label>Email<input type="email" id="m400Email" autocomplete="username"></label><label>Password<input type="password" id="m400Password" autocomplete="current-password"></label><label class="m400Wide">Device name<input id="m400DeviceOut" type="text"></label><button type="button" class="primary m400Wide" id="m400SignIn">Sign In</button></div>',
+      '<div class="m400Note m400Warning">Cloud Sync uses the MITHRIL account from the Home screen. Return Home to sign in, then reopen Cloud Sync.</div>',
       '</div>',
       '<div id="m400CloudIn" style="display:none">',
       '<div class="m400Identity"><span id="m400Identity"></span><button type="button" id="m400SignOut">Sign Out</button></div>',
@@ -1276,7 +1470,6 @@
     ].join("");
     document.body.appendChild(modal);
     byId("m400CloudClose").addEventListener("click", function () { modal.classList.remove("show"); });
-    byId("m400SignIn").addEventListener("click", cloudSignIn);
     byId("m400SignOut").addEventListener("click", cloudSignOut);
     byId("m400Upload").addEventListener("click", uploadCurrent);
     byId("m400Refresh").addEventListener("click", refreshCloudList);
@@ -1290,10 +1483,9 @@
     if (!out || !inside) return;
     out.style.display = currentUser ? "none" : "block";
     inside.style.display = currentUser ? "block" : "none";
-    if (byId("m400DeviceOut")) byId("m400DeviceOut").value = deviceName();
     if (byId("m400DeviceIn")) byId("m400DeviceIn").value = deviceName();
     if (byId("m400TypeLabel") && window.MithrilDocument) byId("m400TypeLabel").textContent = docTypeLabel(window.MithrilDocument.type);
-    if (currentUser && byId("m400Identity")) byId("m400Identity").textContent = "Signed in: " + (currentUser.email || currentUser.uid);
+    if (currentUser && byId("m400Identity")) byId("m400Identity").textContent = "Signed in: " + (currentProfile && currentProfile.displayName || currentUser.email || currentUser.uid) + (currentProfile ? " · " + roleLabel(currentProfile.role) : "");
     if (currentUser) renderLocalCloudStatus();
   }
   function openCloud() {
@@ -1305,22 +1497,13 @@
       currentUser = fb.auth.currentUser || currentUser;
       refreshCloudAuth();
       if (currentUser) return refreshCloudList();
-      setCloudStatus("Sign in to access your private cloud documents.", "");
+      setCloudStatus("Return to MITHRIL Home and sign in to access cloud documents.", "");
     }).catch(function (error) { setCloudStatus(friendlyError(error), "bad"); });
-  }
-  function cloudSignIn() {
-    var email = text(byId("m400Email").value), password = byId("m400Password").value;
-    saveDeviceName(byId("m400DeviceOut").value);
-    if (!email || !password) { setCloudStatus("Enter the account email and password.", "bad"); return; }
-    setCloudStatus("Signing in…", "wait");
-    loadFirebase().then(function (fb) { return fb.authMod.signInWithEmailAndPassword(fb.auth, email, password); })
-      .then(function (cred) { currentUser = cred.user; byId("m400Password").value = ""; refreshCloudAuth(); setCloudStatus("Signed in successfully.", "good"); return refreshCloudList(); })
-      .catch(function (error) { setCloudStatus(friendlyError(error), "bad"); });
   }
   function cloudSignOut() {
     setCloudStatus("Signing out…", "wait");
     loadFirebase().then(function (fb) { return fb.authMod.signOut(fb.auth); })
-      .then(function () { currentUser = null; refreshCloudAuth(); byId("m400Docs").innerHTML = ""; setCloudStatus("Signed out. Local MITHRIL data remains on this device.", "good"); })
+      .then(function () { currentUser = null; currentProfile = null; offlineUserSession = false; profilePromise = null; profilePromiseUid = ""; clearVerifiedUser(); refreshCloudAuth(); renderLandingAuth(); byId("m400Docs").innerHTML = ""; setCloudStatus("Signed out. Local MITHRIL data remains on this device.", "good"); })
       .catch(function (error) { setCloudStatus(friendlyError(error), "bad"); });
   }
   function cloudRecord() {
@@ -1923,7 +2106,7 @@
         script.id = CHILD_SCRIPT_ID;
         script.src = CHILD_SCRIPT_SRC;
         doc.head.appendChild(script);
-      } catch (error) { console.warn("MITHRIL m40.3.0 could not attach the standardized document layer to the Shot Diagram.", error); }
+      } catch (error) { console.warn("MITHRIL m40.4.0 could not attach the standardized document layer to the Shot Diagram.", error); }
     }
     frame.addEventListener("load", function () { setTimeout(inject, 80); });
     setTimeout(inject, 120);
@@ -1970,6 +2153,7 @@
 
   updateVersionLabels();
   installVersionLabelGuard();
+  if (byId("templateStart")) bootLandingAuth();
   if (isWrapper()) injectIntoShotFrame();
   if (isDrill() || isShot()) bootDocument();
 
@@ -1990,6 +2174,11 @@
     timingCheckNumber: timingCheckNumber,
     collectTimingCheckData: collectTimingCheckData,
     findTimingConflicts: findTimingConflicts,
-    maximumHolesPerDelay: maximumHolesPerDelay
+    maximumHolesPerDelay: maximumHolesPerDelay,
+    defaultUserProfile: defaultUserProfile,
+    normalizeUserProfile: normalizeUserProfile,
+    roleLabel: roleLabel,
+    readVerifiedUser: readVerifiedUser,
+    cacheVerifiedUser: cacheVerifiedUser
   };
 })();

@@ -1,14 +1,14 @@
 {
-  "version": "m40.3.0",
-  "title": "Permanent Document Identity",
+  "version": "m40.4.0",
+  "title": "Landing Login and User Profile Foundation",
   "released": "2026-07-27",
   "minimumOfflineVersion": "m39.6.3",
   "notes": [
-    "Assigns every Drill Log and Shot Diagram a permanent internal document UUID.",
-    "Keeps cloud identity unchanged when job names, dates, Shot IDs, Drill Log numbers, blasters, or employees are edited.",
-    "Migrates older local and cloud documents through their legacy cloud identity without abandoning existing records.",
-    "Stores permanent identity in JSON backups and restores it with the document.",
-    "Gives a Shot Diagram created from a Drill Log its own identity while recording the source Drill Log ID.",
-    "Preserves m40.2 Hole Edit rotation, the m40.1.3 desktop selection fix, and all existing cloud safety behavior."
+    "Moves Firebase email/password sign-in to the MITHRIL Home screen.",
+    "Requires a verified user before opening Drill Log or Shot Diagram templates.",
+    "Creates a persistent user-profile foundation with display name, role, organization, and account status.",
+    "Uses the same authenticated session for Home access and Cloud Sync.",
+    "Allows field access through the last verified account when Firebase is temporarily unreachable, while cloud operations remain unavailable offline.",
+    "Preserves permanent document identity, Hole Edit rotation, desktop selection highlighting, and existing cloud conflict safeguards."
   ]
 }
