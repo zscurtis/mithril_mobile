@@ -1,15 +1,11 @@
 {
-  "version": "m40.5.0",
-  "title": "Role-Based Access Foundation",
+  "version": "m40.5.1",
+  "title": "Shot Diagram Header Preservation Hotfix",
   "released": "2026-07-27",
   "minimumOfflineVersion": "m39.6.3",
   "notes": [
-    "Adds centralized permissions for Administrator, Blaster, Driller, Driver, Viewer, and compatibility Member roles.",
-    "Restricts landing-page templates, conversion, editing, cloud writes, and cloud deletion by role.",
-    "Adds a read-only Viewer interface and direct-action access checks.",
-    "Adds an Administrator user-management screen for assigning roles and disabling accounts.",
-    "Moves secure profiles into a dedicated userProfiles collection while migrating existing member profiles.",
-    "Includes deployable Firebase rules so cloud permissions are enforced independently of hidden buttons.",
-    "Preserves landing login, offline verified-user access, permanent document identity, Hole Edit rotation, and cloud conflict safeguards."
+    "Prevents hole edits from overwriting Shot Diagram header information while the Shot Information window is closed.",
+    "Synchronizes the hidden Shot Information fields whenever a local, backup, or cloud document is applied.",
+    "Preserves m40.5 role-based access, cloud rules compatibility, permanent document identity, rotation, and conflict safeguards."
   ]
 }

@@ -1,9 +1,9 @@
 (function () {
   "use strict";
 
-  var RELEASE_VERSION = "m40.5.0";
+  var RELEASE_VERSION = "m40.5.1";
   var CHILD_SCRIPT_ID = "mithrilCoreM400ChildLoader";
-  var CHILD_SCRIPT_SRC = "./mithril-core-m400.js?rev=4050-frame";
+  var CHILD_SCRIPT_SRC = "./mithril-core-m400.js?rev=4051-frame";
   var TRANSFER_KEY = "mithrilDrillToShotTransferM400";
   var UNDO_KEY = "mithrilDrillToShotUndoM400";
   var DEVICE_KEY = "mithrilCloudDeviceNameM399";
@@ -361,6 +361,7 @@
         localStorage.setItem("mithrilCanvasPagesM01", JSON.stringify(pagesData));
         localStorage.setItem("mithrilCanvasPageMetaM03", JSON.stringify(pageMeta));
         localStorage.setItem("mithrilCanvasHeaderM01", JSON.stringify(headerData));
+        syncShotHeaderControls();
         if (typeof view !== "undefined") localStorage.setItem("mithrilCanvasViewM01", JSON.stringify(view));
         if (next.extras && next.extras.timingSequence) localStorage.setItem("mithrilCanvasTimingSequenceM397", JSON.stringify(next.extras.timingSequence));
         try { hasUnsentChanges = options.markDirty === true; } catch (error1) {}
@@ -464,6 +465,41 @@
     guardFunction("saveInfo");
     guardFunction("saveHeaderData");
     persist(capture());
+  }
+
+  function syncShotHeaderControls() {
+    if (!isShot() || typeof headerData === "undefined") return;
+    var header = headerData || {};
+    var values = {
+      fieldDate: typeof toDateInputValue === "function" ? toDateInputValue(header.FieldDate) : text(header.FieldDate),
+      shotID: text(header.ShotID),
+      jobName: text(header.JobName),
+      blaster: text(header.Blaster),
+      enteredByDefault: text(header.EnteredByDefault)
+    };
+    Object.keys(values).forEach(function (id) {
+      var field = byId(id);
+      if (field) field.value = values[id];
+    });
+  }
+
+  function installShotHeaderPreservation() {
+    if (!isShot() || window.__mithrilM4051HeaderPreservation) return;
+    window.__mithrilM4051HeaderPreservation = true;
+    var originalSaveHeaderData = window.saveHeaderData;
+    if (typeof originalSaveHeaderData === "function") {
+      var guardedSaveHeaderData = function () {
+        var modal = byId("shotInfoModal");
+        if (!modal || !modal.classList || !modal.classList.contains("show")) {
+          syncShotHeaderControls();
+          return typeof headerData !== "undefined" ? headerData : undefined;
+        }
+        return originalSaveHeaderData.apply(this, arguments);
+      };
+      guardedSaveHeaderData.__mithrilM4051HeaderPreservation = true;
+      window.saveHeaderData = guardedSaveHeaderData;
+    }
+    syncShotHeaderControls();
   }
 
 
@@ -2402,7 +2438,7 @@
         script.id = CHILD_SCRIPT_ID;
         script.src = CHILD_SCRIPT_SRC;
         doc.head.appendChild(script);
-      } catch (error) { console.warn("MITHRIL m40.5.0 could not attach the standardized document layer to the Shot Diagram.", error); }
+      } catch (error) { console.warn("MITHRIL m40.5.1 could not attach the standardized document layer to the Shot Diagram.", error); }
     }
     frame.addEventListener("load", function () { setTimeout(inject, 80); });
     setTimeout(inject, 120);
@@ -2424,6 +2460,7 @@
     ensureStyles();
     updateVersionLabels();
     installIdentityGuards();
+    installShotHeaderPreservation();
     var adapter = installAdapter();
     installManualBackupStandardization(adapter);
     installPageDeletionPatch(adapter);

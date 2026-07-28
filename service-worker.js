@@ -1,4 +1,4 @@
-const CACHE_NAME = "mithril-mobile-m40-5-0-role-access-v1";
+const CACHE_NAME = "mithril-mobile-m40-5-1-header-preservation-v1";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -28,7 +28,7 @@ function patchHTMLResponse(response, requestUrl) {
       .replace(/<script[^>]+mithril-core-m400\.js[^>]*><\/script>/gi, "");
     const scriptTags = [
       '<script src="./mithril-menu-m397.js?v=39.7"></script>',
-      '<script src="./mithril-core-m400.js?v=40.5.0"></script>'
+      '<script src="./mithril-core-m400.js?v=40.5.1"></script>'
     ].join("");
     if (/<\/body>/i.test(patched)) patched = patched.replace(/<\/body>/i, scriptTags + "</body>"); else patched += scriptTags;
     const headers = new Headers(response.headers); headers.set("Content-Type", "text/html; charset=utf-8"); headers.delete("Content-Length");
