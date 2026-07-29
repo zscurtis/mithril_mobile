@@ -5262,6 +5262,7 @@
       ".m395PatternHelp{font-size:13px;font-weight:750;line-height:1.35;color:#444;margin:0 0 10px}",
       ".m395PatternEditRow{display:grid;grid-template-columns:1fr 1fr;gap:6px}",
       ".m395PatternEditRow button{min-height:43px;font-size:13px}",
+      "#m395AssignPatternModal,#m395DrillAssignPatternModal{z-index:260}",
       ".m395ShotPdfPreview{display:none;position:fixed;inset:0;z-index:400;background:#d9d9d9}",
       ".m395ShotPdfPreview.show{display:grid;grid-template-rows:auto 1fr}",
       ".m395ShotPdfToolbar{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:8px;padding:8px;background:#f7f7f7;border-bottom:1px solid #999;min-height:50px;box-sizing:border-box}",

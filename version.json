@@ -1,11 +1,11 @@
 {
-  "version": "m40.5.1",
-  "title": "Shot Diagram Header Preservation Hotfix",
-  "released": "2026-07-27",
+  "version": "m40.5.2",
+  "title": "Pattern Assignment Dialog Layering Fix",
+  "released": "2026-07-29",
   "minimumOfflineVersion": "m39.6.3",
   "notes": [
-    "Prevents hole edits from overwriting Shot Diagram header information while the Shot Information window is closed.",
-    "Synchronizes the hidden Shot Information fields whenever a local, backup, or cloud document is applied.",
-    "Preserves m40.5 role-based access, cloud rules compatibility, permanent document identity, rotation, and conflict safeguards."
+    "Keeps Drill Log and Shot Diagram pattern-assignment dialogs above their hole-edit panels on shorter laptop displays.",
+    "Preserves the active hole selection while a pattern is assigned or the dialog is cancelled.",
+    "Preserves the m40.5.1 header fix, role-based access, cloud rules compatibility, permanent document identity, rotation, and conflict safeguards."
   ]
 }
