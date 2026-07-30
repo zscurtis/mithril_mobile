@@ -1,8 +1,8 @@
 (function () {
   "use strict";
 
-  var RELEASE_VERSION = "m40.8.1";
-  var RELEASE_LABEL = "compact responsive workspace header";
+  var RELEASE_VERSION = "m40.8.2";
+  var RELEASE_LABEL = "reliable compact workspace header";
   var THEME_STORAGE_KEY = "mithrilCanvasThemeV1";
   var THEME_CLASS_PREFIX = "m395-theme-";
   var THEME_OPTIONS = [
@@ -201,7 +201,7 @@
         var script = childDocument.createElement("script");
         script.id = "mithrilMenuM395ChildLoader";
         script.setAttribute("data-mithril-release", RELEASE_VERSION);
-        script.src = "./mithril-menu-m397.js?v=39.7-frame";
+        script.src = "./mithril-menu-m397.js?v=40.8.2-frame";
         (childDocument.head || childDocument.documentElement).appendChild(script);
         return true;
       } catch (error) {
@@ -549,12 +549,74 @@
     }
   }
 
+  function removeRetiredFinishControls(root) {
+    root = root || document;
+    var buttons = root.querySelectorAll ? root.querySelectorAll("button") : [];
+    for (var i = buttons.length - 1; i >= 0; i -= 1) {
+      var button = buttons[i];
+      var label = String(button.textContent || "").replace(/\s+/g, " ").trim();
+      var action = String(button.getAttribute("onclick") || "");
+      var retired = button.classList.contains("finishBtn") ||
+        button.id === "finishSendBtn" ||
+        /finish\s*(?:&|and)?\s*(?:send|export)/i.test(label) ||
+        /send\s+to\s+blaster/i.test(label) ||
+        /finishAndSend(?:ToBlaster)?\s*\(/i.test(action);
+      if (retired && button.parentNode) button.parentNode.removeChild(button);
+    }
+  }
+
+  function installWorkspaceHeaderHeightSync() {
+    var header = document.querySelector("header");
+    if (!header || header.getAttribute("data-m4082-height-sync") === "true") return;
+    header.setAttribute("data-m4082-height-sync", "true");
+
+    var scheduled = false;
+    function measure() {
+      scheduled = false;
+      if (!header.isConnected) return;
+      var headerRect = header.getBoundingClientRect();
+      var children = header.children;
+      var contentBottom = headerRect.top;
+      for (var i = 0; i < children.length; i += 1) {
+        var child = children[i];
+        if (window.getComputedStyle(child).display === "none") continue;
+        var rect = child.getBoundingClientRect();
+        if (rect.height > 0) contentBottom = Math.max(contentBottom, rect.bottom);
+      }
+      var compact = window.matchMedia &&
+        (window.matchMedia("(min-width:1100px)").matches ||
+         window.matchMedia("(min-width:700px) and (max-height:720px)").matches ||
+         window.matchMedia("(pointer:coarse) and (orientation:landscape) and (min-width:900px)").matches);
+      var minimum = compact ? 96 : 140;
+      var required = Math.max(minimum, Math.ceil(contentBottom - headerRect.top + 6));
+      var current = parseFloat(window.getComputedStyle(document.documentElement).getPropertyValue("--toolbar-h")) || 0;
+      if (Math.abs(required - current) > 1) {
+        document.documentElement.style.setProperty("--toolbar-h", required + "px");
+      }
+    }
+    function scheduleMeasure() {
+      if (scheduled) return;
+      scheduled = true;
+      (window.requestAnimationFrame || function (callback) { return window.setTimeout(callback, 16); })(measure);
+    }
+
+    window.addEventListener("resize", scheduleMeasure);
+    window.addEventListener("orientationchange", scheduleMeasure);
+    if (typeof window.ResizeObserver === "function") {
+      var observer = new window.ResizeObserver(scheduleMeasure);
+      observer.observe(header);
+      for (var i = 0; i < header.children.length; i += 1) observer.observe(header.children[i]);
+    }
+    window.setTimeout(scheduleMeasure, 0);
+    window.setTimeout(scheduleMeasure, 120);
+    window.setTimeout(scheduleMeasure, 600);
+  }
+
   function updateToolbar(isShot) {
     var header = document.querySelector("header");
     if (!header) return;
 
-    var finishButton = header.querySelector(".finishBtn");
-    if (finishButton && finishButton.parentNode) finishButton.parentNode.removeChild(finishButton);
+    removeRetiredFinishControls(document);
 
     var topButtons = header.querySelectorAll(".topRow button");
     for (var i = 0; i < topButtons.length; i += 1) {
@@ -571,6 +633,7 @@
       zoomButtons[0].classList.add("m395FitButton");
     }
 
+    installWorkspaceHeaderHeightSync();
   }
 
   function setButtonArrow(button, isOpen) {

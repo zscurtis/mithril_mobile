@@ -1,11 +1,12 @@
 {
-  "version": "m40.8.1",
-  "title": "Compact Laptop Header",
+  "version": "m40.8.2",
+  "title": "Reliable Workspace Header",
   "released": "2026-07-30",
   "minimumOfflineVersion": "m39.6.3",
   "notes": [
-    "Separates the workspace controls from the document information and sync-status bar on short laptop screens.",
-    "Removes the obsolete Finish and Send to Blaster workflow now that cloud documents are available directly to blasters.",
+    "Forces the current workspace interface code to load inside the Shot Diagram instead of reusing an older cached frame copy.",
+    "Separates workspace controls from the document information and sync-status bar and measures the rendered header as a safety check.",
+    "Removes every legacy Finish and Send to Blaster control by class, id, action, or label.",
     "Removes the old UNSENT and shared-to-Outlook wording from the workspace detail line; cloud status is now authoritative.",
     "Keeps PDF, CSV, and backup exports available from the document menu.",
     "Preserves the verified m40.8.0 field-entry UI, m40.7.1 cloud loading, and m40.6.2 iPad touch behavior."

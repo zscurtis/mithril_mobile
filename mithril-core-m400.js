@@ -1,9 +1,9 @@
 (function () {
   "use strict";
 
-  var RELEASE_VERSION = "m40.8.1";
+  var RELEASE_VERSION = "m40.8.2";
   var CHILD_SCRIPT_ID = "mithrilCoreM400ChildLoader";
-  var CHILD_SCRIPT_SRC = "./mithril-core-m400.js?rev=4080-frame";
+  var CHILD_SCRIPT_SRC = "./mithril-core-m400.js?rev=4082-frame";
   var TRANSFER_KEY = "mithrilDrillToShotTransferM400";
   var UNDO_KEY = "mithrilDrillToShotUndoM400";
   var DEVICE_KEY = "mithrilCloudDeviceNameM399";
@@ -241,6 +241,9 @@
       ".m408ToastRegion{position:fixed;left:50%;bottom:max(16px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:22000;width:min(720px,calc(100vw - 24px));display:grid;gap:8px;pointer-events:none}.m400Toast{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;padding:12px 12px 12px 16px;border:2px solid #4f9a61;border-radius:11px;background:#e9f8ec;color:#173d20;font-size:14px;font-weight:850;line-height:1.35;box-shadow:0 8px 28px rgba(0,0,0,.35);text-align:left;pointer-events:auto;animation:m408ToastIn .18s ease-out}.m400Toast.bad{background:#ffeaea;border-color:#c66;color:#720000}.m400Toast.wait{background:#fff7d8;border-color:#c7aa45;color:#5f4800}.m400Toast.leaving{opacity:0;transform:translateY(8px);transition:opacity .18s,transform .18s}.m408ToastClose{width:34px;min-height:34px!important;padding:0!important;border:0!important;background:transparent!important;color:inherit!important;font-size:24px!important;line-height:1!important}@keyframes m408ToastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}",
       ".m408FeedbackModal{z-index:26000}.m408FeedbackBox{width:min(560px,100%);padding:0;overflow:hidden;border-color:#64748b}.m408FeedbackHead{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid #d6dbe2;background:#f8fafc}.m408FeedbackIcon{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:#eaf3ff;color:#1f5fae;font-size:19px;font-weight:950}.m408FeedbackBox.bad .m408FeedbackIcon,.m408FeedbackBox.danger .m408FeedbackIcon{background:#ffe5e5;color:#8b1e1e}.m408FeedbackBox.warning .m408FeedbackIcon{background:#fff0c2;color:#725000}.m408FeedbackTitle{font-size:19px;font-weight:950}.m408FeedbackMessage{padding:16px;white-space:pre-wrap;font-size:14px;line-height:1.48;color:#26313f}.m408FeedbackActions{position:sticky;bottom:0;display:grid;grid-template-columns:1fr 1fr;gap:9px;padding:12px 16px;border-top:1px solid #d6dbe2;background:#fff}.m408FeedbackActions.one{grid-template-columns:1fr}.m408FeedbackActions button{min-height:48px}.m408FeedbackActions .danger{background:#b42318;color:#fff;border-color:#8f1b13}",
       "#status.m408StatusHost{display:grid!important;grid-template-columns:minmax(0,1fr) auto;gap:5px 10px;align-items:center;padding:6px 9px!important;border:1px solid #c7cfd9;border-radius:9px;background:#f8fafc;min-height:38px;box-sizing:border-box;color:#26313f!important;white-space:normal!important;overflow:visible!important}.m408DocTitle{font-size:13px;font-weight:950;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.m408DocMeta{grid-column:1/-1;font-size:10px;font-weight:750;color:#657284;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.m408StatusChip{display:inline-flex;align-items:center;gap:6px;min-height:24px;padding:3px 8px;border-radius:999px;border:1px solid #9aa7b5;background:#edf1f5;color:#435160;font-size:10px;font-weight:950;white-space:nowrap}.m408StatusChip::before{content:'';width:7px;height:7px;border-radius:50%;background:#7a8795}.m408StatusChip.synced{border-color:#6aa978;background:#e9f8ec;color:#225a2f}.m408StatusChip.synced::before{background:#2f8a45}.m408StatusChip.unsynced{border-color:#caa444;background:#fff7d8;color:#6b5100}.m408StatusChip.unsynced::before{background:#d39412}.m408StatusChip.offline{border-color:#c79c43;background:#fff2cf;color:#6b4d00}.m408StatusChip.offline::before{background:#d39412}.m408StatusChip.readonly{border-color:#9b71df;background:#f2eaff;color:#4b287b}.m408StatusChip.readonly::before{background:#7b4ac5}.m408StatusChip.syncing::before{background:#1f6feb;animation:m408Pulse 1s infinite alternate}@keyframes m408Pulse{to{opacity:.28}}",
+      "button.finishBtn,#finishSendBtn{display:none!important}",
+      "@media(min-width:1100px){:root{--toolbar-h:96px}header{grid-template-columns:minmax(0,1fr) minmax(255px,.7fr)!important;grid-template-rows:40px 38px!important;align-items:center}header>.topRow{grid-column:1!important;grid-row:1!important}header>.zoomRow{grid-column:2!important;grid-row:1!important}header>#status{grid-column:1/-1!important;grid-row:2!important}header>#status.m408StatusHost{grid-template-columns:minmax(0,1fr) minmax(0,.7fr) auto;min-height:38px;padding:4px 8px!important;gap:8px}header>#status.m408StatusHost .m408DocMeta{grid-column:auto;grid-row:auto}}",
+      "@media(min-width:700px) and (max-height:720px){:root{--toolbar-h:96px}header{grid-template-columns:minmax(0,1fr) minmax(235px,.65fr)!important;grid-template-rows:40px 38px!important;align-items:center}header>.topRow{grid-column:1!important;grid-row:1!important}header>.zoomRow{grid-column:2!important;grid-row:1!important}header>#status{grid-column:1/-1!important;grid-row:2!important}header>#status.m408StatusHost{grid-template-columns:minmax(0,1fr) minmax(0,.7fr) auto;min-height:38px;padding:4px 8px!important;gap:8px}header>#status.m408StatusHost .m408DocMeta{grid-column:auto;grid-row:auto}}",
       ".m404LandingAuth{color:#fff}.m404LandingHead{display:flex;justify-content:space-between;gap:10px;align-items:center}.m404LandingHead strong{font-size:18px}.m404AuthState{font-size:11px;font-weight:900;color:#b9c7da;letter-spacing:.04em}.m404AuthForm{display:grid;grid-template-columns:1fr 1fr auto;gap:9px;margin-top:11px}.m404AuthForm input{min-width:0;min-height:46px;border:1px solid #697585;border-radius:9px;padding:9px 11px;background:#f8fafc;font-size:16px}.m404AuthForm button{min-width:105px;background:#1f6feb;border-color:#1f6feb;color:#fff}.m404SignedIn{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-top:10px;padding:11px;border:1px solid #3f7650;border-radius:11px;background:rgba(37,110,57,.2)}.m404UserName{font-size:16px;font-weight:950}.m404UserMeta{font-size:12px;color:#c9d7cc;font-weight:800;margin-top:3px}.m404AuthMessage{display:none;margin-top:9px;font-size:12px;line-height:1.35;font-weight:800;color:#ffd37a}.m404AuthMessage.show{display:block}.m404TemplateLocked{opacity:.42;pointer-events:none;filter:grayscale(.55)}",
       ".m405UserActions{display:flex;gap:8px;flex-wrap:wrap}.m405AdminBox{width:min(900px,100%)}.m405AdminRows{display:grid;gap:8px;margin-top:10px}.m405AdminRow{display:grid;grid-template-columns:minmax(0,1fr) 150px 125px auto;gap:8px;align-items:center;border:1px solid #aaa;border-radius:9px;padding:9px}.m405AdminName{font-weight:900}.m405AdminMeta{font-size:11px;color:#555;font-weight:750;overflow-wrap:anywhere}.m405AccessBanner{position:fixed;left:50%;top:8px;transform:translateX(-50%);z-index:19000;padding:8px 13px;border:2px solid #9b71df;border-radius:10px;background:#f2eaff;color:#3d226d;font:900 13px Arial,sans-serif;box-shadow:0 5px 18px rgba(0,0,0,.28)}body.m405ReadOnly canvas{pointer-events:none!important}body.m405ReadOnly [data-m405-mutation=true]{display:none!important}",
       "@media(max-width:700px){.m405AdminRow{grid-template-columns:1fr 1fr}.m405AdminIdentity{grid-column:1/-1}.m405AdminRow button{grid-column:1/-1}}",
@@ -2898,6 +2901,63 @@
     return true;
   }
 
+  function installM4082HeaderFallback() {
+    var header = document.querySelector("header");
+    if (!header) return false;
+
+    var buttons = document.querySelectorAll("button");
+    for (var i = buttons.length - 1; i >= 0; i -= 1) {
+      var button = buttons[i];
+      var label = text(button.textContent).replace(/\s+/g, " ");
+      var action = text(button.getAttribute("onclick"));
+      var retired = button.classList.contains("finishBtn") ||
+        button.id === "finishSendBtn" ||
+        /finish\s*(?:&|and)?\s*(?:send|export)/i.test(label) ||
+        /send\s+to\s+blaster/i.test(label) ||
+        /finishAndSend(?:ToBlaster)?\s*\(/i.test(action);
+      if (retired && button.parentNode) button.parentNode.removeChild(button);
+    }
+
+    if (header.getAttribute("data-m4082-height-sync") === "true") return true;
+    header.setAttribute("data-m4082-height-sync", "true");
+    var scheduled = false;
+    function measure() {
+      scheduled = false;
+      if (!header.isConnected) return;
+      var headerRect = header.getBoundingClientRect();
+      var contentBottom = headerRect.top;
+      for (var index = 0; index < header.children.length; index += 1) {
+        var child = header.children[index];
+        if (window.getComputedStyle(child).display === "none") continue;
+        var rect = child.getBoundingClientRect();
+        if (rect.height > 0) contentBottom = Math.max(contentBottom, rect.bottom);
+      }
+      var compact = window.matchMedia &&
+        (window.matchMedia("(min-width:1100px)").matches ||
+         window.matchMedia("(min-width:700px) and (max-height:720px)").matches ||
+         window.matchMedia("(pointer:coarse) and (orientation:landscape) and (min-width:900px)").matches);
+      var required = Math.max(compact ? 96 : 140, Math.ceil(contentBottom - headerRect.top + 6));
+      var current = parseFloat(window.getComputedStyle(document.documentElement).getPropertyValue("--toolbar-h")) || 0;
+      if (Math.abs(required - current) > 1) document.documentElement.style.setProperty("--toolbar-h", required + "px");
+    }
+    function scheduleMeasure() {
+      if (scheduled) return;
+      scheduled = true;
+      (window.requestAnimationFrame || function (callback) { return window.setTimeout(callback, 16); })(measure);
+    }
+    window.addEventListener("resize", scheduleMeasure);
+    window.addEventListener("orientationchange", scheduleMeasure);
+    if (typeof window.ResizeObserver === "function") {
+      var observer = new window.ResizeObserver(scheduleMeasure);
+      observer.observe(header);
+      for (var childIndex = 0; childIndex < header.children.length; childIndex += 1) observer.observe(header.children[childIndex]);
+    }
+    window.setTimeout(scheduleMeasure, 0);
+    window.setTimeout(scheduleMeasure, 120);
+    window.setTimeout(scheduleMeasure, 600);
+    return true;
+  }
+
   function m408ConfirmMessage(button) {
     var action = text(button && button.getAttribute("onclick"));
     var hole = byId("holeTitle") ? text(byId("holeTitle").textContent) : "this hole";
@@ -2989,7 +3049,7 @@
         script.id = CHILD_SCRIPT_ID;
         script.src = CHILD_SCRIPT_SRC;
         doc.head.appendChild(script);
-      } catch (error) { console.warn("MITHRIL m40.8.1 could not attach the standardized document layer to the Shot Diagram.", error); }
+      } catch (error) { console.warn("MITHRIL m40.8.2 could not attach the standardized document layer to the Shot Diagram.", error); }
     }
     frame.addEventListener("load", function () { setTimeout(inject, 80); });
     setTimeout(inject, 120);
@@ -3011,6 +3071,7 @@
     ensureStyles();
     installM408Feedback();
     updateVersionLabels();
+    installM4082HeaderFallback();
     if (!byId("templateStart")) rememberDocumentType(docType());
     installIdentityGuards();
     installShotHeaderPreservation();
@@ -3036,6 +3097,7 @@
       installTimingSeparationCheck();
       installDesktopSelectionRedraw();
       installWorkspaceStatus();
+      installM4082HeaderFallback();
       updateUndoButton();
       if (attempts >= 40) clearInterval(timer);
     }, 150);
