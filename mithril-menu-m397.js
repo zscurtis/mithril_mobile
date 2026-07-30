@@ -1,8 +1,8 @@
 (function () {
   "use strict";
 
-  var RELEASE_VERSION = "m39.7";
-  var RELEASE_LABEL = "Timing Sequence Mode with row-by-row starting times, configurable intervals, individual tap/click fill, desktop Shift-click row fill, mobile selection fill, undo, physical keyboard entry, dual shot volumes, pattern calculations, closable PDF preview, explosive-load extremes, selection tools, GPS callouts, and structured hole conditions";
+  var RELEASE_VERSION = "m40.6.0";
+  var RELEASE_LABEL = "Responsive workspace, compact toolbar, adaptive Edit Holes drawer, and integrated pattern assignment";
   var THEME_STORAGE_KEY = "mithrilCanvasThemeV1";
   var THEME_CLASS_PREFIX = "m395-theme-";
   var THEME_OPTIONS = [
@@ -270,6 +270,151 @@
       "@media(max-width:520px){.m395QuickButton{font-size:0}.m395QuickButton:after{content:'Quick';font-size:14px}.m395FitButton{font-size:0}.m395FitButton:after{content:'Fit';font-size:14px}.m395ActionGrid{grid-template-columns:1fr}.m395ActionGrid .wide{grid-column:auto}.m395DirectionGrid{grid-template-columns:1fr 1fr 1fr}.m395ThemeGrid{grid-template-columns:1fr}}"
     ].join("");
     document.head.appendChild(style);
+  }
+
+  function injectM406WorkspaceStyles() {
+    if (byId("mithrilWorkspaceM406Styles")) return;
+    var style = document.createElement("style");
+    style.id = "mithrilWorkspaceM406Styles";
+    style.textContent = [
+      ":root{--toolbar-h:112px}",
+      "header{height:var(--toolbar-h);padding:6px;gap:6px}",
+      "header .brandText{overflow:hidden;text-overflow:ellipsis}",
+      "header .version{display:none}",
+      "header .finishBtn{font-size:15px;min-height:40px}",
+      "header #status{padding:0 2px;color:#48515b}",
+      "#canvasWrap{top:var(--toolbar-h);transition:right .18s ease}",
+      ".modal .box{overscroll-behavior:contain}",
+      ".modal .boxHead{position:sticky;top:-14px;z-index:4;background:#fff;padding:12px 0 8px;margin-top:-12px;border-bottom:1px solid #e1e4e8}",
+      ".modal .box>.buttonGrid:last-child{position:sticky;bottom:-14px;z-index:3;background:#fff;padding:10px 0 14px;margin-bottom:-14px;border-top:1px solid #e1e4e8}",
+      ".m406EditTabs{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;padding:2px 0}",
+      ".m406EditTabs button{min-height:40px;padding:5px 4px;font-size:12px;background:#f2f3f5;border-color:#b9bec5}",
+      ".m406EditTabs button.active{background:#7240c7;color:#fff;border-color:#6031ae}",
+      ".m406EditPanel{display:none;gap:6px;min-width:0}",
+      ".m406EditPanel.active{display:grid}",
+      ".m406EditPanel .m395DrillEditModes,.m406EditPanel .m395DrillEditActions,.m406EditPanel .m395ShotEditModes,.m406EditPanel .m395ShotEditActions{display:grid}",
+      ".m406InlinePattern{display:none;gap:8px;padding:9px;border:1px solid #9b79d0;border-radius:10px;background:#faf8ff}",
+      ".m406InlinePattern.show{display:grid}",
+      ".m406InlinePatternHead{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:14px}",
+      ".m406InlinePatternHead button{min-height:36px;font-size:12px}",
+      ".m406InlinePattern label{gap:5px}",
+      ".m406InlinePattern select{width:100%;min-height:44px}",
+      ".m406InlinePattern .buttonGrid{margin-top:0}",
+      ".m406InlinePattern .buttonGrid button{min-height:44px}",
+      ".m406EditDrawer{max-height:min(54vh,480px);overflow:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}",
+      "@media(min-width:1100px){",
+      "  :root{--toolbar-h:68px}",
+      "  header{grid-template-columns:minmax(0,1fr) auto minmax(255px,.7fr);grid-template-rows:40px 16px;align-items:center}",
+      "  header>.topRow{grid-column:1;grid-row:1;grid-template-columns:minmax(170px,1fr) auto auto auto}",
+      "  header>.finishBtn{grid-column:2;grid-row:1;min-width:170px}",
+      "  header>.zoomRow{grid-column:3;grid-row:1}",
+      "  header>#status{grid-column:1/-1;grid-row:2}",
+      "  header .mark{width:32px;height:32px}",
+      "  header .brandText{font-size:15px}",
+      "}",
+      "@media(min-width:900px){",
+      "  .m406EditDrawer{left:auto!important;right:8px!important;top:calc(var(--toolbar-h) + 8px)!important;bottom:8px!important;width:360px;max-height:none;overflow:auto;align-content:start}",
+      "  html.m406-edit-open #canvasWrap{right:376px}",
+      "}",
+      "@media(min-width:700px) and (max-height:720px){",
+      "  :root{--toolbar-h:68px}",
+      "  header{grid-template-columns:minmax(0,1fr) auto minmax(235px,.65fr);grid-template-rows:40px 16px;align-items:center}",
+      "  header>.topRow{grid-column:1;grid-row:1;grid-template-columns:minmax(145px,1fr) auto auto auto}",
+      "  header>.finishBtn{grid-column:2;grid-row:1;min-width:155px}",
+      "  header>.zoomRow{grid-column:3;grid-row:1}",
+      "  header>#status{grid-column:1/-1;grid-row:2}",
+      "  .m406EditDrawer{left:auto!important;right:8px!important;top:calc(var(--toolbar-h) + 8px)!important;bottom:8px!important;width:min(360px,38vw);max-height:none;overflow:auto;align-content:start}",
+      "  html.m406-edit-open #canvasWrap{right:min(376px,40vw)}",
+      "}",
+      "@media(min-width:641px) and (max-width:1099px) and (min-height:721px){",
+      "  header{grid-template-columns:1fr 1fr;grid-template-rows:40px 40px 16px}",
+      "  header>.topRow{grid-column:1/-1;grid-row:1}",
+      "  header>.finishBtn{grid-column:1;grid-row:2}",
+      "  header>.zoomRow{grid-column:2;grid-row:2}",
+      "  header>#status{grid-column:1/-1;grid-row:3}",
+      "}",
+      "@media(max-width:640px){",
+      "  :root{--toolbar-h:116px}",
+      "  header{grid-template-columns:1fr auto;grid-template-rows:40px 40px 16px}",
+      "  header>.topRow{grid-column:1/-1;grid-row:1;grid-template-columns:minmax(0,1fr) auto auto auto}",
+      "  header>.finishBtn{grid-column:1;grid-row:2}",
+      "  header>.zoomRow{grid-column:2;grid-row:2;grid-template-columns:auto auto auto}",
+      "  header>.zoomRow input[type=range]{display:none}",
+      "  header>#status{grid-column:1/-1;grid-row:3}",
+      "  header .mark{width:30px;height:30px}",
+      "  header .brandText{font-size:13px}",
+      "  .m406EditDrawer{max-height:min(56vh,450px)}",
+      "  .m406EditTabs button{font-size:11px}",
+      "}",
+      "@media(max-height:560px) and (max-width:899px){.m406EditDrawer{max-height:66vh}}"
+    ].join("");
+    document.head.appendChild(style);
+  }
+
+  function m406SetEditPanel(bar, panelName) {
+    if (!bar) return;
+    var tabs = bar.querySelectorAll("[data-m406-tab]");
+    var panels = bar.querySelectorAll("[data-m406-panel]");
+    for (var i = 0; i < tabs.length; i += 1) {
+      var tabActive = tabs[i].getAttribute("data-m406-tab") === panelName;
+      tabs[i].classList.toggle("active", tabActive);
+      tabs[i].setAttribute("aria-selected", tabActive ? "true" : "false");
+    }
+    for (var j = 0; j < panels.length; j += 1) {
+      panels[j].classList.toggle("active", panels[j].getAttribute("data-m406-panel") === panelName);
+    }
+  }
+
+  function m406UpgradeEditBar(bar, kind) {
+    if (!bar || bar.classList.contains("m406EditDrawer")) return bar;
+    bar.classList.add("m406EditDrawer");
+    var prefix = kind === "drill" ? "m395Drill" : "m395Shot";
+    var head = bar.querySelector("." + prefix + "EditHead");
+    var modes = bar.querySelector("." + prefix + "EditModes");
+    var actions = bar.querySelector("." + prefix + "EditActions");
+    var directions = bar.querySelector("." + prefix + "EditDirections");
+    var rotations = bar.querySelector("." + prefix + "EditRotations");
+    var hint = bar.querySelector("." + prefix + "EditHint");
+    if (!head || !modes || !actions || !directions || !rotations) return bar;
+
+    var tabs = document.createElement("div");
+    tabs.className = "m406EditTabs";
+    tabs.setAttribute("role", "tablist");
+    tabs.innerHTML = [
+      '<button type="button" data-m406-tab="select" class="active" aria-selected="true">Select</button>',
+      '<button type="button" data-m406-tab="move" aria-selected="false">Move</button>',
+      '<button type="button" data-m406-tab="transform" aria-selected="false">Transform</button>',
+      '<button type="button" data-m406-tab="more" aria-selected="false">More</button>'
+    ].join("");
+
+    function panel(name) {
+      var node = document.createElement("div");
+      node.className = "m406EditPanel" + (name === "select" ? " active" : "");
+      node.setAttribute("data-m406-panel", name);
+      return node;
+    }
+    var selectPanel = panel("select");
+    var movePanel = panel("move");
+    var transformPanel = panel("transform");
+    var morePanel = panel("more");
+    selectPanel.appendChild(modes);
+    selectPanel.appendChild(actions);
+    movePanel.appendChild(directions);
+    transformPanel.appendChild(rotations);
+
+    head.insertAdjacentElement("afterend", tabs);
+    tabs.insertAdjacentElement("afterend", selectPanel);
+    selectPanel.insertAdjacentElement("afterend", movePanel);
+    movePanel.insertAdjacentElement("afterend", transformPanel);
+    transformPanel.insertAdjacentElement("afterend", morePanel);
+    if (hint) bar.appendChild(hint);
+
+    tabs.addEventListener("click", function (event) {
+      var button = event.target.closest("[data-m406-tab]");
+      if (!button) return;
+      m406SetEditPanel(bar, button.getAttribute("data-m406-tab"));
+    });
+    return bar;
   }
 
   function updateRuntimeLabels() {
@@ -3411,7 +3556,10 @@
     pauseQuickForDrillEdit();
     closeMenu();
     var bar = ensureDrillEditBar();
+    m406UpgradeEditBar(bar, "drill");
+    document.documentElement.classList.add("m406-edit-open");
     bar.classList.add("show");
+    m406SetEditPanel(bar, "select");
     drillEditSetHint("Tap saved holes to select them. Use Row, Column, or All Page for groups.");
     draw();
   }
@@ -3425,6 +3573,7 @@
     drillEditTouchStart = null;
     var bar = byId("m395DrillEditBar");
     if (bar) bar.classList.remove("show");
+    document.documentElement.classList.remove("m406-edit-open");
     resumeQuickAfterDrillEdit();
     draw();
   }
@@ -4211,7 +4360,10 @@
     pauseQuickForShotEdit();
     closeMenu();
     var bar = ensureShotEditBar();
+    m406UpgradeEditBar(bar, "shot");
+    document.documentElement.classList.add("m406-edit-open");
     bar.classList.add("show");
+    m406SetEditPanel(bar, "select");
     shotEditSetHint("Tap saved holes to select them. Use Row, Column, or All Page for groups.");
     draw();
   }
@@ -4224,6 +4376,7 @@
     shotEditPointerStarts = {};
     var bar = byId("m395ShotEditBar");
     if (bar) bar.classList.remove("show");
+    document.documentElement.classList.remove("m406-edit-open");
     resumeQuickAfterShotEdit();
     draw();
   }
@@ -5539,16 +5692,17 @@
     if (modal) return modal;
     modal = document.createElement("div");
     modal.id = "m395AssignPatternModal";
-    modal.className = "modal";
+    modal.className = "m406InlinePattern";
     modal.innerHTML = [
-      '<div class="box">',
-      '  <div class="boxHead"><span>Assign Pattern</span><button type="button" id="m395AssignPatternClose">Close</button></div>',
-      '  <p id="m395AssignPatternCount" class="m395PatternHelp"></p>',
-      '  <label>Pattern<select id="m395AssignPatternSelect"></select></label>',
-      '  <div class="buttonGrid"><button type="button" class="primary" id="m395AssignPatternSave">Assign to Selection</button><button type="button" id="m395AssignPatternCancel">Cancel</button></div>',
-      '</div>'
+      '<div class="m406InlinePatternHead"><strong>Assign Pattern</strong><button type="button" id="m395AssignPatternClose">Close</button></div>',
+      '<p id="m395AssignPatternCount" class="m395PatternHelp"></p>',
+      '<label>Pattern<select id="m395AssignPatternSelect"></select></label>',
+      '<div class="buttonGrid"><button type="button" class="primary" id="m395AssignPatternSave">Assign to Selection</button><button type="button" id="m395AssignPatternCancel">Cancel</button></div>'
     ].join("");
-    document.body.appendChild(modal);
+    var bar = byId("m395ShotEditBar");
+    m406UpgradeEditBar(bar, "shot");
+    var host = bar && bar.querySelector('[data-m406-panel="more"]');
+    (host || document.body).appendChild(modal);
     byId("m395AssignPatternClose").addEventListener("click", m395CloseAssignPattern);
     byId("m395AssignPatternCancel").addEventListener("click", m395CloseAssignPattern);
     byId("m395AssignPatternSave").addEventListener("click", m395AssignPatternToSelection);
@@ -5562,6 +5716,8 @@
       return;
     }
     m395EnsureAssignPatternModal();
+    var bar = byId("m395ShotEditBar");
+    m406SetEditPanel(bar, "more");
     var groups = m395EnsurePatternState();
     var select = byId("m395AssignPatternSelect");
     select.innerHTML = "";
@@ -5662,11 +5818,14 @@
   function m395AugmentShotEditBar() {
     var bar = byId("m395ShotEditBar");
     if (!bar || byId("m395AssignPatternButton")) return;
+    m406UpgradeEditBar(bar, "shot");
     var row = document.createElement("div");
     row.className = "m395PatternEditRow";
     row.innerHTML = '<button type="button" id="m395AssignPatternButton">Assign Pattern</button><button type="button" id="m395ShowPatternsButton">Show Pattern Colors</button>';
     var hint = byId("m395ShotEditHint");
-    bar.insertBefore(row, hint || null);
+    var host = bar.querySelector('[data-m406-panel="more"]');
+    if (host) host.appendChild(row);
+    else bar.insertBefore(row, hint || null);
     byId("m395AssignPatternButton").addEventListener("click", m395OpenAssignPattern);
     byId("m395ShowPatternsButton").addEventListener("click", function () {
       m395PatternOverlayVisible = !m395PatternOverlayVisible;
@@ -6091,16 +6250,17 @@
     if (modal) return modal;
     modal = document.createElement("div");
     modal.id = "m395DrillAssignPatternModal";
-    modal.className = "modal";
+    modal.className = "m406InlinePattern";
     modal.innerHTML = [
-      '<div class="box">',
-      '  <div class="boxHead"><span>Assign Drill Pattern</span><button type="button" id="m395DrillAssignPatternClose">Close</button></div>',
-      '  <p id="m395DrillAssignPatternCount" class="m395PatternHelp"></p>',
-      '  <label>Pattern<select id="m395DrillAssignPatternSelect"></select></label>',
-      '  <div class="buttonGrid"><button type="button" class="primary" id="m395DrillAssignPatternSave">Assign to Selection</button><button type="button" id="m395DrillAssignPatternCancel">Cancel</button></div>',
-      '</div>'
+      '<div class="m406InlinePatternHead"><strong>Assign Drill Pattern</strong><button type="button" id="m395DrillAssignPatternClose">Close</button></div>',
+      '<p id="m395DrillAssignPatternCount" class="m395PatternHelp"></p>',
+      '<label>Pattern<select id="m395DrillAssignPatternSelect"></select></label>',
+      '<div class="buttonGrid"><button type="button" class="primary" id="m395DrillAssignPatternSave">Assign to Selection</button><button type="button" id="m395DrillAssignPatternCancel">Cancel</button></div>'
     ].join("");
-    document.body.appendChild(modal);
+    var bar = byId("m395DrillEditBar");
+    m406UpgradeEditBar(bar, "drill");
+    var host = bar && bar.querySelector('[data-m406-panel="more"]');
+    (host || document.body).appendChild(modal);
     byId("m395DrillAssignPatternClose").addEventListener("click", m395CloseDrillAssignPattern);
     byId("m395DrillAssignPatternCancel").addEventListener("click", m395CloseDrillAssignPattern);
     byId("m395DrillAssignPatternSave").addEventListener("click", m395AssignDrillPatternToSelection);
@@ -6114,6 +6274,8 @@
       return;
     }
     m395EnsureDrillAssignPatternModal();
+    var bar = byId("m395DrillEditBar");
+    m406SetEditPanel(bar, "more");
     var groups = m395EnsurePatternState();
     var select = byId("m395DrillAssignPatternSelect");
     select.innerHTML = "";
@@ -6214,11 +6376,14 @@
   function m395AugmentDrillEditBar() {
     var bar = byId("m395DrillEditBar");
     if (!bar || byId("m395DrillAssignPatternButton")) return;
+    m406UpgradeEditBar(bar, "drill");
     var row = document.createElement("div");
     row.className = "m395PatternEditRow";
     row.innerHTML = '<button type="button" id="m395DrillAssignPatternButton">Assign Pattern</button><button type="button" id="m395DrillShowPatternsButton">Show Pattern Colors</button>';
     var hint = byId("m395DrillEditHint");
-    bar.insertBefore(row, hint || null);
+    var host = bar.querySelector('[data-m406-panel="more"]');
+    if (host) host.appendChild(row);
+    else bar.insertBefore(row, hint || null);
     byId("m395DrillAssignPatternButton").addEventListener("click", m395OpenDrillAssignPattern);
     byId("m395DrillShowPatternsButton").addEventListener("click", function () {
       m395DrillPatternOverlayVisible = !m395DrillPatternOverlayVisible;
@@ -7803,6 +7968,7 @@
     };
     installClosestPolyfill();
     injectStyles();
+    injectM406WorkspaceStyles();
     injectMultiQuickStyles();
     injectGPSStyles();
     updateRuntimeLabels();

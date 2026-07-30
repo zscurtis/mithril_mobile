@@ -1,11 +1,13 @@
 {
-  "version": "m40.5.2",
-  "title": "Pattern Assignment Dialog Layering Fix",
+  "version": "m40.6.0",
+  "title": "Responsive Workspace and Edit Holes Redesign",
   "released": "2026-07-29",
   "minimumOfflineVersion": "m39.6.3",
   "notes": [
-    "Keeps Drill Log and Shot Diagram pattern-assignment dialogs above their hole-edit panels on shorter laptop displays.",
-    "Preserves the active hole selection while a pattern is assigned or the dialog is cancelled.",
-    "Preserves the m40.5.1 header fix, role-based access, cloud rules compatibility, permanent document identity, rotation, and conflict safeguards."
+    "Uses a compact, height-aware workspace toolbar to return more screen space to the canvas.",
+    "Changes Edit Drill Holes and Edit Holes into adaptive drawers with Select, Move, Transform, and More tool groups.",
+    "Integrates pattern assignment directly into the edit workflow instead of stacking a second dialog over the edit panel.",
+    "Keeps modal titles and primary actions reachable while long forms scroll.",
+    "Preserves role-based access, cloud rules compatibility, permanent document identity, header preservation, rotation, and conflict safeguards."
   ]
 }
