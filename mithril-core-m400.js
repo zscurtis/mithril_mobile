@@ -1,9 +1,9 @@
 (function () {
   "use strict";
 
-  var RELEASE_VERSION = "m40.7.0";
+  var RELEASE_VERSION = "m40.7.1";
   var CHILD_SCRIPT_ID = "mithrilCoreM400ChildLoader";
-  var CHILD_SCRIPT_SRC = "./mithril-core-m400.js?rev=4070-frame";
+  var CHILD_SCRIPT_SRC = "./mithril-core-m400.js?rev=4071-frame";
   var TRANSFER_KEY = "mithrilDrillToShotTransferM400";
   var UNDO_KEY = "mithrilDrillToShotUndoM400";
   var DEVICE_KEY = "mithrilCloudDeviceNameM399";
@@ -41,6 +41,7 @@
   var authUnsubscribe = null;
   var cloudItems = [];
   var landingCloudLoadUid = "";
+  var pendingCloudOpenInFlight = false;
   var accessObserver = null;
   var accessNoticeShown = false;
 
@@ -1223,14 +1224,15 @@
     var value = normalizedSnapshot(snapshot || {});
     return JSON.stringify({ type: value.type, pagesData: value.pagesData, pageMeta: value.pageMeta, headerData: stripIdentity(value.headerData), extras: value.extras });
   }
-  function syncStorageKey(id) { return SYNC_META_PREFIX + (currentUser ? currentUser.uid : "signed-out") + ":" + id; }
-  function recoveryStorageKey(id) { return RECOVERY_PREFIX + (currentUser ? currentUser.uid : "signed-out") + ":" + id; }
+  function storageOwnerUid(uidOverride) { return text(uidOverride) || (currentUser ? currentUser.uid : "signed-out"); }
+  function syncStorageKey(id, uidOverride) { return SYNC_META_PREFIX + storageOwnerUid(uidOverride) + ":" + id; }
+  function recoveryStorageKey(id, uidOverride) { return RECOVERY_PREFIX + storageOwnerUid(uidOverride) + ":" + id; }
   function readJsonStorage(key) { try { return JSON.parse(localStorage.getItem(key) || "null"); } catch (error) { return null; } }
   function writeJsonStorage(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); return true; } catch (error) { return false; } }
-  function readSyncMeta(id) { return readJsonStorage(syncStorageKey(id)); }
-  function writeSyncMeta(id, revision, snapshot, cloudData) {
+  function readSyncMeta(id, uidOverride) { return readJsonStorage(syncStorageKey(id, uidOverride)); }
+  function writeSyncMeta(id, revision, snapshot, cloudData, uidOverride) {
     var meta = { revision: Number(revision || 0), fingerprint: snapshotFingerprint(snapshot), syncedAt: new Date().toISOString(), sourceDevice: cloudData && cloudData.sourceDevice || deviceName() };
-    writeJsonStorage(syncStorageKey(id), meta);
+    writeJsonStorage(syncStorageKey(id, uidOverride), meta);
     return meta;
   }
   function currentSyncState(cloudData, cloudPathId) {
@@ -1251,8 +1253,8 @@
     }
     return null;
   }
-  function saveRecovery(id, adapter, meta) {
-    return writeJsonStorage(recoveryStorageKey(id), { savedAt: new Date().toISOString(), snapshot: adapter.getSnapshot(), syncMeta: meta || null });
+  function saveRecovery(id, adapter, meta, uidOverride) {
+    return writeJsonStorage(recoveryStorageKey(id, uidOverride), { savedAt: new Date().toISOString(), snapshot: adapter.getSnapshot(), syncMeta: meta || null });
   }
   function updateUndoCloudButton() {
     var button = byId("m401UndoCloud"), record = window.MithrilDocument && cloudRecord();
@@ -1447,7 +1449,7 @@
     if (!button || !title || !meta) return;
     var type = dashboardRecentType(), summary = dashboardDocumentSummary(type);
     title.textContent = summary.hasContent ? summary.title : "Continue " + docTypeLabel(type);
-    meta.textContent = summary.holeCount ? docTypeLabel(type) + " · " + summary.holeCount + " populated hole" + (summary.holeCount === 1 ? "" : "s") : docTypeLabel(type) + " · device copy";
+    meta.textContent = "Device copy · " + docTypeLabel(type) + (summary.holeCount ? " · " + summary.holeCount + " populated hole" + (summary.holeCount === 1 ? "" : "s") : "");
     var profileActive = !!currentProfile && !/^(?:disabled|inactive)$/i.test(text(currentProfile.status));
     var allowed = profileActive && (type === "shotDiagram" ? hasPermission("shot") : hasPermission("drill"));
     button.disabled = !allowed;
@@ -1469,7 +1471,7 @@
       row.className = "m407CloudItem";
       row.innerHTML = '<div><strong>' + escapeHtml(d.title || docTypeLabel(d.type)) + '</strong><span>' + escapeHtml(docTypeLabel(d.type)) + ' · Revision ' + escapeHtml(d.revision || 1) + ' · ' + escapeHtml(d.holeCount || 0) + ' holes</span></div>';
       action.type = "button";
-      action.textContent = "Open";
+      action.textContent = "Load cloud";
       action.addEventListener("click", function () { openLandingCloudDocument(item.id, d); });
       row.appendChild(action);
       box.appendChild(row);
@@ -1511,11 +1513,27 @@
     if (type === "drillLog" && !hasPermission("drill")) return restrictedMessage("Drill Log");
     var label = data.title || docTypeLabel(type);
     if (!confirm("Open this cloud document?\n\n" + label + "\nRevision " + (data.revision || 1) + "\n\nThis replaces the current local " + docTypeLabel(type) + " on this device. Undo Cloud Download will remain available.")) return;
+    var pending = {
+      id: id,
+      type: type,
+      title: label,
+      revision: Number(data.revision || 1),
+      ownerUid: currentUser && currentUser.uid || "",
+      selectedAt: new Date().toISOString(),
+      record: clone(data)
+    };
     try {
-      sessionStorage.setItem(PENDING_CLOUD_OPEN_KEY, JSON.stringify({ id: id, type: type, title: label, ownerUid: currentUser && currentUser.uid || "" }));
+      sessionStorage.setItem(PENDING_CLOUD_OPEN_KEY, JSON.stringify(pending));
     } catch (error) {
-      setLandingMessage("This browser could not prepare the cloud document. Try opening it through Cloud Sync.", "bad");
-      return;
+      // Large documents can exceed a browser's session-storage allowance.
+      // Retain the lightweight request so the target workspace can fetch it.
+      try {
+        delete pending.record;
+        sessionStorage.setItem(PENDING_CLOUD_OPEN_KEY, JSON.stringify(pending));
+      } catch (fallbackError) {
+        setLandingMessage("This browser could not prepare the cloud document. Try opening it through Cloud Sync.", "bad");
+        return;
+      }
     }
     rememberDocumentType(type);
     if (type === "shotDiagram") window.openStableShotDiagram();
@@ -2121,7 +2139,7 @@
     items.forEach(function (item) {
       var d = item.data, row = document.createElement("div");
       row.className = "m400Doc";
-      row.innerHTML = '<div><div class="m400DocTitle">' + escapeHtml(d.title || docTypeLabel(d.type)) + '</div><div class="m400Meta">Revision ' + escapeHtml(d.revision || 1) + ' · ' + escapeHtml(d.holeCount || 0) + ' populated holes<br>' + escapeHtml(formatTime(d.updatedAt)) + ' · ' + escapeHtml(d.sourceDevice || "Unknown device") + '</div></div><div class="m400DocActions"><button type="button" class="primary m407OpenDoc">Open</button>' + (hasPermission("cloudDelete") ? '<details class="m407DocMenu"><summary aria-label="More document actions">⋯</summary><div class="m407DocMenuPanel"><button type="button" class="danger m407DeleteDoc">Delete Cloud Copy</button><div class="m407Technical">Contract v' + escapeHtml(d.documentContractVersion || 1) + ' · ' + escapeHtml(item.id) + '</div></div></details>' : "") + '</div>';
+      row.innerHTML = '<div><div class="m400DocTitle">' + escapeHtml(d.title || docTypeLabel(d.type)) + '</div><div class="m400Meta">Revision ' + escapeHtml(d.revision || 1) + ' · ' + escapeHtml(d.holeCount || 0) + ' populated holes<br>' + escapeHtml(formatTime(d.updatedAt)) + ' · ' + escapeHtml(d.sourceDevice || "Unknown device") + '</div></div><div class="m400DocActions"><button type="button" class="primary m407OpenDoc">Load</button>' + (hasPermission("cloudDelete") ? '<details class="m407DocMenu"><summary aria-label="More document actions">⋯</summary><div class="m407DocMenuPanel"><button type="button" class="danger m407DeleteDoc">Delete Cloud Copy</button><div class="m407Technical">Contract v' + escapeHtml(d.documentContractVersion || 1) + ' · ' + escapeHtml(item.id) + '</div></div></details>' : "") + '</div>';
       row.querySelector(".m407OpenDoc").addEventListener("click", function () { downloadCloud(item.id, d); });
       var deleteButton = row.querySelector(".m407DeleteDoc");
       if (deleteButton) deleteButton.addEventListener("click", function () { deleteCloud(item.id, d); });
@@ -2130,11 +2148,11 @@
   }
   function downloadCloud(id, data, options) {
     options = options || {};
-    if (!hasPermission("cloudRead")) return restrictedMessage("Cloud download");
+    if (!hasPermission("cloudRead")) { restrictedMessage("Cloud download"); return false; }
     var adapter = window.MithrilDocument;
-    if (!adapter) return;
+    if (!adapter) return false;
     var warning = "Open cloud revision " + (data.revision || 1) + " of:\n\n" + (data.title || docTypeLabel(data.type)) + "\nSaved from " + (data.sourceDevice || "Unknown device") + "\n\nThis replaces the current local " + docTypeLabel(data.type) + " on this device.";
-    if (!options.skipConfirm && !confirm(warning)) { setCloudStatus("Download cancelled. Nothing was changed.", ""); return; }
+    if (!options.skipConfirm && !confirm(warning)) { setCloudStatus("Download cancelled. Nothing was changed.", ""); return false; }
     setCloudStatus("Downloading and applying the cloud document through the shared document interface…", "wait");
     try {
       var cloudSnapshot = normalizedSnapshot(data.payload || data);
@@ -2152,13 +2170,18 @@
         });
       }
       var targetId = cloudSnapshot.documentId;
-      var priorMeta = readSyncMeta(targetId) || readSyncMeta(id);
-      saveRecovery(targetId, adapter, priorMeta);
+      var priorMeta = readSyncMeta(targetId, options.syncUid) || readSyncMeta(id, options.syncUid);
+      saveRecovery(targetId, adapter, priorMeta, options.syncUid);
       adapter.applySnapshot(cloudSnapshot, { markDirty: false, fitAll: adapter.type === "shotDiagram" });
-      writeSyncMeta(targetId, Number(data.revision || 1), cloudSnapshot, data);
+      writeSyncMeta(targetId, Number(data.revision || 1), cloudSnapshot, data, options.syncUid);
       var modal = byId("m400CloudModal"); if (modal) modal.classList.remove("show");
       showToast((data.title || docTypeLabel(data.type)) + " — cloud revision " + (data.revision || 1) + " loaded. Undo Cloud Download is available.");
-    } catch (error) { setCloudStatus(friendlyError(error), "bad"); }
+      return true;
+    } catch (error) {
+      setCloudStatus(friendlyError(error), "bad");
+      showToast(friendlyError(error), "bad");
+      return false;
+    }
   }
   function firebaseWithAuthenticatedUser() {
     return loadFirebase().then(function (fb) {
@@ -2187,22 +2210,45 @@
     });
   }
   function consumePendingCloudOpen() {
-    if (!window.MithrilDocument) return;
+    if (!window.MithrilDocument || pendingCloudOpenInFlight) return;
     var pending = null;
     try { pending = JSON.parse(sessionStorage.getItem(PENDING_CLOUD_OPEN_KEY) || "null"); } catch (error) {}
     if (!pending || !pending.id || pending.type !== window.MithrilDocument.type) return;
-    try { sessionStorage.removeItem(PENDING_CLOUD_OPEN_KEY); } catch (error2) {}
+    pendingCloudOpenInFlight = true;
     showToast("Opening " + (pending.title || docTypeLabel(pending.type)) + " from the cloud…");
-    firebaseWithAuthenticatedUser().then(function (result) {
+    if (pending.record && pending.record.type === window.MithrilDocument.type) {
+      if (downloadCloud(pending.id, pending.record, { skipConfirm: true, syncUid: pending.ownerUid })) {
+        try { sessionStorage.removeItem(PENDING_CLOUD_OPEN_KEY); } catch (error2) {}
+        pendingCloudOpenInFlight = false;
+        return true;
+      }
+    }
+    var retryDelay = 0;
+    return firebaseWithAuthenticatedUser().then(function (result) {
       if (pending.ownerUid && result.user.uid !== pending.ownerUid) throw new Error("This cloud document belongs to a different signed-in account.");
-      return result.fb.storeMod.getDoc(result.fb.storeMod.doc(result.fb.db, "users", result.user.uid, "documents", pending.id)).then(function (snap) {
+      var ref = result.fb.storeMod.doc(result.fb.db, "users", result.user.uid, "documents", pending.id);
+      var read = typeof result.fb.storeMod.getDocFromServer === "function"
+        ? result.fb.storeMod.getDocFromServer(ref).catch(function () { return result.fb.storeMod.getDoc(ref); })
+        : result.fb.storeMod.getDoc(ref);
+      return read.then(function (snap) {
         if (!snap.exists()) throw new Error("The selected cloud document is no longer available.");
         var data = snap.data();
         if (!data || data.type !== window.MithrilDocument.type) throw new Error("The selected cloud document does not match this workspace.");
-        downloadCloud(pending.id, data, { skipConfirm: true });
+        if (!downloadCloud(pending.id, data, { skipConfirm: true })) throw new Error("MITHRIL could not apply the selected cloud document.");
+        try { sessionStorage.removeItem(PENDING_CLOUD_OPEN_KEY); } catch (error3) {}
       });
     }).catch(function (error) {
-      showToast(friendlyError(error), "bad");
+      pending.attempts = Number(pending.attempts || 0) + 1;
+      try { sessionStorage.setItem(PENDING_CLOUD_OPEN_KEY, JSON.stringify(pending)); } catch (storageError) {}
+      if (pending.attempts < 3) {
+        retryDelay = pending.attempts * 1200;
+        showToast("Cloud loading was delayed. MITHRIL is retrying automatically…", "bad");
+      } else {
+        showToast(friendlyError(error) + " The cloud request is still available; reload this workspace to try again.", "bad");
+      }
+    }).then(function () {
+      pendingCloudOpenInFlight = false;
+      if (retryDelay) setTimeout(consumePendingCloudOpen, retryDelay);
     });
   }
   function undoCloudDownload() {
@@ -2654,7 +2700,7 @@
         script.id = CHILD_SCRIPT_ID;
         script.src = CHILD_SCRIPT_SRC;
         doc.head.appendChild(script);
-      } catch (error) { console.warn("MITHRIL m40.7.0 could not attach the standardized document layer to the Shot Diagram.", error); }
+      } catch (error) { console.warn("MITHRIL m40.7.1 could not attach the standardized document layer to the Shot Diagram.", error); }
     }
     frame.addEventListener("load", function () { setTimeout(inject, 80); });
     setTimeout(inject, 120);

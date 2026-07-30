@@ -1,14 +1,13 @@
 {
-  "version": "m40.7.0",
-  "title": "Field Operations Dashboard and Streamlined Cloud Sync",
+  "version": "m40.7.1",
+  "title": "Reliable Cross-Device Cloud Loading",
   "released": "2026-07-30",
   "minimumOfflineVersion": "m39.6.3",
   "notes": [
-    "Replaces the development-style landing screen with a field operations dashboard.",
-    "Adds account, connection, Continue, document-type, recent-cloud-document, and update sections with clearer visual hierarchy.",
-    "Allows a recent cloud Shot Diagram or Drill Log to be opened directly from Home with the existing recovery safeguard.",
-    "Centers Cloud Sync on one Sync Now action and a clearer current-document comparison.",
-    "Moves device naming, manual upload, Undo Cloud Download, contract details, and cloud deletion into advanced or overflow controls.",
-    "Preserves the verified m40.6.2 laptop and iPad edit layouts, touch routing, role permissions, document identity, header preservation, rotation, and conflict safeguards."
+    "Prevents a selected Home cloud document from silently falling back to the existing local Shot Diagram during cross-page loading.",
+    "Carries the selected cloud revision into the target workspace and removes the pending request only after the snapshot is applied successfully.",
+    "Retains a server-fetch fallback for documents too large for the temporary page handoff.",
+    "Clarifies the difference between Continue device copy and Load cloud.",
+    "Preserves the m40.7.0 dashboard, streamlined Cloud Sync, and verified m40.6.2 editing behavior."
   ]
 }

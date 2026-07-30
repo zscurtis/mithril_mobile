@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var RELEASE_VERSION = "m40.7.0";
+  var RELEASE_VERSION = "m40.7.1";
   var RELEASE_LABEL = "field operations dashboard and streamlined Cloud Sync";
   var THEME_STORAGE_KEY = "mithrilCanvasThemeV1";
   var THEME_CLASS_PREFIX = "m395-theme-";
