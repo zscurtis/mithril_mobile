@@ -1,9 +1,9 @@
 (function () {
   "use strict";
 
-  var RELEASE_VERSION = "m40.8.2";
+  var RELEASE_VERSION = "m40.8.3";
   var CHILD_SCRIPT_ID = "mithrilCoreM400ChildLoader";
-  var CHILD_SCRIPT_SRC = "./mithril-core-m400.js?rev=4082-frame";
+  var CHILD_SCRIPT_SRC = "./mithril-core-m400.js?rev=4083-frame";
   var TRANSFER_KEY = "mithrilDrillToShotTransferM400";
   var UNDO_KEY = "mithrilDrillToShotUndoM400";
   var DEVICE_KEY = "mithrilCloudDeviceNameM399";
@@ -2327,6 +2327,7 @@
       saveRecovery(targetId, adapter, priorMeta, options.syncUid);
       adapter.applySnapshot(cloudSnapshot, { markDirty: false, fitAll: adapter.type === "shotDiagram" });
       writeSyncMeta(targetId, Number(data.revision || 1), cloudSnapshot, data, options.syncUid);
+      setCloudStatus((data.title || docTypeLabel(data.type)) + " loaded from cloud revision " + (data.revision || 1) + ".", "good");
       var modal = byId("m400CloudModal"); if (modal) modal.classList.remove("show");
       showToast((data.title || docTypeLabel(data.type)) + " — cloud revision " + (data.revision || 1) + " loaded. Undo Cloud Download is available.");
       return true;
@@ -3049,7 +3050,7 @@
         script.id = CHILD_SCRIPT_ID;
         script.src = CHILD_SCRIPT_SRC;
         doc.head.appendChild(script);
-      } catch (error) { console.warn("MITHRIL m40.8.2 could not attach the standardized document layer to the Shot Diagram.", error); }
+      } catch (error) { console.warn("MITHRIL m40.8.3 could not attach the standardized document layer to the Shot Diagram.", error); }
     }
     frame.addEventListener("load", function () { setTimeout(inject, 80); });
     setTimeout(inject, 120);
