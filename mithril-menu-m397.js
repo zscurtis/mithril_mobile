@@ -1,8 +1,8 @@
 (function () {
   "use strict";
 
-  var RELEASE_VERSION = "m40.6.0";
-  var RELEASE_LABEL = "Responsive workspace, compact toolbar, adaptive Edit Holes drawer, and integrated pattern assignment";
+  var RELEASE_VERSION = "m40.6.2";
+  var RELEASE_LABEL = "iPad landscape side drawer with stabilized touch routing";
   var THEME_STORAGE_KEY = "mithrilCanvasThemeV1";
   var THEME_CLASS_PREFIX = "m395-theme-";
   var THEME_OPTIONS = [
@@ -301,7 +301,8 @@
       ".m406InlinePattern select{width:100%;min-height:44px}",
       ".m406InlinePattern .buttonGrid{margin-top:0}",
       ".m406InlinePattern .buttonGrid button{min-height:44px}",
-      ".m406EditDrawer{max-height:min(54vh,480px);overflow:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}",
+      ".m406EditDrawer{max-height:min(54vh,480px);overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:auto;isolation:isolate;contain:layout paint style;transform:translate3d(0,0,0);-webkit-transform:translate3d(0,0,0);backface-visibility:hidden;-webkit-backface-visibility:hidden}",
+      ".m406EditDrawer button,.m406EditDrawer select{touch-action:manipulation}",
       "@media(min-width:1100px){",
       "  :root{--toolbar-h:68px}",
       "  header{grid-template-columns:minmax(0,1fr) auto minmax(255px,.7fr);grid-template-rows:40px 16px;align-items:center}",
@@ -312,11 +313,11 @@
       "  header .mark{width:32px;height:32px}",
       "  header .brandText{font-size:15px}",
       "}",
-      "@media(min-width:900px){",
+      "@media(min-width:900px) and (pointer:fine){",
       "  .m406EditDrawer{left:auto!important;right:8px!important;top:calc(var(--toolbar-h) + 8px)!important;bottom:8px!important;width:360px;max-height:none;overflow:auto;align-content:start}",
       "  html.m406-edit-open #canvasWrap{right:376px}",
       "}",
-      "@media(min-width:700px) and (max-height:720px){",
+      "@media(min-width:700px) and (max-height:720px) and (pointer:fine){",
       "  :root{--toolbar-h:68px}",
       "  header{grid-template-columns:minmax(0,1fr) auto minmax(235px,.65fr);grid-template-rows:40px 16px;align-items:center}",
       "  header>.topRow{grid-column:1;grid-row:1;grid-template-columns:minmax(145px,1fr) auto auto auto}",
@@ -325,6 +326,15 @@
       "  header>#status{grid-column:1/-1;grid-row:2}",
       "  .m406EditDrawer{left:auto!important;right:8px!important;top:calc(var(--toolbar-h) + 8px)!important;bottom:8px!important;width:min(360px,38vw);max-height:none;overflow:auto;align-content:start}",
       "  html.m406-edit-open #canvasWrap{right:min(376px,40vw)}",
+      "}",
+      "@media(pointer:coarse){",
+      "  #canvasWrap{transition:none}",
+      "  .m406EditDrawer{left:8px!important;right:8px!important;top:auto!important;bottom:max(8px,env(safe-area-inset-bottom))!important;width:auto!important;max-height:min(56vh,480px)!important;contain:layout paint style}",
+      "  html.m406-edit-open #canvasWrap{right:0!important}",
+      "}",
+      "@media(pointer:coarse) and (orientation:landscape) and (min-width:900px){",
+      "  .m406EditDrawer{left:auto!important;right:max(8px,env(safe-area-inset-right))!important;top:calc(var(--toolbar-h) + 8px)!important;bottom:max(8px,env(safe-area-inset-bottom))!important;width:min(360px,38vw)!important;max-height:none!important;overflow-x:hidden;overflow-y:auto;align-content:start}",
+      "  html.m406-edit-open #canvasWrap{right:min(376px,40vw)!important}",
       "}",
       "@media(min-width:641px) and (max-width:1099px) and (min-height:721px){",
       "  header{grid-template-columns:1fr 1fr;grid-template-rows:40px 40px 16px}",
@@ -363,6 +373,99 @@
     for (var j = 0; j < panels.length; j += 1) {
       panels[j].classList.toggle("active", panels[j].getAttribute("data-m406-panel") === panelName);
     }
+    m406SyncTouchSurface(bar);
+  }
+
+  var m406TouchSurfaceFrame = 0;
+  var m406TouchRoute = null;
+  var m406TouchRouterInstalled = false;
+
+  function m406ActiveEditBar() {
+    var drill = byId("m395DrillEditBar");
+    if (drill && drill.classList.contains("show")) return drill;
+    var shot = byId("m395ShotEditBar");
+    if (shot && shot.classList.contains("show")) return shot;
+    return null;
+  }
+
+  function m406PointInside(rect, x, y) {
+    return !!rect && x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
+  }
+
+  function m406TouchControlAt(bar, x, y) {
+    if (!bar) return null;
+    var controls = bar.querySelectorAll("button:not([disabled]),select:not([disabled]),input:not([disabled])");
+    for (var i = controls.length - 1; i >= 0; i -= 1) {
+      var control = controls[i];
+      var rect = control.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0 && m406PointInside(rect, x, y)) return control;
+    }
+    return null;
+  }
+
+  function m406SyncTouchSurface(bar) {
+    if (!bar || !bar.classList.contains("show") || typeof window.requestAnimationFrame !== "function") return;
+    if (m406TouchSurfaceFrame) window.cancelAnimationFrame(m406TouchSurfaceFrame);
+    m406TouchSurfaceFrame = window.requestAnimationFrame(function () {
+      m406TouchSurfaceFrame = 0;
+      // Force WebKit to commit the fixed drawer's current geometry to its
+      // compositor hit-test layer after a canvas redraw or tool-panel change.
+      void bar.offsetHeight;
+      bar.getBoundingClientRect();
+    });
+  }
+
+  function m406InstallTouchRouter() {
+    if (m406TouchRouterInstalled) return;
+    m406TouchRouterInstalled = true;
+
+    document.addEventListener("pointerdown", function (event) {
+      if (event.pointerType !== "touch") return;
+      var bar = m406ActiveEditBar();
+      if (!bar) return;
+      var barRect = bar.getBoundingClientRect();
+      if (!m406PointInside(barRect, event.clientX, event.clientY)) return;
+      var intended = m406TouchControlAt(bar, event.clientX, event.clientY);
+      var targetIsIntended = !!(intended && (event.target === intended || intended.contains(event.target)));
+      m406TouchRoute = {
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+        moved: false,
+        intended: intended,
+        rescue: !!intended && !targetIsIntended
+      };
+      if (!bar.contains(event.target) || m406TouchRoute.rescue) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+      }
+    }, true);
+
+    document.addEventListener("pointermove", function (event) {
+      if (!m406TouchRoute || event.pointerId !== m406TouchRoute.pointerId) return;
+      if (Math.abs(event.clientX - m406TouchRoute.startX) > 10 || Math.abs(event.clientY - m406TouchRoute.startY) > 10) {
+        m406TouchRoute.moved = true;
+      }
+      if (m406TouchRoute.rescue) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+      }
+    }, true);
+
+    function endTouchRoute(event) {
+      if (!m406TouchRoute || event.pointerId !== m406TouchRoute.pointerId) return;
+      var route = m406TouchRoute;
+      m406TouchRoute = null;
+      if (!route.rescue) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      if (event.type === "pointercancel" || route.moved || !route.intended || route.intended.disabled) return;
+      try { route.intended.focus({ preventScroll: true }); } catch (error) { try { route.intended.focus(); } catch (ignored) {} }
+      route.intended.click();
+    }
+
+    document.addEventListener("pointerup", endTouchRoute, true);
+    document.addEventListener("pointercancel", endTouchRoute, true);
   }
 
   function m406UpgradeEditBar(bar, kind) {
@@ -414,6 +517,7 @@
       if (!button) return;
       m406SetEditPanel(bar, button.getAttribute("data-m406-tab"));
     });
+    m406InstallTouchRouter();
     return bar;
   }
 
@@ -3430,6 +3534,7 @@
     for (var r = 0; r < rotations.length; r += 1) rotations[r].disabled = count < 2;
     var undoButton = byId("m395DrillUndo");
     if (undoButton) undoButton.disabled = !drillEditUndoHistory.length;
+    m406SyncTouchSurface(bar);
   }
 
   function injectDrillEditStyles() {
@@ -4235,6 +4340,7 @@
     for (var r = 0; r < rotations.length; r += 1) rotations[r].disabled = count < 2;
     var undoButton = byId("m395ShotUndo");
     if (undoButton) undoButton.disabled = !shotEditUndoHistory.length;
+    m406SyncTouchSurface(byId("m395ShotEditBar"));
   }
 
   function injectShotEditStyles() {

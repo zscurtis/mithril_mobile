@@ -1,13 +1,14 @@
 {
-  "version": "m40.6.0",
-  "title": "Responsive Workspace and Edit Holes Redesign",
+  "version": "m40.6.2",
+  "title": "iPad Side Drawer Touch-Layer Fix",
   "released": "2026-07-29",
   "minimumOfflineVersion": "m39.6.3",
   "notes": [
-    "Uses a compact, height-aware workspace toolbar to return more screen space to the canvas.",
-    "Changes Edit Drill Holes and Edit Holes into adaptive drawers with Select, Move, Transform, and More tool groups.",
-    "Integrates pattern assignment directly into the edit workflow instead of stacking a second dialog over the edit panel.",
-    "Keeps modal titles and primary actions reachable while long forms scroll.",
+    "Restores the Edit Holes right-side drawer on iPad in landscape while retaining the bottom sheet in portrait.",
+    "Stabilizes the fixed drawer as an isolated WebKit compositor and hit-test surface.",
+    "Adds a touch-routing safety layer so visible drawer buttons remain tappable at their displayed positions after hole-selection redraws.",
+    "Keeps iOS momentum scrolling disabled and removes the canvas resize animation on touch devices.",
+    "Preserves the m40.6 responsive laptop drawer and integrated pattern workflow.",
     "Preserves role-based access, cloud rules compatibility, permanent document identity, header preservation, rotation, and conflict safeguards."
   ]
 }
