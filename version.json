@@ -1,13 +1,14 @@
 {
-  "version": "m40.7.1",
-  "title": "Reliable Cross-Device Cloud Loading",
+  "version": "m40.8.0",
+  "title": "Unified Field UI",
   "released": "2026-07-30",
   "minimumOfflineVersion": "m39.6.3",
   "notes": [
-    "Prevents a selected Home cloud document from silently falling back to the existing local Shot Diagram during cross-page loading.",
-    "Carries the selected cloud revision into the target workspace and removes the pending request only after the snapshot is applied successfully.",
-    "Retains a server-fetch fallback for documents too large for the temporary page handoff.",
-    "Clarifies the difference between Continue device copy and Load cloud.",
-    "Preserves the m40.7.0 dashboard, streamlined Cloud Sync, and verified m40.6.2 editing behavior."
+    "Adds a shared MITHRIL notice, confirmation, and stacked toast system.",
+    "Shows the active document name and persistent Saved on device, Unsynced changes, Syncing, Cloud synced, Offline, or Read only status.",
+    "Makes Save + Next the primary field action and keeps field actions reachable while entering hole data.",
+    "Docks the touch keypad on the right in tablet landscape and at the bottom in portrait.",
+    "Standardizes Drill Log and Shot Diagram hole-entry context without changing calculations, storage, cloud contracts, or permissions.",
+    "Preserves the verified m40.7.1 cross-device cloud-loading fix and m40.6.2 iPad touch behavior."
   ]
 }

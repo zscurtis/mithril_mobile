@@ -1,9 +1,9 @@
 (function () {
   "use strict";
 
-  var RELEASE_VERSION = "m40.7.1";
+  var RELEASE_VERSION = "m40.8.0";
   var CHILD_SCRIPT_ID = "mithrilCoreM400ChildLoader";
-  var CHILD_SCRIPT_SRC = "./mithril-core-m400.js?rev=4071-frame";
+  var CHILD_SCRIPT_SRC = "./mithril-core-m400.js?rev=4080-frame";
   var TRANSFER_KEY = "mithrilDrillToShotTransferM400";
   var UNDO_KEY = "mithrilDrillToShotUndoM400";
   var DEVICE_KEY = "mithrilCloudDeviceNameM399";
@@ -182,14 +182,35 @@
     return count;
   }
   function showToast(message, kind) {
-    var old = byId("m400Toast");
-    if (old && old.parentNode) old.parentNode.removeChild(old);
+    ensureStyles();
+    var region = byId("m408ToastRegion");
+    if (!region) {
+      region = document.createElement("div");
+      region.id = "m408ToastRegion";
+      region.className = "m408ToastRegion";
+      region.setAttribute("aria-live", "polite");
+      region.setAttribute("aria-atomic", "false");
+      document.body.appendChild(region);
+    }
     var toast = document.createElement("div");
-    toast.id = "m400Toast";
     toast.className = "m400Toast " + (kind || "good");
-    toast.textContent = message;
-    document.body.appendChild(toast);
-    setTimeout(function () { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 5200);
+    toast.setAttribute("role", kind === "bad" ? "alert" : "status");
+    var messageNode = document.createElement("span");
+    messageNode.textContent = message;
+    var close = document.createElement("button");
+    close.type = "button";
+    close.className = "m408ToastClose";
+    close.setAttribute("aria-label", "Dismiss message");
+    close.textContent = "×";
+    close.addEventListener("click", function () { if (toast.parentNode) toast.parentNode.removeChild(toast); });
+    toast.appendChild(messageNode);
+    toast.appendChild(close);
+    region.appendChild(toast);
+    setTimeout(function () {
+      toast.classList.add("leaving");
+      setTimeout(function () { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 180);
+    }, kind === "bad" ? 7200 : 4400);
+    return toast;
   }
 
   function ensureStyles() {
@@ -217,13 +238,112 @@
       ".m407CloudCurrent{padding:12px;border:1px solid #aebdd0;border-radius:12px;background:#f8fafc}.m407CloudCurrentHead{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.m407CloudCurrentHead strong{font-size:16px}.m407CloudCurrentHead span{font-size:12px;color:#627083;font-weight:800}.m407CloudPrimary{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:9px;margin-top:10px}.m407CloudPrimary .primary{min-height:50px;font-size:16px}.m407LastRefresh{align-self:center;color:#687687;font-size:11px;font-weight:800;text-align:right}.m407CloudSectionHead{display:flex;justify-content:space-between;gap:10px;align-items:center;margin:15px 0 8px}.m407CloudSectionHead strong{font-size:15px}.m407CloudSectionHead button{min-height:38px}.m407Advanced{margin-top:11px;border:1px solid #c5ccd5;border-radius:10px;background:#f7f8fa}.m407Advanced summary{cursor:pointer;padding:10px 12px;font-size:13px;font-weight:900;color:#465467}.m407AdvancedBody{padding:0 11px 11px}.m407Advanced .m400Note{margin-bottom:0}",
       ".m401Compare{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:10px 0}.m401Side{border:1px solid #9ab8df;border-radius:9px;padding:10px;background:#f7faff}.m401Side.cloud{border-color:#8dbb96;background:#f3fbf4}.m401Side h3{margin:0 0 6px;font-size:12px;letter-spacing:.08em;color:#516174}.m401Side b{display:block;font-size:15px;margin-bottom:4px}.m401Side span{display:block;font-size:12px;line-height:1.4;color:#4d5866;font-weight:750}",
       ".m400Docs{display:grid;gap:8px}.m400Doc{border:1px solid #bdc6d1;border-radius:11px;padding:10px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;background:#fff}.m400DocTitle{font-size:15px;font-weight:900}.m400Meta{font-size:12px;color:#596777;font-weight:750;line-height:1.4;margin-top:3px}.m400DocActions{display:flex;gap:6px;align-items:center}.m407DocMenu{position:relative}.m407DocMenu summary{list-style:none;display:flex;align-items:center;justify-content:center;width:42px;min-height:44px;border:1px solid #8996a5;border-radius:8px;background:#f4f4f4;font-size:22px;font-weight:900;cursor:pointer}.m407DocMenu summary::-webkit-details-marker{display:none}.m407DocMenuPanel{position:absolute;right:0;top:48px;z-index:3;width:190px;padding:7px;border:1px solid #aab3bf;border-radius:9px;background:#fff;box-shadow:0 8px 22px rgba(0,0,0,.2)}.m407DocMenuPanel button{width:100%}.m407Technical{margin-top:5px;font-size:10px;color:#8792a0;font-weight:750}",
-      ".m400Toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:22000;max-width:min(720px,calc(100vw - 24px));padding:12px 16px;border:2px solid #4f9a61;border-radius:10px;background:#e9f8ec;color:#173d20;font-size:14px;font-weight:900;line-height:1.35;box-shadow:0 8px 28px rgba(0,0,0,.35);text-align:center}.m400Toast.bad{background:#ffeaea;border-color:#c66;color:#720000}",
+      ".m408ToastRegion{position:fixed;left:50%;bottom:max(16px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:22000;width:min(720px,calc(100vw - 24px));display:grid;gap:8px;pointer-events:none}.m400Toast{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;padding:12px 12px 12px 16px;border:2px solid #4f9a61;border-radius:11px;background:#e9f8ec;color:#173d20;font-size:14px;font-weight:850;line-height:1.35;box-shadow:0 8px 28px rgba(0,0,0,.35);text-align:left;pointer-events:auto;animation:m408ToastIn .18s ease-out}.m400Toast.bad{background:#ffeaea;border-color:#c66;color:#720000}.m400Toast.wait{background:#fff7d8;border-color:#c7aa45;color:#5f4800}.m400Toast.leaving{opacity:0;transform:translateY(8px);transition:opacity .18s,transform .18s}.m408ToastClose{width:34px;min-height:34px!important;padding:0!important;border:0!important;background:transparent!important;color:inherit!important;font-size:24px!important;line-height:1!important}@keyframes m408ToastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}",
+      ".m408FeedbackModal{z-index:26000}.m408FeedbackBox{width:min(560px,100%);padding:0;overflow:hidden;border-color:#64748b}.m408FeedbackHead{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid #d6dbe2;background:#f8fafc}.m408FeedbackIcon{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:#eaf3ff;color:#1f5fae;font-size:19px;font-weight:950}.m408FeedbackBox.bad .m408FeedbackIcon,.m408FeedbackBox.danger .m408FeedbackIcon{background:#ffe5e5;color:#8b1e1e}.m408FeedbackBox.warning .m408FeedbackIcon{background:#fff0c2;color:#725000}.m408FeedbackTitle{font-size:19px;font-weight:950}.m408FeedbackMessage{padding:16px;white-space:pre-wrap;font-size:14px;line-height:1.48;color:#26313f}.m408FeedbackActions{position:sticky;bottom:0;display:grid;grid-template-columns:1fr 1fr;gap:9px;padding:12px 16px;border-top:1px solid #d6dbe2;background:#fff}.m408FeedbackActions.one{grid-template-columns:1fr}.m408FeedbackActions button{min-height:48px}.m408FeedbackActions .danger{background:#b42318;color:#fff;border-color:#8f1b13}",
+      "#status.m408StatusHost{display:grid!important;grid-template-columns:minmax(0,1fr) auto;gap:5px 10px;align-items:center;padding:6px 9px!important;border:1px solid #c7cfd9;border-radius:9px;background:#f8fafc;min-height:38px;box-sizing:border-box;color:#26313f!important;white-space:normal!important;overflow:visible!important}.m408DocTitle{font-size:13px;font-weight:950;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.m408DocMeta{grid-column:1/-1;font-size:10px;font-weight:750;color:#657284;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.m408StatusChip{display:inline-flex;align-items:center;gap:6px;min-height:24px;padding:3px 8px;border-radius:999px;border:1px solid #9aa7b5;background:#edf1f5;color:#435160;font-size:10px;font-weight:950;white-space:nowrap}.m408StatusChip::before{content:'';width:7px;height:7px;border-radius:50%;background:#7a8795}.m408StatusChip.synced{border-color:#6aa978;background:#e9f8ec;color:#225a2f}.m408StatusChip.synced::before{background:#2f8a45}.m408StatusChip.unsynced{border-color:#caa444;background:#fff7d8;color:#6b5100}.m408StatusChip.unsynced::before{background:#d39412}.m408StatusChip.offline{border-color:#c79c43;background:#fff2cf;color:#6b4d00}.m408StatusChip.offline::before{background:#d39412}.m408StatusChip.readonly{border-color:#9b71df;background:#f2eaff;color:#4b287b}.m408StatusChip.readonly::before{background:#7b4ac5}.m408StatusChip.syncing::before{background:#1f6feb;animation:m408Pulse 1s infinite alternate}@keyframes m408Pulse{to{opacity:.28}}",
       ".m404LandingAuth{color:#fff}.m404LandingHead{display:flex;justify-content:space-between;gap:10px;align-items:center}.m404LandingHead strong{font-size:18px}.m404AuthState{font-size:11px;font-weight:900;color:#b9c7da;letter-spacing:.04em}.m404AuthForm{display:grid;grid-template-columns:1fr 1fr auto;gap:9px;margin-top:11px}.m404AuthForm input{min-width:0;min-height:46px;border:1px solid #697585;border-radius:9px;padding:9px 11px;background:#f8fafc;font-size:16px}.m404AuthForm button{min-width:105px;background:#1f6feb;border-color:#1f6feb;color:#fff}.m404SignedIn{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-top:10px;padding:11px;border:1px solid #3f7650;border-radius:11px;background:rgba(37,110,57,.2)}.m404UserName{font-size:16px;font-weight:950}.m404UserMeta{font-size:12px;color:#c9d7cc;font-weight:800;margin-top:3px}.m404AuthMessage{display:none;margin-top:9px;font-size:12px;line-height:1.35;font-weight:800;color:#ffd37a}.m404AuthMessage.show{display:block}.m404TemplateLocked{opacity:.42;pointer-events:none;filter:grayscale(.55)}",
       ".m405UserActions{display:flex;gap:8px;flex-wrap:wrap}.m405AdminBox{width:min(900px,100%)}.m405AdminRows{display:grid;gap:8px;margin-top:10px}.m405AdminRow{display:grid;grid-template-columns:minmax(0,1fr) 150px 125px auto;gap:8px;align-items:center;border:1px solid #aaa;border-radius:9px;padding:9px}.m405AdminName{font-weight:900}.m405AdminMeta{font-size:11px;color:#555;font-weight:750;overflow-wrap:anywhere}.m405AccessBanner{position:fixed;left:50%;top:8px;transform:translateX(-50%);z-index:19000;padding:8px 13px;border:2px solid #9b71df;border-radius:10px;background:#f2eaff;color:#3d226d;font:900 13px Arial,sans-serif;box-shadow:0 5px 18px rgba(0,0,0,.28)}body.m405ReadOnly canvas{pointer-events:none!important}body.m405ReadOnly [data-m405-mutation=true]{display:none!important}",
       "@media(max-width:700px){.m405AdminRow{grid-template-columns:1fr 1fr}.m405AdminIdentity{grid-column:1/-1}.m405AdminRow button{grid-column:1/-1}}",
-      "@media(max-width:600px){.m400Grid,.m400Actions,.m401Compare,.m404AuthForm,.m407CloudPrimary{grid-template-columns:1fr}.m400Wide{grid-column:auto}.m400Stats{grid-template-columns:1fr 1fr}.m400Doc{grid-template-columns:1fr}.m400DocActions{justify-content:stretch}.m400DocActions>.primary{flex:1}.m404SignedIn{align-items:flex-start;flex-direction:column}.m404SignedIn button{width:100%}.m405UserActions{width:100%;display:grid}.m407LastRefresh{text-align:left}.m407CloudCurrentHead{display:grid}.m407DocMenuPanel{right:auto;left:0}}"
+      "@media(max-width:600px){.m400Grid,.m400Actions,.m401Compare,.m404AuthForm,.m407CloudPrimary{grid-template-columns:1fr}.m400Wide{grid-column:auto}.m400Stats{grid-template-columns:1fr 1fr}.m400Doc{grid-template-columns:1fr}.m400DocActions{justify-content:stretch}.m400DocActions>.primary{flex:1}.m404SignedIn{align-items:flex-start;flex-direction:column}.m404SignedIn button{width:100%}.m405UserActions{width:100%;display:grid}.m407LastRefresh{text-align:left}.m407CloudCurrentHead{display:grid}.m407DocMenuPanel{right:auto;left:0}.m408FeedbackActions{grid-template-columns:1fr}.m408DocTitle{font-size:12px}.m408StatusChip{padding:3px 7px}}"
     ].join("");
     document.head.appendChild(style);
+  }
+
+  function ensureFeedbackModal() {
+    var modal = byId("m408FeedbackModal");
+    if (modal) return modal;
+    ensureStyles();
+    modal = document.createElement("div");
+    modal.id = "m408FeedbackModal";
+    modal.className = "m400Modal m408FeedbackModal";
+    modal.setAttribute("role", "dialog");
+    modal.setAttribute("aria-modal", "true");
+    modal.innerHTML = [
+      '<div id="m408FeedbackBox" class="m400Box m408FeedbackBox">',
+      '<div class="m408FeedbackHead"><span id="m408FeedbackIcon" class="m408FeedbackIcon">i</span><strong id="m408FeedbackTitle" class="m408FeedbackTitle">MITHRIL</strong></div>',
+      '<div id="m408FeedbackMessage" class="m408FeedbackMessage"></div>',
+      '<div id="m408FeedbackActions" class="m408FeedbackActions one"><button type="button" class="primary" id="m408FeedbackPrimary">OK</button><button type="button" id="m408FeedbackCancel">Cancel</button></div>',
+      '</div>'
+    ].join("");
+    document.body.appendChild(modal);
+    return modal;
+  }
+
+  function feedbackKind(message, requested) {
+    if (requested) return requested;
+    var value = text(message);
+    if (/delete|clear all|remove|replace|overwrite|cannot be undone/i.test(value)) return "danger";
+    if (/error|failed|invalid|restricted|conflict|could not|cannot/i.test(value)) return "bad";
+    if (/warning|missing|required|offline|unavailable/i.test(value)) return "warning";
+    return "info";
+  }
+
+  function showNotice(message, options) {
+    options = options || {};
+    var value = String(message == null ? "" : message);
+    var kind = feedbackKind(value, options.kind);
+    if (options.toast === true || (!options.modal && value.length < 105 && value.indexOf("\n") < 0 && kind === "info")) {
+      showToast(value, options.toastKind || (kind === "bad" || kind === "danger" ? "bad" : (kind === "warning" ? "wait" : "good")));
+      return Promise.resolve(true);
+    }
+    var modal = ensureFeedbackModal();
+    var box = byId("m408FeedbackBox");
+    var actions = byId("m408FeedbackActions");
+    var primary = byId("m408FeedbackPrimary");
+    var cancel = byId("m408FeedbackCancel");
+    box.className = "m400Box m408FeedbackBox " + kind;
+    byId("m408FeedbackIcon").textContent = kind === "danger" || kind === "bad" ? "!" : (kind === "warning" ? "!" : "i");
+    byId("m408FeedbackTitle").textContent = options.title || (kind === "danger" ? "Confirm action" : (kind === "bad" ? "MITHRIL could not continue" : (kind === "warning" ? "Review needed" : "MITHRIL")));
+    byId("m408FeedbackMessage").textContent = value;
+    primary.textContent = options.primaryLabel || "OK";
+    primary.className = kind === "danger" ? "danger" : "primary";
+    cancel.textContent = options.cancelLabel || "Cancel";
+    cancel.style.display = options.confirm ? "" : "none";
+    actions.className = "m408FeedbackActions" + (options.confirm ? "" : " one");
+    modal.classList.add("show");
+    return new Promise(function (resolve) {
+      var settled = false;
+      function finish(result) {
+        if (settled) return;
+        settled = true;
+        modal.classList.remove("show");
+        primary.removeEventListener("click", accept);
+        cancel.removeEventListener("click", reject);
+        modal.removeEventListener("click", backdrop);
+        document.removeEventListener("keydown", escape);
+        resolve(result);
+      }
+      function accept() { finish(true); }
+      function reject() { finish(false); }
+      function backdrop(event) { if (event.target === modal && options.confirm !== true) finish(true); }
+      function escape(event) { if (event.key === "Escape") finish(options.confirm ? false : true); }
+      primary.addEventListener("click", accept);
+      cancel.addEventListener("click", reject);
+      modal.addEventListener("click", backdrop);
+      document.addEventListener("keydown", escape);
+      setTimeout(function () { try { primary.focus({ preventScroll: true }); } catch (error) {} }, 0);
+    });
+  }
+
+  function mithrilConfirm(message, options) {
+    options = options || {};
+    options.confirm = true;
+    if (!options.kind) options.kind = "danger";
+    if (!options.primaryLabel) options.primaryLabel = "Continue";
+    return showNotice(message, options);
+  }
+
+  function installM408Feedback() {
+    if (window.__mithrilM408FeedbackInstalled) return;
+    window.__mithrilM408FeedbackInstalled = true;
+    var nativeAlert = window.alert;
+    window.__mithrilNativeAlert = nativeAlert;
+    window.alert = function (message) { showNotice(message); };
+    window.MithrilFeedback = {
+      toast: showToast,
+      notice: showNotice,
+      confirm: mithrilConfirm
+    };
   }
   function stat(value, label) { return '<div class="m400Stat"><b>' + escapeHtml(value) + '</b><span>' + escapeHtml(label) + '</span></div>'; }
 
@@ -1506,13 +1626,22 @@
       renderLandingCloudDocuments([], "Cloud documents could not be refreshed. Your device copies remain available.");
     });
   }
-  function openLandingCloudDocument(id, data) {
+  function openLandingCloudDocument(id, data, options) {
+    options = options || {};
     var type = data && data.type;
     if (type !== "shotDiagram" && type !== "drillLog") return;
     if (type === "shotDiagram" && !hasPermission("shot")) return restrictedMessage("Shot Diagram");
     if (type === "drillLog" && !hasPermission("drill")) return restrictedMessage("Drill Log");
     var label = data.title || docTypeLabel(type);
-    if (!confirm("Open this cloud document?\n\n" + label + "\nRevision " + (data.revision || 1) + "\n\nThis replaces the current local " + docTypeLabel(type) + " on this device. Undo Cloud Download will remain available.")) return;
+    if (!options.skipConfirm) {
+      mithrilConfirm(label + "\nRevision " + (data.revision || 1) + "\n\nThis replaces the current local " + docTypeLabel(type) + " on this device. Undo Cloud Download will remain available.", {
+        title: "Load cloud revision?",
+        primaryLabel: "Load cloud"
+      }).then(function (approved) {
+        if (approved) openLandingCloudDocument(id, data, { skipConfirm: true });
+      });
+      return;
+    }
     var pending = {
       id: id,
       type: type,
@@ -1671,6 +1800,7 @@
     }).catch(function (error) { setLandingMessage(friendlyError(error), "bad"); });
   }
   function bootLandingAuth() {
+    installM408Feedback();
     if (!ensureLandingAuth()) return;
     installLandingActionGuards();
     renderLandingAuth();
@@ -1881,6 +2011,7 @@
   }
   function bootDocumentAccess() {
     if (!isDrill() && !isShot()) return;
+    installM408Feedback();
     if (!currentProfile) {
       var cached = readVerifiedUser();
       if (cached) currentProfile = normalizeUserProfile({ uid: cached.uid, email: cached.email, displayName: cached.displayName }, cached);
@@ -1934,6 +2065,8 @@
     return fbPromise;
   }
   function setCloudStatus(message, kind) {
+    if (document.body) document.body.setAttribute("data-m408-cloud-state", kind || "");
+    renderWorkspaceStatus();
     var el = byId("m400CloudStatus"); if (!el) return;
     el.textContent = message; el.className = "m400Status " + (kind || "");
   }
@@ -2080,22 +2213,30 @@
         var state = currentSyncState(existing, resolved.id);
         if (existing && state.cloudRevision > state.lastRevision && state.dirty) throw { conflict: true, state: state };
         var revision = existing && Number(existing.revision) ? Number(existing.revision) + 1 : 1;
-        if (existing && !options.skipConfirm) {
-          var when = existing.updatedAt && existing.updatedAt.toDate ? existing.updatedAt.toDate().toLocaleString() : "an earlier time";
-          if (!confirm("A cloud copy already exists.\n\nCloud revision: " + (existing.revision || 1) + "\nSaved from: " + (existing.sourceDevice || "Unknown device") + "\nUpdated: " + when + "\n\nUpload this device as revision " + revision + "?")) throw { cancelled: true };
+        function writeRevision() {
+          var record = clone(data);
+          record.ownerUid = currentUser.uid;
+          record.revision = revision;
+          record.sourceDevice = deviceName();
+          record.updatedBy = currentUser.email || currentUser.uid;
+          record.updatedAt = fb.storeMod.serverTimestamp();
+          record.createdAt = existing && existing.createdAt ? existing.createdAt : fb.storeMod.serverTimestamp();
+          var permanentRef = fb.storeMod.doc(fb.db, "users", currentUser.uid, "documents", id);
+          return fb.storeMod.setDoc(permanentRef, record).then(function () {
+            if (!resolved.isLegacy) return null;
+            return fb.storeMod.deleteDoc(resolved.ref);
+          }).then(function () { return { revision: revision, record: record, id: id, migrated: resolved.isLegacy }; });
         }
-        var record = clone(data);
-        record.ownerUid = currentUser.uid;
-        record.revision = revision;
-        record.sourceDevice = deviceName();
-        record.updatedBy = currentUser.email || currentUser.uid;
-        record.updatedAt = fb.storeMod.serverTimestamp();
-        record.createdAt = existing && existing.createdAt ? existing.createdAt : fb.storeMod.serverTimestamp();
-        var permanentRef = fb.storeMod.doc(fb.db, "users", currentUser.uid, "documents", id);
-        return fb.storeMod.setDoc(permanentRef, record).then(function () {
-          if (!resolved.isLegacy) return null;
-          return fb.storeMod.deleteDoc(resolved.ref);
-        }).then(function () { return { revision: revision, record: record, id: id, migrated: resolved.isLegacy }; });
+        if (!existing || options.skipConfirm) return writeRevision();
+        var when = existing.updatedAt && existing.updatedAt.toDate ? existing.updatedAt.toDate().toLocaleString() : "an earlier time";
+        return mithrilConfirm("Cloud revision: " + (existing.revision || 1) + "\nSaved from: " + (existing.sourceDevice || "Unknown device") + "\nUpdated: " + when + "\n\nUpload this device as revision " + revision + "?", {
+          title: "Upload a new cloud revision?",
+          primaryLabel: "Upload revision",
+          kind: "warning"
+        }).then(function (approved) {
+          if (!approved) throw { cancelled: true };
+          return writeRevision();
+        });
       });
     }).then(function (result) {
       writeSyncMeta(result.id, result.revision, data.payload, result.record);
@@ -2152,7 +2293,16 @@
     var adapter = window.MithrilDocument;
     if (!adapter) return false;
     var warning = "Open cloud revision " + (data.revision || 1) + " of:\n\n" + (data.title || docTypeLabel(data.type)) + "\nSaved from " + (data.sourceDevice || "Unknown device") + "\n\nThis replaces the current local " + docTypeLabel(data.type) + " on this device.";
-    if (!options.skipConfirm && !confirm(warning)) { setCloudStatus("Download cancelled. Nothing was changed.", ""); return false; }
+    if (!options.skipConfirm) {
+      mithrilConfirm(warning, {
+        title: "Replace the device copy?",
+        primaryLabel: "Load cloud"
+      }).then(function (approved) {
+        if (approved) downloadCloud(id, data, { skipConfirm: true, syncUid: options.syncUid });
+        else setCloudStatus("Download cancelled. Nothing was changed.", "");
+      });
+      return false;
+    }
     setCloudStatus("Downloading and applying the cloud document through the shared document interface…", "wait");
     try {
       var cloudSnapshot = normalizedSnapshot(data.payload || data);
@@ -2251,12 +2401,21 @@
       if (retryDelay) setTimeout(consumePendingCloudOpen, retryDelay);
     });
   }
-  function undoCloudDownload() {
+  function undoCloudDownload(options) {
+    options = options || {};
     var adapter = window.MithrilDocument, record = cloudRecord();
     if (!adapter || !record) return;
     var id = logicalId(record), recovery = readJsonStorage(recoveryStorageKey(id));
     if (!recovery || !recovery.snapshot) { setCloudStatus("No cloud-download recovery snapshot is available for this document.", "bad"); return; }
-    if (!confirm("Restore the local document as it was before the last cloud download?")) return;
+    if (!options.skipConfirm) {
+      mithrilConfirm("Restore the local document as it was before the last cloud download?\n\nWork completed after that download will be replaced.", {
+        title: "Undo cloud download?",
+        primaryLabel: "Restore device copy"
+      }).then(function (approved) {
+        if (approved) undoCloudDownload({ skipConfirm: true });
+      });
+      return;
+    }
     try {
       adapter.applySnapshot(recovery.snapshot, { markDirty: true, fitAll: adapter.type === "shotDiagram" });
       if (recovery.syncMeta) writeJsonStorage(syncStorageKey(id), recovery.syncMeta);
@@ -2296,9 +2455,18 @@
       });
     }).catch(function (error) { setCloudStatus(friendlyError(error), "bad"); });
   }
-  function deleteCloud(id, data) {
+  function deleteCloud(id, data, options) {
+    options = options || {};
     if (!hasPermission("cloudDelete")) return restrictedMessage("Cloud deletion");
-    if (!confirm("Delete this cloud copy?\n\n" + (data.title || docTypeLabel(data.type)) + "\n\nThe local copy on this device will not be deleted.")) return;
+    if (!options.skipConfirm) {
+      mithrilConfirm((data.title || docTypeLabel(data.type)) + "\n\nThe cloud copy will be deleted. The local copy on this device will remain.", {
+        title: "Delete cloud copy?",
+        primaryLabel: "Delete cloud copy"
+      }).then(function (approved) {
+        if (approved) deleteCloud(id, data, { skipConfirm: true });
+      });
+      return;
+    }
     setCloudStatus("Deleting cloud copy…", "wait");
     loadFirebase().then(function (fb) { return fb.storeMod.deleteDoc(fb.storeMod.doc(fb.db, "users", currentUser.uid, "documents", id)); })
       .then(function () { setCloudStatus("Cloud copy deleted. Local data was not changed.", "good"); return refreshCloudList(); })
@@ -2664,6 +2832,126 @@
   }
 
   // ---------------------------------------------------------------------------
+  // m40.8 shared workspace status and destructive-action confirmation
+  // ---------------------------------------------------------------------------
+
+  function m408DocumentTitle() {
+    try {
+      if (window.MithrilDocument && typeof window.MithrilDocument.getInfo === "function") {
+        var info = window.MithrilDocument.getInfo() || {};
+        if (text(info.title)) return text(info.title);
+      }
+    } catch (error) {}
+    return docTypeLabel(docType()) + " — Untitled";
+  }
+
+  function m408WorkspaceState() {
+    if (document.body && document.body.classList.contains("m405ReadOnly")) return { key: "readonly", label: "Read only" };
+    if (navigator.onLine === false) return { key: "offline", label: "Offline" };
+    if (document.body && document.body.getAttribute("data-m408-cloud-state") === "wait") return { key: "syncing", label: "Syncing" };
+    try {
+      if (window.MithrilDocument) {
+        var data = cloudRecord();
+        var id = data && logicalId(data);
+        var meta = id ? readSyncMeta(id) : null;
+        if (meta) {
+          var fingerprint = snapshotFingerprint(data.payload);
+          if (meta.fingerprint === fingerprint) return { key: "synced", label: "Cloud synced" };
+          return { key: "unsynced", label: "Unsynced changes" };
+        }
+      }
+    } catch (error) {}
+    return { key: "device", label: "Saved on device" };
+  }
+
+  function renderWorkspaceStatus(rawText) {
+    var status = byId("status");
+    if (!status) return;
+    if (rawText !== undefined && rawText !== null) status.setAttribute("data-m408-raw", text(rawText));
+    var raw = status.getAttribute("data-m408-raw") || "Ready.";
+    var state = m408WorkspaceState();
+    status.className = "m408StatusHost";
+    status.innerHTML = '<span class="m408DocTitle">' + escapeHtml(m408DocumentTitle()) + '</span><span class="m408StatusChip ' + escapeHtml(state.key) + '">' + escapeHtml(state.label) + '</span><span class="m408DocMeta">' + escapeHtml(raw) + '</span>';
+  }
+
+  function installWorkspaceStatus() {
+    var status = byId("status");
+    if (!status || status.getAttribute("data-m408-installed") === "true") return !!status;
+    status.setAttribute("data-m408-installed", "true");
+    renderWorkspaceStatus(status.textContent);
+    if (typeof MutationObserver === "function") {
+      var observer = new MutationObserver(function () {
+        if (status.querySelector(".m408DocTitle")) return;
+        renderWorkspaceStatus(status.textContent);
+      });
+      observer.observe(status, { childList: true, characterData: true, subtree: true });
+      if (document.body) {
+        new MutationObserver(function () { renderWorkspaceStatus(); }).observe(document.body, {
+          attributes: true,
+          attributeFilter: ["class", "data-m408-cloud-state"]
+        });
+      }
+    }
+    window.addEventListener("online", function () { renderWorkspaceStatus(); });
+    window.addEventListener("offline", function () { renderWorkspaceStatus(); });
+    return true;
+  }
+
+  function m408ConfirmMessage(button) {
+    var action = text(button && button.getAttribute("onclick"));
+    var hole = byId("holeTitle") ? text(byId("holeTitle").textContent) : "this hole";
+    if (/clearCurrentHole|clearHole/.test(action)) return {
+      title: "Clear hole data?",
+      message: "Clear all saved data for " + hole + "?\n\nThis cannot be undone.",
+      primaryLabel: "Clear hole"
+    };
+    if (/deletePage|deleteCurrentPage/.test(action)) {
+      var page = typeof currentPage !== "undefined" ? currentPage : "";
+      return {
+        title: "Delete current page?",
+        message: "Delete Page " + page + " and its saved hole data?\n\nIf this is the only page, the page will be cleared instead.",
+        primaryLabel: "Delete page"
+      };
+    }
+    if (/clearAll/.test(action)) return {
+      title: "Clear all local data?",
+      message: "Clear every local " + docTypeLabel(docType()).toLowerCase() + " page, header, and hole record from this device?\n\nCreate a backup first if this work may be needed later.",
+      primaryLabel: "Clear all data"
+    };
+    return null;
+  }
+
+  function installDestructiveActionGuards() {
+    if (window.__mithrilM408DestructiveGuards) return;
+    window.__mithrilM408DestructiveGuards = true;
+    document.addEventListener("click", function (event) {
+      var button = event.target && event.target.closest ? event.target.closest("button[onclick]") : null;
+      if (!button) return;
+      if (button.getAttribute("data-m408-confirmed") === "true") {
+        button.removeAttribute("data-m408-confirmed");
+        return;
+      }
+      var details = m408ConfirmMessage(button);
+      if (!details) return;
+      event.preventDefault();
+      event.stopPropagation();
+      if (typeof event.stopImmediatePropagation === "function") event.stopImmediatePropagation();
+      mithrilConfirm(details.message, {
+        title: details.title,
+        primaryLabel: details.primaryLabel,
+        cancelLabel: "Cancel"
+      }).then(function (approved) {
+        if (!approved || !button.isConnected) return;
+        button.setAttribute("data-m408-confirmed", "true");
+        var nativeConfirm = window.confirm;
+        window.confirm = function () { return true; };
+        try { button.click(); }
+        finally { window.confirm = nativeConfirm; }
+      });
+    }, true);
+  }
+
+  // ---------------------------------------------------------------------------
   // Versioning and wrapper bridge
   // ---------------------------------------------------------------------------
 
@@ -2700,7 +2988,7 @@
         script.id = CHILD_SCRIPT_ID;
         script.src = CHILD_SCRIPT_SRC;
         doc.head.appendChild(script);
-      } catch (error) { console.warn("MITHRIL m40.7.1 could not attach the standardized document layer to the Shot Diagram.", error); }
+      } catch (error) { console.warn("MITHRIL m40.8.0 could not attach the standardized document layer to the Shot Diagram.", error); }
     }
     frame.addEventListener("load", function () { setTimeout(inject, 80); });
     setTimeout(inject, 120);
@@ -2720,6 +3008,7 @@
 
   function bootDocument() {
     ensureStyles();
+    installM408Feedback();
     updateVersionLabels();
     if (!byId("templateStart")) rememberDocumentType(docType());
     installIdentityGuards();
@@ -2733,6 +3022,8 @@
     installCloudButton();
     installTimingSeparationCheck();
     installDesktopSelectionRedraw();
+    installWorkspaceStatus();
+    installDestructiveActionGuards();
     setTimeout(consumePendingCloudOpen, 180);
     if (isShot()) setTimeout(openImportReview, 100);
     var attempts = 0;
@@ -2743,6 +3034,7 @@
       installCloudButton();
       installTimingSeparationCheck();
       installDesktopSelectionRedraw();
+      installWorkspaceStatus();
       updateUndoButton();
       if (attempts >= 40) clearInterval(timer);
     }, 150);

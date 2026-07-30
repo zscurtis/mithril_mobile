@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var RELEASE_VERSION = "m40.7.1";
+  var RELEASE_VERSION = "m40.8.0";
   var RELEASE_LABEL = "field operations dashboard and streamlined Cloud Sync";
   var THEME_STORAGE_KEY = "mithrilCanvasThemeV1";
   var THEME_CLASS_PREFIX = "m395-theme-";
@@ -7232,6 +7232,109 @@
     installForTest: installPhysicalKeyboardEntry
   };
 
+  // ---------------------------------------------------------------------------
+  // m40.8 adaptive field entry and shared editor presentation
+  // ---------------------------------------------------------------------------
+
+  function m408FieldLabel(id) {
+    return {
+      overburden: "Overburden",
+      depth: "Depth",
+      stemming: "Stemming",
+      primaryLoad: "Primary Load",
+      secondaryLoad: "Secondary Load",
+      timing: "Timing"
+    }[String(id || "")] || "Field";
+  }
+
+  function m408InjectEntryStyles() {
+    if (byId("mithrilAdaptiveEntryM408Styles")) return;
+    var style = document.createElement("style");
+    style.id = "mithrilAdaptiveEntryM408Styles";
+    style.textContent = [
+      "#holeBox,#holeEditorBox{--m408-primary:#1f6feb;--m408-border:#c8d0da}",
+      ".m408EntryContext{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:0 0 10px;padding:8px 10px;border:1px solid #b8c6d8;border-radius:9px;background:#f6f9fd;color:#243247;font-size:12px;font-weight:850}",
+      ".m408EntryContext strong{font-size:15px;font-weight:950;color:#16253a}.m408EntryContext span:last-child{text-align:right;color:#51647c}",
+      ".m408FieldActions{position:sticky;bottom:0;z-index:8;margin:10px -4px -4px!important;padding:10px 4px 4px;background:linear-gradient(to bottom,rgba(255,255,255,.72),#fff 24%);border-top:1px solid var(--m408-border)}",
+      ".m408FieldActions button{min-height:48px}.m408FieldActions .m408SaveNext{background:var(--m408-primary)!important;border-color:var(--m408-primary)!important;color:#fff!important}.m408FieldActions .m408SaveOnly{background:#eef3f8!important;border-color:#9aa8b7!important;color:#243247!important}",
+      "#numberPad.show,#loadKeypad.show{overscroll-behavior:contain;touch-action:manipulation}",
+      "#numberPad .padTitle,#loadKeypad .loadKeypadTitle{color:#526277;font-size:11px;text-transform:uppercase;letter-spacing:.06em}",
+      "@media (pointer:coarse) and (orientation:portrait){#holeBox.padOpen .m408FieldActions,#holeEditorBox.keypadOpen .m408FieldActions{bottom:330px}}",
+      "@media (pointer:coarse) and (orientation:landscape) and (min-width:700px){",
+      " #numberPad.show,#loadKeypad.show{left:auto!important;right:8px!important;top:max(74px,env(safe-area-inset-top))!important;bottom:8px!important;width:min(360px,42vw)!important;overflow:auto!important}",
+      " #holeBox.padOpen,#holeEditorBox.keypadOpen{width:calc(100vw - 390px)!important;max-width:760px!important;margin-left:12px!important;margin-right:auto!important;padding-bottom:14px!important}",
+      " #holeBox.padOpen .m408FieldActions,#holeEditorBox.keypadOpen .m408FieldActions{bottom:0}",
+      " #numberPad .padGrid button,#loadKeypad .loadKeypadGrid button{min-height:42px}",
+      "}",
+      "@media (max-width:520px){.m408EntryContext{align-items:flex-start;flex-direction:column;gap:2px}.m408EntryContext span:last-child{text-align:left}.m408FieldActions{grid-template-columns:1fr 1fr!important}}"
+    ].join("");
+    document.head.appendChild(style);
+  }
+
+  function m408UpdateEntryContext(type, fieldId) {
+    var context = byId(type === "drill" ? "m408DrillEntryContext" : "m408ShotEntryContext");
+    if (!context) return;
+    var title = byId("holeTitle");
+    var hole = title ? String(title.textContent || "Hole") : "Hole";
+    var active = String(fieldId || (m396CurrentActiveFieldId ? m396CurrentActiveFieldId(type) : "overburden"));
+    context.innerHTML = "<strong>" + hole.replace(/</g, "&lt;") + "</strong><span>Current field: " + m408FieldLabel(active) + "</span>";
+  }
+
+  function m408WrapKeypad(type) {
+    var name = type === "drill" ? "showPad" : "showEntryKeypad";
+    var original = window[name];
+    if (typeof original !== "function" || original.__m408EntryContext) return;
+    var wrapped = function (id) {
+      m408UpdateEntryContext(type, id);
+      return original.apply(this, arguments);
+    };
+    wrapped.__m408EntryContext = true;
+    window[name] = wrapped;
+  }
+
+  function installAdaptiveFieldEntry(type) {
+    var box = m396HoleBox(type);
+    if (!box || box.getAttribute("data-m408-adaptive-entry") === "true") return;
+    box.setAttribute("data-m408-adaptive-entry", "true");
+    m408InjectEntryStyles();
+    var head = box.querySelector(".boxHead");
+    var context = document.createElement("div");
+    context.id = type === "drill" ? "m408DrillEntryContext" : "m408ShotEntryContext";
+    context.className = "m408EntryContext";
+    context.setAttribute("aria-live", "polite");
+    if (head && head.nextSibling) box.insertBefore(context, head.nextSibling);
+    else if (head) box.appendChild(context);
+
+    var actions = box.querySelector(".buttonGrid");
+    if (actions) {
+      actions.classList.add("m408FieldActions");
+      var buttons = actions.querySelectorAll("button");
+      for (var i = 0; i < buttons.length; i += 1) {
+        var action = String(buttons[i].getAttribute("onclick") || "");
+        if (/saveHoleAndNext|saveHole\(true\)/.test(action)) buttons[i].classList.add("m408SaveNext", "primary");
+        else if (/saveHole\(\)|saveHole\(false\)/.test(action)) {
+          buttons[i].classList.add("m408SaveOnly");
+          buttons[i].classList.remove("primary");
+        }
+      }
+    }
+
+    var fields = m396FieldIds(type);
+    fields.forEach(function (id) {
+      var input = byId(id);
+      if (!input) return;
+      ["pointerdown", "focus"].forEach(function (eventName) {
+        input.addEventListener(eventName, function () { m408UpdateEntryContext(type, id); }, true);
+      });
+    });
+    var title = byId("holeTitle");
+    if (title && typeof MutationObserver === "function") {
+      new MutationObserver(function () { m408UpdateEntryContext(type); }).observe(title, { childList: true, characterData: true, subtree: true });
+    }
+    m408WrapKeypad(type);
+    m408UpdateEntryContext(type, fields[0]);
+  }
+
 
   // ---------------------------------------------------------------------------
   // m39.7 Shot Diagram Timing Sequence Mode
@@ -8103,6 +8206,7 @@
       installDrillPatternSystem();
       enableWheelZoom(drillCanvas);
       installPhysicalKeyboardEntry("drill");
+      installAdaptiveFieldEntry("drill");
     } else if (shotCanvas) {
       installPrecisionCanvasCoordinates(shotCanvas, "shot");
       updateToolbar(true);
@@ -8117,6 +8221,7 @@
       m395AugmentShotEditBar();
       enableWheelZoom(shotCanvas);
       installPhysicalKeyboardEntry("shot");
+      installAdaptiveFieldEntry("shot");
       installShotTimingSequence(shotCanvas);
     } else if (byId("shotFrame")) {
       installShotFrameBridge();
