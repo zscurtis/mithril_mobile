@@ -1,8 +1,8 @@
 (function () {
   "use strict";
 
-  var RELEASE_VERSION = "m40.8.0";
-  var RELEASE_LABEL = "field operations dashboard and streamlined Cloud Sync";
+  var RELEASE_VERSION = "m40.8.1";
+  var RELEASE_LABEL = "compact responsive workspace header";
   var THEME_STORAGE_KEY = "mithrilCanvasThemeV1";
   var THEME_CLASS_PREFIX = "m395-theme-";
   var THEME_OPTIONS = [
@@ -277,11 +277,13 @@
     var style = document.createElement("style");
     style.id = "mithrilWorkspaceM406Styles";
     style.textContent = [
-      ":root{--toolbar-h:112px}",
-      "header{height:var(--toolbar-h);padding:6px;gap:6px}",
+      ":root{--toolbar-h:140px}",
+      "header{height:var(--toolbar-h);padding:6px;gap:6px;grid-template-columns:1fr;grid-template-rows:40px 40px minmax(40px,auto);align-items:center}",
+      "header>.topRow{grid-column:1;grid-row:1}",
+      "header>.zoomRow{grid-column:1;grid-row:2}",
+      "header>#status{grid-column:1;grid-row:3}",
       "header .brandText{overflow:hidden;text-overflow:ellipsis}",
       "header .version{display:none}",
-      "header .finishBtn{font-size:15px;min-height:40px}",
       "header #status{padding:0 2px;color:#48515b}",
       "#canvasWrap{top:var(--toolbar-h);transition:right .18s ease}",
       ".modal .box{overscroll-behavior:contain}",
@@ -304,12 +306,13 @@
       ".m406EditDrawer{max-height:min(54vh,480px);overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:auto;isolation:isolate;contain:layout paint style;transform:translate3d(0,0,0);-webkit-transform:translate3d(0,0,0);backface-visibility:hidden;-webkit-backface-visibility:hidden}",
       ".m406EditDrawer button,.m406EditDrawer select{touch-action:manipulation}",
       "@media(min-width:1100px){",
-      "  :root{--toolbar-h:68px}",
-      "  header{grid-template-columns:minmax(0,1fr) auto minmax(255px,.7fr);grid-template-rows:40px 16px;align-items:center}",
+      "  :root{--toolbar-h:96px}",
+      "  header{grid-template-columns:minmax(0,1fr) minmax(255px,.7fr);grid-template-rows:40px 38px;align-items:center}",
       "  header>.topRow{grid-column:1;grid-row:1;grid-template-columns:minmax(170px,1fr) auto auto auto}",
-      "  header>.finishBtn{grid-column:2;grid-row:1;min-width:170px}",
-      "  header>.zoomRow{grid-column:3;grid-row:1}",
+      "  header>.zoomRow{grid-column:2;grid-row:1}",
       "  header>#status{grid-column:1/-1;grid-row:2}",
+      "  header>#status.m408StatusHost{grid-template-columns:minmax(0,1fr) minmax(0,.7fr) auto;min-height:38px;padding:4px 8px!important;gap:8px}",
+      "  header>#status.m408StatusHost .m408DocMeta{grid-column:auto;grid-row:auto}",
       "  header .mark{width:32px;height:32px}",
       "  header .brandText{font-size:15px}",
       "}",
@@ -318,12 +321,13 @@
       "  html.m406-edit-open #canvasWrap{right:376px}",
       "}",
       "@media(min-width:700px) and (max-height:720px) and (pointer:fine){",
-      "  :root{--toolbar-h:68px}",
-      "  header{grid-template-columns:minmax(0,1fr) auto minmax(235px,.65fr);grid-template-rows:40px 16px;align-items:center}",
+      "  :root{--toolbar-h:96px}",
+      "  header{grid-template-columns:minmax(0,1fr) minmax(235px,.65fr);grid-template-rows:40px 38px;align-items:center}",
       "  header>.topRow{grid-column:1;grid-row:1;grid-template-columns:minmax(145px,1fr) auto auto auto}",
-      "  header>.finishBtn{grid-column:2;grid-row:1;min-width:155px}",
-      "  header>.zoomRow{grid-column:3;grid-row:1}",
+      "  header>.zoomRow{grid-column:2;grid-row:1}",
       "  header>#status{grid-column:1/-1;grid-row:2}",
+      "  header>#status.m408StatusHost{grid-template-columns:minmax(0,1fr) minmax(0,.7fr) auto;min-height:38px;padding:4px 8px!important;gap:8px}",
+      "  header>#status.m408StatusHost .m408DocMeta{grid-column:auto;grid-row:auto}",
       "  .m406EditDrawer{left:auto!important;right:8px!important;top:calc(var(--toolbar-h) + 8px)!important;bottom:8px!important;width:min(360px,38vw);max-height:none;overflow:auto;align-content:start}",
       "  html.m406-edit-open #canvasWrap{right:min(376px,40vw)}",
       "}",
@@ -333,22 +337,27 @@
       "  html.m406-edit-open #canvasWrap{right:0!important}",
       "}",
       "@media(pointer:coarse) and (orientation:landscape) and (min-width:900px){",
+      "  :root{--toolbar-h:96px}",
+      "  header{grid-template-columns:minmax(0,1fr) minmax(235px,.65fr);grid-template-rows:40px 38px;align-items:center}",
+      "  header>.topRow{grid-column:1;grid-row:1}",
+      "  header>.zoomRow{grid-column:2;grid-row:1}",
+      "  header>#status{grid-column:1/-1;grid-row:2}",
+      "  header>#status.m408StatusHost{grid-template-columns:minmax(0,1fr) minmax(0,.7fr) auto;min-height:38px;padding:4px 8px!important;gap:8px}",
+      "  header>#status.m408StatusHost .m408DocMeta{grid-column:auto;grid-row:auto}",
       "  .m406EditDrawer{left:auto!important;right:max(8px,env(safe-area-inset-right))!important;top:calc(var(--toolbar-h) + 8px)!important;bottom:max(8px,env(safe-area-inset-bottom))!important;width:min(360px,38vw)!important;max-height:none!important;overflow-x:hidden;overflow-y:auto;align-content:start}",
       "  html.m406-edit-open #canvasWrap{right:min(376px,40vw)!important}",
       "}",
       "@media(min-width:641px) and (max-width:1099px) and (min-height:721px){",
-      "  header{grid-template-columns:1fr 1fr;grid-template-rows:40px 40px 16px}",
+      "  header{grid-template-columns:1fr;grid-template-rows:40px 40px minmax(40px,auto)}",
       "  header>.topRow{grid-column:1/-1;grid-row:1}",
-      "  header>.finishBtn{grid-column:1;grid-row:2}",
-      "  header>.zoomRow{grid-column:2;grid-row:2}",
+      "  header>.zoomRow{grid-column:1;grid-row:2}",
       "  header>#status{grid-column:1/-1;grid-row:3}",
       "}",
       "@media(max-width:640px){",
-      "  :root{--toolbar-h:116px}",
-      "  header{grid-template-columns:1fr auto;grid-template-rows:40px 40px 16px}",
+      "  :root{--toolbar-h:140px}",
+      "  header{grid-template-columns:1fr;grid-template-rows:40px 40px minmax(40px,auto)}",
       "  header>.topRow{grid-column:1/-1;grid-row:1;grid-template-columns:minmax(0,1fr) auto auto auto}",
-      "  header>.finishBtn{grid-column:1;grid-row:2}",
-      "  header>.zoomRow{grid-column:2;grid-row:2;grid-template-columns:auto auto auto}",
+      "  header>.zoomRow{grid-column:1;grid-row:2;grid-template-columns:auto 1fr auto auto}",
       "  header>.zoomRow input[type=range]{display:none}",
       "  header>#status{grid-column:1/-1;grid-row:3}",
       "  header .mark{width:30px;height:30px}",
@@ -544,6 +553,9 @@
     var header = document.querySelector("header");
     if (!header) return;
 
+    var finishButton = header.querySelector(".finishBtn");
+    if (finishButton && finishButton.parentNode) finishButton.parentNode.removeChild(finishButton);
+
     var topButtons = header.querySelectorAll(".topRow button");
     for (var i = 0; i < topButtons.length; i += 1) {
       var label = String(topButtons[i].textContent || "").trim();
@@ -559,10 +571,6 @@
       zoomButtons[0].classList.add("m395FitButton");
     }
 
-    if (isShot) {
-      var finishButton = header.querySelector(".finishBtn");
-      if (finishButton) finishButton.textContent = "Finish & Export PDF";
-    }
   }
 
   function setButtonArrow(button, isOpen) {
@@ -819,8 +827,7 @@
       '  <div id="m395DrillExport" class="m395Section">',
       '    <div class="m395SectionTitle">Export &amp; Share</div>',
       '    <div class="m395ActionGrid">',
-      '      <button type="button" class="primary wide" data-m395-action="finish">Finish &amp; Send to Blaster</button>',
-      '      <button type="button" data-m395-action="pdf">Download PDF</button>',
+      '      <button type="button" class="primary" data-m395-action="pdf">Download PDF</button>',
       '      <button type="button" data-m395-action="csv">Export CSV</button>',
       '    </div>',
       '  </div>',
@@ -856,7 +863,6 @@
     wireAction(box, '[data-m395-action="editHoles"]', function () { closeMenu(); startDrillEditMode(); });
     wireAction(box, '[data-m395-action="fitAll"]', function () { runAndClose("fitAllPages"); });
     wireAction(box, '[data-m395-action="deletePage"]', function () { runAndClose("deletePage"); });
-    wireAction(box, '[data-m395-action="finish"]', function () { runAndClose("finishAndSendToBlaster"); });
     wireAction(box, '[data-m395-action="pdf"]', function () { runAndClose("downloadPDF"); });
     wireAction(box, '[data-m395-action="csv"]', function () { runAndClose("exportCSV"); });
     wireAction(box, '[data-m395-action="backup"]', function () { runAndClose("downloadJSON"); });
@@ -915,10 +921,9 @@
       '  <div id="m395ShotExport" class="m395Section">',
       '    <div class="m395SectionTitle">Export &amp; Share</div>',
       '    <div class="m395ActionGrid">',
-      '      <button type="button" class="primary wide" data-m395-action="finish">Finish &amp; Export PDF</button>',
       '      <button type="button" data-m395-action="shareCsv">Share CSV</button>',
       '      <button type="button" data-m395-action="csv">Download CSV</button>',
-      '      <button type="button" class="wide" data-m395-action="pdf">Download PDF</button>',
+      '      <button type="button" class="primary wide" data-m395-action="pdf">Download PDF</button>',
       '    </div>',
       '  </div>',
       '  <button type="button" data-m395-section="m395ShotBackup" data-label="Backup & Restore" aria-expanded="false">Backup &amp; Restore  ›</button>',
@@ -953,7 +958,6 @@
     wireAction(box, '[data-m395-action="editHoles"]', function () { closeMenu(); startShotEditMode(); });
     wireAction(box, '[data-m395-action="fitAll"]', function () { runAndClose("fitAllPages"); });
     wireAction(box, '[data-m395-action="deletePage"]', function () { runAndClose("deleteCurrentPage"); });
-    wireAction(box, '[data-m395-action="finish"]', function () { runAndClose("finishAndSend"); });
     wireAction(box, '[data-m395-action="shareCsv"]', function () { runAndClose("emailCSV"); });
     wireAction(box, '[data-m395-action="csv"]', function () { runAndClose("exportCSV"); });
     wireAction(box, '[data-m395-action="pdf"]', function () { runAndClose("exportPDFReport"); });

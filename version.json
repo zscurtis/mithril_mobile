@@ -1,14 +1,13 @@
 {
-  "version": "m40.8.0",
-  "title": "Unified Field UI",
+  "version": "m40.8.1",
+  "title": "Compact Laptop Header",
   "released": "2026-07-30",
   "minimumOfflineVersion": "m39.6.3",
   "notes": [
-    "Adds a shared MITHRIL notice, confirmation, and stacked toast system.",
-    "Shows the active document name and persistent Saved on device, Unsynced changes, Syncing, Cloud synced, Offline, or Read only status.",
-    "Makes Save + Next the primary field action and keeps field actions reachable while entering hole data.",
-    "Docks the touch keypad on the right in tablet landscape and at the bottom in portrait.",
-    "Standardizes Drill Log and Shot Diagram hole-entry context without changing calculations, storage, cloud contracts, or permissions.",
-    "Preserves the verified m40.7.1 cross-device cloud-loading fix and m40.6.2 iPad touch behavior."
+    "Separates the workspace controls from the document information and sync-status bar on short laptop screens.",
+    "Removes the obsolete Finish and Send to Blaster workflow now that cloud documents are available directly to blasters.",
+    "Removes the old UNSENT and shared-to-Outlook wording from the workspace detail line; cloud status is now authoritative.",
+    "Keeps PDF, CSV, and backup exports available from the document menu.",
+    "Preserves the verified m40.8.0 field-entry UI, m40.7.1 cloud loading, and m40.6.2 iPad touch behavior."
   ]
 }

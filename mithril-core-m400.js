@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var RELEASE_VERSION = "m40.8.0";
+  var RELEASE_VERSION = "m40.8.1";
   var CHILD_SCRIPT_ID = "mithrilCoreM400ChildLoader";
   var CHILD_SCRIPT_SRC = "./mithril-core-m400.js?rev=4080-frame";
   var TRANSFER_KEY = "mithrilDrillToShotTransferM400";
@@ -1941,7 +1941,7 @@
     if (button.id === "m400CloudSyncButton" || button.id === "m400CloudClose" || button.id === "m400Refresh" || button.id === "m400SignOut") return true;
     var label = text(button.textContent);
     if (button.classList && (button.classList.contains("brandHome") || button.classList.contains("updateCheckButton"))) return true;
-    return /^(?:close|(?:☰\s*)?menu|fit(?: current page| all pages)?|check for updates|switch template|cloud sync|refresh cloud list|open on this device|sign out|download (?:pdf|csv|backup)|export (?:pdf|csv)|finish & export pdf|backup json|← back to menu|\+|-)$/i.test(label);
+    return /^(?:close|(?:☰\s*)?menu|fit(?: current page| all pages)?|check for updates|switch template|cloud sync|refresh cloud list|open on this device|sign out|download (?:pdf|csv|backup)|export (?:pdf|csv)|backup json|← back to menu|\+|-)$/i.test(label);
   }
   function markReadOnlyControls() {
     if (!document.body || !document.body.classList) return;
@@ -2869,6 +2869,7 @@
     if (!status) return;
     if (rawText !== undefined && rawText !== null) status.setAttribute("data-m408-raw", text(rawText));
     var raw = status.getAttribute("data-m408-raw") || "Ready.";
+    raw = raw.replace(/\s*(?:—|-)\s*UNSENT\b/gi, "").replace(/\s*(?:—|-)\s*shared\b.*$/i, "").trim();
     var state = m408WorkspaceState();
     status.className = "m408StatusHost";
     status.innerHTML = '<span class="m408DocTitle">' + escapeHtml(m408DocumentTitle()) + '</span><span class="m408StatusChip ' + escapeHtml(state.key) + '">' + escapeHtml(state.label) + '</span><span class="m408DocMeta">' + escapeHtml(raw) + '</span>';
@@ -2988,7 +2989,7 @@
         script.id = CHILD_SCRIPT_ID;
         script.src = CHILD_SCRIPT_SRC;
         doc.head.appendChild(script);
-      } catch (error) { console.warn("MITHRIL m40.8.0 could not attach the standardized document layer to the Shot Diagram.", error); }
+      } catch (error) { console.warn("MITHRIL m40.8.1 could not attach the standardized document layer to the Shot Diagram.", error); }
     }
     frame.addEventListener("load", function () { setTimeout(inject, 80); });
     setTimeout(inject, 120);
