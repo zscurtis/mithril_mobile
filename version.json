@@ -1,14 +1,14 @@
 {
-  "version": "m40.6.2",
-  "title": "iPad Side Drawer Touch-Layer Fix",
-  "released": "2026-07-29",
+  "version": "m40.7.0",
+  "title": "Field Operations Dashboard and Streamlined Cloud Sync",
+  "released": "2026-07-30",
   "minimumOfflineVersion": "m39.6.3",
   "notes": [
-    "Restores the Edit Holes right-side drawer on iPad in landscape while retaining the bottom sheet in portrait.",
-    "Stabilizes the fixed drawer as an isolated WebKit compositor and hit-test surface.",
-    "Adds a touch-routing safety layer so visible drawer buttons remain tappable at their displayed positions after hole-selection redraws.",
-    "Keeps iOS momentum scrolling disabled and removes the canvas resize animation on touch devices.",
-    "Preserves the m40.6 responsive laptop drawer and integrated pattern workflow.",
-    "Preserves role-based access, cloud rules compatibility, permanent document identity, header preservation, rotation, and conflict safeguards."
+    "Replaces the development-style landing screen with a field operations dashboard.",
+    "Adds account, connection, Continue, document-type, recent-cloud-document, and update sections with clearer visual hierarchy.",
+    "Allows a recent cloud Shot Diagram or Drill Log to be opened directly from Home with the existing recovery safeguard.",
+    "Centers Cloud Sync on one Sync Now action and a clearer current-document comparison.",
+    "Moves device naming, manual upload, Undo Cloud Download, contract details, and cloud deletion into advanced or overflow controls.",
+    "Preserves the verified m40.6.2 laptop and iPad edit layouts, touch routing, role permissions, document identity, header preservation, rotation, and conflict safeguards."
   ]
 }

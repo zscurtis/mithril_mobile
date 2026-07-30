@@ -1,15 +1,17 @@
 (function () {
   "use strict";
 
-  var RELEASE_VERSION = "m40.6.2";
+  var RELEASE_VERSION = "m40.7.0";
   var CHILD_SCRIPT_ID = "mithrilCoreM400ChildLoader";
-  var CHILD_SCRIPT_SRC = "./mithril-core-m400.js?rev=4062-frame";
+  var CHILD_SCRIPT_SRC = "./mithril-core-m400.js?rev=4070-frame";
   var TRANSFER_KEY = "mithrilDrillToShotTransferM400";
   var UNDO_KEY = "mithrilDrillToShotUndoM400";
   var DEVICE_KEY = "mithrilCloudDeviceNameM399";
   var SYNC_META_PREFIX = "mithrilCloudSyncMetaM401:";
   var RECOVERY_PREFIX = "mithrilCloudRecoveryM401:";
   var LAST_VERIFIED_USER_KEY = "mithrilLastVerifiedUserM404";
+  var LAST_DOCUMENT_TYPE_KEY = "mithrilLastDocumentTypeM407";
+  var PENDING_CLOUD_OPEN_KEY = "mithrilPendingCloudOpenM407";
   var PROFILE_DOCUMENT_ID = "__mithril_user_profile__";
   var PROFILE_COLLECTION = "userProfiles";
   var FIREBASE_VERSION = "12.16.0";
@@ -38,6 +40,7 @@
   var profilePromiseUid = "";
   var authUnsubscribe = null;
   var cloudItems = [];
+  var landingCloudLoadUid = "";
   var accessObserver = null;
   var accessNoticeShown = false;
 
@@ -196,6 +199,7 @@
       ".m400Modal{display:none;position:fixed;inset:0;z-index:20000;background:rgba(0,0,0,.7);padding:12px;box-sizing:border-box;overflow:auto;font-family:Arial,sans-serif}",
       ".m400Modal.show{display:flex;align-items:flex-start;justify-content:center}",
       ".m400Box{width:min(780px,100%);margin:auto;background:#fff;color:#111;border:2px solid #1f6feb;border-radius:14px;padding:14px;box-sizing:border-box;box-shadow:0 12px 40px rgba(0,0,0,.5)}",
+      ".m400Box.m407CloudBox{width:min(860px,100%);padding:0;overflow:hidden;border-color:#5c718d}.m407CloudBody{padding:14px}.m400Head.m407CloudHead{position:sticky;top:0;z-index:2;margin:0;padding:13px 14px;border-bottom:1px solid #cbd3dc;background:#f8fafc}.m407CloudTitle{display:grid;gap:2px}.m407CloudTitle strong{font-size:20px}.m407CloudTitle span{font-size:12px;color:#627083;font-weight:800}",
       ".m400Head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}.m400Head strong{font-size:21px}",
       ".m400Box button{min-height:44px;border:1px solid #777;border-radius:8px;background:#f4f4f4;color:#111;font-weight:850;padding:7px 10px;font-size:14px}",
       ".m400Box button.primary{background:#1f6feb;border-color:#1f6feb;color:#fff}.m400Box button.danger{background:#fff0f0;border-color:#c66}",
@@ -209,13 +213,14 @@
       ".m400Stat{background:#eef4ff;border:1px solid #98b9e7;border-radius:9px;padding:8px;min-height:58px}.m400Stat b{display:block;font-size:21px;color:#173f70}.m400Stat span{font-size:11px;font-weight:800;color:#4d6075}",
       ".m400Status{margin:9px 0;padding:9px;border:1px solid #aaa;border-radius:8px;background:#f5f5f5;font-size:13px;font-weight:800;line-height:1.35}.m400Status.good{background:#e9f8ec;border-color:#61a86e}.m400Status.bad{background:#ffeaea;border-color:#c66}.m400Status.wait{background:#fff7d8;border-color:#c7aa45}",
       ".m400Identity{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;padding:9px;border-radius:8px;background:#eef4ff;border:1px solid #9ab8df;margin-bottom:9px;font-size:13px;font-weight:800}",
-      ".m401Compare{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:10px 0}.m401Side{border:1px solid #9ab8df;border-radius:9px;padding:10px;background:#f7faff}.m401Side.cloud{border-color:#8dbb96;background:#f3fbf4}.m401Side h3{margin:0 0 6px;font-size:13px;letter-spacing:.08em}.m401Side b{display:block;font-size:16px;margin-bottom:4px}.m401Side span{display:block;font-size:12px;line-height:1.4;color:#4d5866;font-weight:750}",
-      ".m400Docs{display:grid;gap:8px;margin-top:10px}.m400Doc{border:1px solid #aaa;border-radius:9px;padding:9px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:9px;align-items:center}.m400DocTitle{font-size:15px;font-weight:900}.m400Meta{font-size:12px;color:#555;font-weight:750;line-height:1.35;margin-top:3px}.m400DocActions{display:grid;gap:6px}",
+      ".m407CloudCurrent{padding:12px;border:1px solid #aebdd0;border-radius:12px;background:#f8fafc}.m407CloudCurrentHead{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.m407CloudCurrentHead strong{font-size:16px}.m407CloudCurrentHead span{font-size:12px;color:#627083;font-weight:800}.m407CloudPrimary{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:9px;margin-top:10px}.m407CloudPrimary .primary{min-height:50px;font-size:16px}.m407LastRefresh{align-self:center;color:#687687;font-size:11px;font-weight:800;text-align:right}.m407CloudSectionHead{display:flex;justify-content:space-between;gap:10px;align-items:center;margin:15px 0 8px}.m407CloudSectionHead strong{font-size:15px}.m407CloudSectionHead button{min-height:38px}.m407Advanced{margin-top:11px;border:1px solid #c5ccd5;border-radius:10px;background:#f7f8fa}.m407Advanced summary{cursor:pointer;padding:10px 12px;font-size:13px;font-weight:900;color:#465467}.m407AdvancedBody{padding:0 11px 11px}.m407Advanced .m400Note{margin-bottom:0}",
+      ".m401Compare{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:10px 0}.m401Side{border:1px solid #9ab8df;border-radius:9px;padding:10px;background:#f7faff}.m401Side.cloud{border-color:#8dbb96;background:#f3fbf4}.m401Side h3{margin:0 0 6px;font-size:12px;letter-spacing:.08em;color:#516174}.m401Side b{display:block;font-size:15px;margin-bottom:4px}.m401Side span{display:block;font-size:12px;line-height:1.4;color:#4d5866;font-weight:750}",
+      ".m400Docs{display:grid;gap:8px}.m400Doc{border:1px solid #bdc6d1;border-radius:11px;padding:10px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;background:#fff}.m400DocTitle{font-size:15px;font-weight:900}.m400Meta{font-size:12px;color:#596777;font-weight:750;line-height:1.4;margin-top:3px}.m400DocActions{display:flex;gap:6px;align-items:center}.m407DocMenu{position:relative}.m407DocMenu summary{list-style:none;display:flex;align-items:center;justify-content:center;width:42px;min-height:44px;border:1px solid #8996a5;border-radius:8px;background:#f4f4f4;font-size:22px;font-weight:900;cursor:pointer}.m407DocMenu summary::-webkit-details-marker{display:none}.m407DocMenuPanel{position:absolute;right:0;top:48px;z-index:3;width:190px;padding:7px;border:1px solid #aab3bf;border-radius:9px;background:#fff;box-shadow:0 8px 22px rgba(0,0,0,.2)}.m407DocMenuPanel button{width:100%}.m407Technical{margin-top:5px;font-size:10px;color:#8792a0;font-weight:750}",
       ".m400Toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:22000;max-width:min(720px,calc(100vw - 24px));padding:12px 16px;border:2px solid #4f9a61;border-radius:10px;background:#e9f8ec;color:#173d20;font-size:14px;font-weight:900;line-height:1.35;box-shadow:0 8px 28px rgba(0,0,0,.35);text-align:center}.m400Toast.bad{background:#ffeaea;border-color:#c66;color:#720000}",
-      ".m404LandingAuth{margin:14px 0 16px;padding:14px;border:1px solid #666;border-radius:12px;background:rgba(255,255,255,.06);color:#fff}.m404LandingHead{display:flex;justify-content:space-between;gap:10px;align-items:center}.m404LandingHead strong{font-size:17px}.m404AuthState{font-size:12px;font-weight:900;color:#b9c7da}.m404AuthForm{display:grid;grid-template-columns:1fr 1fr auto;gap:9px;margin-top:10px}.m404AuthForm input{min-width:0;min-height:44px;border:1px solid #888;border-radius:8px;padding:9px;font-size:16px}.m404AuthForm button{min-width:105px;background:#1f6feb;border-color:#1f6feb;color:#fff}.m404SignedIn{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-top:10px;padding:10px;border:1px solid #477454;border-radius:9px;background:rgba(37,110,57,.24)}.m404UserName{font-size:15px;font-weight:950}.m404UserMeta{font-size:12px;color:#c9d7cc;font-weight:800;margin-top:3px}.m404AuthMessage{display:none;margin-top:9px;font-size:12px;line-height:1.35;font-weight:800;color:#ffd37a}.m404AuthMessage.show{display:block}.m404TemplateLocked{opacity:.42;pointer-events:none;filter:grayscale(.55)}",
+      ".m404LandingAuth{color:#fff}.m404LandingHead{display:flex;justify-content:space-between;gap:10px;align-items:center}.m404LandingHead strong{font-size:18px}.m404AuthState{font-size:11px;font-weight:900;color:#b9c7da;letter-spacing:.04em}.m404AuthForm{display:grid;grid-template-columns:1fr 1fr auto;gap:9px;margin-top:11px}.m404AuthForm input{min-width:0;min-height:46px;border:1px solid #697585;border-radius:9px;padding:9px 11px;background:#f8fafc;font-size:16px}.m404AuthForm button{min-width:105px;background:#1f6feb;border-color:#1f6feb;color:#fff}.m404SignedIn{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-top:10px;padding:11px;border:1px solid #3f7650;border-radius:11px;background:rgba(37,110,57,.2)}.m404UserName{font-size:16px;font-weight:950}.m404UserMeta{font-size:12px;color:#c9d7cc;font-weight:800;margin-top:3px}.m404AuthMessage{display:none;margin-top:9px;font-size:12px;line-height:1.35;font-weight:800;color:#ffd37a}.m404AuthMessage.show{display:block}.m404TemplateLocked{opacity:.42;pointer-events:none;filter:grayscale(.55)}",
       ".m405UserActions{display:flex;gap:8px;flex-wrap:wrap}.m405AdminBox{width:min(900px,100%)}.m405AdminRows{display:grid;gap:8px;margin-top:10px}.m405AdminRow{display:grid;grid-template-columns:minmax(0,1fr) 150px 125px auto;gap:8px;align-items:center;border:1px solid #aaa;border-radius:9px;padding:9px}.m405AdminName{font-weight:900}.m405AdminMeta{font-size:11px;color:#555;font-weight:750;overflow-wrap:anywhere}.m405AccessBanner{position:fixed;left:50%;top:8px;transform:translateX(-50%);z-index:19000;padding:8px 13px;border:2px solid #9b71df;border-radius:10px;background:#f2eaff;color:#3d226d;font:900 13px Arial,sans-serif;box-shadow:0 5px 18px rgba(0,0,0,.28)}body.m405ReadOnly canvas{pointer-events:none!important}body.m405ReadOnly [data-m405-mutation=true]{display:none!important}",
       "@media(max-width:700px){.m405AdminRow{grid-template-columns:1fr 1fr}.m405AdminIdentity{grid-column:1/-1}.m405AdminRow button{grid-column:1/-1}}",
-      "@media(max-width:600px){.m400Grid,.m400Actions,.m401Compare,.m404AuthForm{grid-template-columns:1fr}.m400Wide{grid-column:auto}.m400Stats{grid-template-columns:1fr 1fr}.m400Doc{grid-template-columns:1fr}.m400DocActions{grid-template-columns:1fr 1fr}.m404SignedIn{align-items:flex-start;flex-direction:column}.m404SignedIn button{width:100%}.m405UserActions{width:100%;display:grid}}"
+      "@media(max-width:600px){.m400Grid,.m400Actions,.m401Compare,.m404AuthForm,.m407CloudPrimary{grid-template-columns:1fr}.m400Wide{grid-column:auto}.m400Stats{grid-template-columns:1fr 1fr}.m400Doc{grid-template-columns:1fr}.m400DocActions{justify-content:stretch}.m400DocActions>.primary{flex:1}.m404SignedIn{align-items:flex-start;flex-direction:column}.m404SignedIn button{width:100%}.m405UserActions{width:100%;display:grid}.m407LastRefresh{text-align:left}.m407CloudCurrentHead{display:grid}.m407DocMenuPanel{right:auto;left:0}}"
     ].join("");
     document.head.appendChild(style);
   }
@@ -1259,7 +1264,7 @@
     var item = matchingCloudItem(), d = item && item.data, state = currentSyncState(d, item && item.id);
     var localLabel = state.dirty ? "Modified on this device" : (state.meta ? "Matches last sync" : "Not yet linked to cloud");
     local.innerHTML = "<h3>LOCAL</h3><b>" + escapeHtml(localLabel) + "</b><span>" + escapeHtml(state.data.holeCount || 0) + " populated holes<br>Last synced revision: " + escapeHtml(state.lastRevision || "None") + "</span>";
-    cloud.innerHTML = "<h3>CLOUD</h3>" + (d ? "<b>Revision " + escapeHtml(d.revision || 1) + "</b><span>" + escapeHtml(d.holeCount || 0) + " populated holes<br>" + escapeHtml(formatTime(d.updatedAt)) + "<br>" + escapeHtml(d.sourceDevice || "Unknown device") + "</span>" : "<b>No matching cloud copy</b><span>Smart Sync will upload this document.</span>");
+    cloud.innerHTML = "<h3>CLOUD</h3>" + (d ? "<b>Revision " + escapeHtml(d.revision || 1) + "</b><span>" + escapeHtml(d.holeCount || 0) + " populated holes<br>" + escapeHtml(formatTime(d.updatedAt)) + "<br>" + escapeHtml(d.sourceDevice || "Unknown device") + "</span>" : "<b>No matching cloud copy</b><span>Sync Now will upload this document.</span>");
     updateUndoCloudButton();
   }
 
@@ -1395,7 +1400,137 @@
       if (allowed) anyEnabled = true;
     });
     cards.classList.toggle("m404TemplateLocked", !enabled || !anyEnabled);
+    var recentType = dashboardRecentType();
+    var continueButton = byId("m407ContinueButton");
+    var continueAllowed = !!enabled && (recentType === "shotDiagram" ? hasPermission("shot") : hasPermission("drill"));
+    if (continueButton) {
+      continueButton.disabled = !continueAllowed;
+      continueButton.classList.toggle("m404TemplateLocked", !continueAllowed);
+      continueButton.setAttribute("aria-disabled", continueAllowed ? "false" : "true");
+    }
   }
+  function dashboardDocumentSummary(type) {
+    var isShotType = type === "shotDiagram";
+    var header = readJsonStorage(isShotType ? "mithrilCanvasHeaderM01" : "mithrilDrill16x34HeaderM01") || {};
+    var pages = readJsonStorage(isShotType ? "mithrilCanvasPagesM01" : "mithrilDrill16x34PagesM01") || {};
+    var job = text(isShotType ? header.JobName : header.Job);
+    var number = text(isShotType ? header.ShotID : header.DrillLogNumber);
+    var count = countHoles(pages);
+    var label = docTypeLabel(type);
+    var title = job && number ? job + " — " + number : (job || number || "Current " + label);
+    return { type: type, title: title, holeCount: count, hasContent: !!(job || number || count) };
+  }
+  function dashboardRecentType() {
+    var stored = "";
+    try { stored = localStorage.getItem(LAST_DOCUMENT_TYPE_KEY) || ""; } catch (error) {}
+    if (stored === "shotDiagram" || stored === "drillLog") return stored;
+    var shot = dashboardDocumentSummary("shotDiagram"), drill = dashboardDocumentSummary("drillLog");
+    if (shot.hasContent && !drill.hasContent) return "shotDiagram";
+    if (drill.hasContent && !shot.hasContent) return "drillLog";
+    return "shotDiagram";
+  }
+  function rememberDocumentType(type) {
+    if (type !== "shotDiagram" && type !== "drillLog") return;
+    try { localStorage.setItem(LAST_DOCUMENT_TYPE_KEY, type); } catch (error) {}
+    renderLandingDashboard();
+  }
+  function renderLandingConnection() {
+    var connection = byId("m407Connection");
+    if (!connection) return;
+    var online = navigator.onLine !== false;
+    connection.textContent = online ? "Online" : "Offline";
+    connection.className = "m407Connection " + (online ? "online" : "offline");
+  }
+  function renderLandingDashboard() {
+    renderLandingConnection();
+    var button = byId("m407ContinueButton"), title = byId("m407ContinueTitle"), meta = byId("m407ContinueMeta");
+    if (!button || !title || !meta) return;
+    var type = dashboardRecentType(), summary = dashboardDocumentSummary(type);
+    title.textContent = summary.hasContent ? summary.title : "Continue " + docTypeLabel(type);
+    meta.textContent = summary.holeCount ? docTypeLabel(type) + " · " + summary.holeCount + " populated hole" + (summary.holeCount === 1 ? "" : "s") : docTypeLabel(type) + " · device copy";
+    var profileActive = !!currentProfile && !/^(?:disabled|inactive)$/i.test(text(currentProfile.status));
+    var allowed = profileActive && (type === "shotDiagram" ? hasPermission("shot") : hasPermission("drill"));
+    button.disabled = !allowed;
+    button.classList.toggle("m404TemplateLocked", !allowed);
+  }
+  function renderLandingCloudDocuments(items, message) {
+    var box = byId("m407CloudRecent");
+    if (!box) return;
+    box.innerHTML = "";
+    if (!items || !items.length) {
+      var empty = document.createElement("div");
+      empty.className = "m407CloudEmpty";
+      empty.textContent = message || "No cloud documents are available yet.";
+      box.appendChild(empty);
+      return;
+    }
+    items.slice(0, 4).forEach(function (item) {
+      var d = item.data, row = document.createElement("div"), action = document.createElement("button");
+      row.className = "m407CloudItem";
+      row.innerHTML = '<div><strong>' + escapeHtml(d.title || docTypeLabel(d.type)) + '</strong><span>' + escapeHtml(docTypeLabel(d.type)) + ' · Revision ' + escapeHtml(d.revision || 1) + ' · ' + escapeHtml(d.holeCount || 0) + ' holes</span></div>';
+      action.type = "button";
+      action.textContent = "Open";
+      action.addEventListener("click", function () { openLandingCloudDocument(item.id, d); });
+      row.appendChild(action);
+      box.appendChild(row);
+    });
+  }
+  function refreshLandingCloudDocuments(force) {
+    if (!byId("m407CloudRecent")) return Promise.resolve();
+    if (!currentUser || offlineUserSession || navigator.onLine === false) {
+      landingCloudLoadUid = "";
+      renderLandingCloudDocuments([], currentProfile ? "Offline — cloud documents will refresh when service returns." : "Sign in to view recent cloud documents.");
+      return Promise.resolve();
+    }
+    if (!force && landingCloudLoadUid === currentUser.uid) return Promise.resolve();
+    landingCloudLoadUid = currentUser.uid;
+    renderLandingCloudDocuments([], "Loading recent cloud documents…");
+    return loadFirebase().then(function (fb) {
+      var col = fb.storeMod.collection(fb.db, "users", currentUser.uid, "documents");
+      return fb.storeMod.getDocs(col).then(function (snap) {
+        var docs = [];
+        snap.forEach(function (item) {
+          var d = item.data();
+          if (d && (d.type === "shotDiagram" || d.type === "drillLog") && !d.migratedTo) docs.push({ id: item.id, data: d });
+        });
+        docs.sort(function (a, b) {
+          var at = a.data.updatedAt && a.data.updatedAt.seconds || 0, bt = b.data.updatedAt && b.data.updatedAt.seconds || 0;
+          return bt - at;
+        });
+        renderLandingCloudDocuments(docs, "No cloud documents have been uploaded yet.");
+      });
+    }).catch(function () {
+      landingCloudLoadUid = "";
+      renderLandingCloudDocuments([], "Cloud documents could not be refreshed. Your device copies remain available.");
+    });
+  }
+  function openLandingCloudDocument(id, data) {
+    var type = data && data.type;
+    if (type !== "shotDiagram" && type !== "drillLog") return;
+    if (type === "shotDiagram" && !hasPermission("shot")) return restrictedMessage("Shot Diagram");
+    if (type === "drillLog" && !hasPermission("drill")) return restrictedMessage("Drill Log");
+    var label = data.title || docTypeLabel(type);
+    if (!confirm("Open this cloud document?\n\n" + label + "\nRevision " + (data.revision || 1) + "\n\nThis replaces the current local " + docTypeLabel(type) + " on this device. Undo Cloud Download will remain available.")) return;
+    try {
+      sessionStorage.setItem(PENDING_CLOUD_OPEN_KEY, JSON.stringify({ id: id, type: type, title: label, ownerUid: currentUser && currentUser.uid || "" }));
+    } catch (error) {
+      setLandingMessage("This browser could not prepare the cloud document. Try opening it through Cloud Sync.", "bad");
+      return;
+    }
+    rememberDocumentType(type);
+    if (type === "shotDiagram") window.openStableShotDiagram();
+    else {
+      window.openDrillLog();
+      setTimeout(consumePendingCloudOpen, 80);
+    }
+  }
+  function continueRecentDocument() {
+    var type = dashboardRecentType();
+    rememberDocumentType(type);
+    if (type === "drillLog") return window.openDrillLog();
+    return window.openStableShotDiagram();
+  }
+  window.m407ContinueRecent = continueRecentDocument;
   function ensureLandingAuth() {
     var start = byId("templateStart"), box = start && start.querySelector(".startBox");
     if (!box) return null;
@@ -1406,15 +1541,16 @@
     panel.id = "m404LandingAuth";
     panel.className = "m404LandingAuth";
     panel.innerHTML = [
-      '<div class="m404LandingHead"><strong>User Access</strong><span id="m404AuthState" class="m404AuthState">Checking sign-in…</span></div>',
+      '<div class="m404LandingHead"><strong>Account</strong><span id="m404AuthState" class="m404AuthState">Checking sign-in…</span></div>',
       '<div id="m404AuthOut">',
       '<div class="m404AuthForm"><input id="m404Email" type="email" autocomplete="username" placeholder="Email"><input id="m404Password" type="password" autocomplete="current-password" placeholder="Password"><button id="m404SignIn" type="button">Sign In</button></div>',
       '</div>',
       '<div id="m404AuthIn" class="m404SignedIn" style="display:none"><div><div id="m404UserName" class="m404UserName"></div><div id="m404UserMeta" class="m404UserMeta"></div></div><div class="m405UserActions"><button id="m405ManageUsers" type="button" style="display:none">Manage Users</button><button id="m404SignOut" type="button">Sign Out</button></div></div>',
       '<div id="m404AuthMessage" class="m404AuthMessage"></div>'
     ].join("");
-    var intro = box.querySelector(".startIntro");
-    box.insertBefore(panel, intro || box.firstChild);
+    var slot = byId("m407AccountSlot");
+    if (slot) slot.appendChild(panel);
+    else box.insertBefore(panel, box.firstChild);
     byId("m404SignIn").addEventListener("click", landingSignIn);
     byId("m404SignOut").addEventListener("click", landingSignOut);
     byId("m405ManageUsers").addEventListener("click", openUserAdmin);
@@ -1446,9 +1582,13 @@
       if (byId("m405ManageUsers")) byId("m405ManageUsers").style.display = !offlineUserSession && hasPermission("userAdmin") ? "block" : "none";
       var noTemplates = active && !hasPermission("drill") && !hasPermission("shot");
       setLandingMessage(active ? (offlineUserSession ? "Using the last verified account on this device. Cloud Sync will reconnect when service returns." : (noTemplates ? "No current field templates are assigned to this role yet." : "")) : "This account is inactive. Contact a MITHRIL administrator.", active && !noTemplates ? "" : "bad");
+      if (active) refreshLandingCloudDocuments(false);
     } else {
       state.textContent = "SIGN IN REQUIRED";
+      landingCloudLoadUid = "";
+      renderLandingCloudDocuments([], "Sign in to view recent cloud documents.");
     }
+    renderLandingDashboard();
   }
   function useOfflineVerifiedUser(reason) {
     var cached = readVerifiedUser();
@@ -1467,10 +1607,12 @@
     var originalDrill = window.openDrillLog;
     if (typeof originalShot === "function") window.openStableShotDiagram = function () {
       if (!hasPermission("shot")) return restrictedMessage("Shot Diagram");
+      rememberDocumentType("shotDiagram");
       return originalShot.apply(this, arguments);
     };
     if (typeof originalDrill === "function") window.openDrillLog = function () {
       if (!hasPermission("drill")) return restrictedMessage("Drill Log");
+      rememberDocumentType("drillLog");
       var result = originalDrill.apply(this, arguments);
       applyDocumentRoleUI();
       return result;
@@ -1504,6 +1646,7 @@
       offlineUserSession = false;
       profilePromise = null;
       profilePromiseUid = "";
+      landingCloudLoadUid = "";
       clearVerifiedUser();
       renderLandingAuth();
       setLandingMessage("Signed out. Local document data remains on this device.", "good");
@@ -1513,6 +1656,17 @@
     if (!ensureLandingAuth()) return;
     installLandingActionGuards();
     renderLandingAuth();
+    if (!window.__mithrilM407ConnectionListeners) {
+      window.__mithrilM407ConnectionListeners = true;
+      window.addEventListener("online", function () {
+        renderLandingDashboard();
+        refreshLandingCloudDocuments(true);
+      });
+      window.addEventListener("offline", function () {
+        renderLandingDashboard();
+        refreshLandingCloudDocuments(true);
+      });
+    }
     loadFirebase().then(function (fb) {
       if (fb.auth.currentUser) return loadUserProfile(fb, fb.auth.currentUser);
       currentUser = null;
@@ -1773,21 +1927,29 @@
     modal.id = "m400CloudModal";
     modal.className = "m400Modal";
     modal.innerHTML = [
-      '<div class="m400Box">',
-      '<div class="m400Head"><strong>MITHRIL Cloud Sync · Role Access · m40.5</strong><button type="button" id="m400CloudClose">Close</button></div>',
+      '<div class="m400Box m407CloudBox">',
+      '<div class="m400Head m407CloudHead"><div class="m407CloudTitle"><strong>Cloud Sync</strong><span>Keep this device and your cloud copy aligned.</span></div><button type="button" id="m400CloudClose">Close</button></div>',
+      '<div class="m407CloudBody">',
       '<div id="m400CloudOut">',
-      '<div class="m400Note m400Warning">Cloud Sync uses the MITHRIL account from the Home screen. Return Home to sign in, then reopen Cloud Sync.</div>',
+      '<div class="m400Note m400Warning">Return to MITHRIL Home and sign in before using Cloud Sync.</div>',
       '</div>',
       '<div id="m400CloudIn" style="display:none">',
       '<div class="m400Identity"><span id="m400Identity"></span><button type="button" id="m400SignOut">Sign Out</button></div>',
-      '<div class="m400Grid"><label class="m400Wide">Device name<input id="m400DeviceIn" type="text"></label></div>',
+      '<section class="m407CloudCurrent">',
+      '<div class="m407CloudCurrentHead"><div><strong id="m407CurrentDocTitle">Current document</strong><span id="m407CurrentDocType"></span></div></div>',
       '<div class="m401Compare"><div id="m401LocalStatus" class="m401Side"></div><div id="m401CloudStatus" class="m401Side cloud"></div></div>',
-      '<div class="m400Actions"><button type="button" class="primary" id="m401SmartSync">Sync Current Document</button><button type="button" id="m401UndoCloud">Undo Cloud Download</button></div>',
-      '<div class="m400Actions"><button type="button" id="m400Upload">Manual Upload Current <span id="m400TypeLabel"></span></button><button type="button" id="m400Refresh">Refresh Cloud List</button></div>',
-      '<div class="m400Note">Smart Sync uploads local changes, downloads a newer unchanged cloud copy, and stops when both sides changed. Manual upload and download controls remain available.</div>',
-      '<div id="m400Docs" class="m400Docs"></div>',
-      '</div>',
+      '<div class="m407CloudPrimary"><button type="button" class="primary" id="m401SmartSync">Sync Now</button><div id="m407LastRefresh" class="m407LastRefresh">Cloud list not refreshed yet</div></div>',
       '<div id="m400CloudStatus" class="m400Status">Cloud sync is ready.</div>',
+      '</section>',
+      '<div class="m407CloudSectionHead"><strong>Cloud documents</strong><button type="button" id="m400Refresh">Refresh</button></div>',
+      '<div id="m400Docs" class="m400Docs"></div>',
+      '<details class="m407Advanced"><summary>Advanced and recovery tools</summary><div class="m407AdvancedBody">',
+      '<div class="m400Grid"><label class="m400Wide">Device name<input id="m400DeviceIn" type="text"></label></div>',
+      '<div class="m400Actions"><button type="button" id="m400Upload">Upload Current <span id="m400TypeLabel"></span></button><button type="button" id="m401UndoCloud">Undo Cloud Download</button></div>',
+      '<div class="m400Note">Sync Now is the normal action. Manual upload is for recovery and troubleshooting. Contract details are shown only inside each document menu.</div>',
+      '</div></details>',
+      '</div>',
+      '</div>',
       '</div>'
     ].join("");
     document.body.appendChild(modal);
@@ -1807,7 +1969,12 @@
     inside.style.display = currentUser ? "block" : "none";
     if (byId("m400DeviceIn")) byId("m400DeviceIn").value = deviceName();
     if (byId("m400TypeLabel") && window.MithrilDocument) byId("m400TypeLabel").textContent = docTypeLabel(window.MithrilDocument.type);
-    if (currentUser && byId("m400Identity")) byId("m400Identity").textContent = "Signed in: " + (currentProfile && currentProfile.displayName || currentUser.email || currentUser.uid) + (currentProfile ? " · " + roleLabel(currentProfile.role) : "");
+    if (currentUser && byId("m400Identity")) byId("m400Identity").textContent = (currentProfile && currentProfile.displayName || currentUser.email || currentUser.uid) + (currentProfile ? " · " + roleLabel(currentProfile.role) : "");
+    if (window.MithrilDocument) {
+      var info = window.MithrilDocument.getInfo();
+      if (byId("m407CurrentDocTitle")) byId("m407CurrentDocTitle").textContent = info.title || "Current " + docTypeLabel(window.MithrilDocument.type);
+      if (byId("m407CurrentDocType")) byId("m407CurrentDocType").textContent = docTypeLabel(window.MithrilDocument.type);
+    }
     ["m401SmartSync", "m400Upload", "m401UndoCloud"].forEach(function (id) {
       var button = byId(id);
       if (button) button.style.display = hasPermission("cloudWrite") ? "" : "none";
@@ -1941,6 +2108,9 @@
         cloudItems = docs;
         renderCloudDocs(docs);
         renderLocalCloudStatus();
+        if (byId("m407LastRefresh")) byId("m407LastRefresh").textContent = "Refreshed " + new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+        landingCloudLoadUid = "";
+        refreshLandingCloudDocuments(true);
         setCloudStatus(docs.length ? docs.length + " cloud " + docTypeLabel(type) + (docs.length === 1 ? "" : "s") + " found." : "No cloud " + docTypeLabel(type) + "s have been uploaded yet.", docs.length ? "good" : "");
       });
     }).catch(function (error) { setCloudStatus(friendlyError(error), "bad"); });
@@ -1951,19 +2121,20 @@
     items.forEach(function (item) {
       var d = item.data, row = document.createElement("div");
       row.className = "m400Doc";
-      row.innerHTML = '<div><div class="m400DocTitle">' + escapeHtml(d.title || docTypeLabel(d.type)) + '</div><div class="m400Meta">Revision ' + escapeHtml(d.revision || 1) + ' • ' + escapeHtml(d.holeCount || 0) + ' populated holes<br>' + escapeHtml(formatTime(d.updatedAt)) + ' • ' + escapeHtml(d.sourceDevice || "Unknown device") + '<br>Contract v' + escapeHtml(d.documentContractVersion || 1) + '</div></div><div class="m400DocActions"><button type="button" class="primary">Open on This Device</button>' + (hasPermission("cloudDelete") ? '<button type="button" class="danger">Delete Cloud Copy</button>' : "") + '</div>';
-      var buttons = row.querySelectorAll("button");
-      buttons[0].addEventListener("click", function () { downloadCloud(item.id, d); });
-      if (buttons[1]) buttons[1].addEventListener("click", function () { deleteCloud(item.id, d); });
+      row.innerHTML = '<div><div class="m400DocTitle">' + escapeHtml(d.title || docTypeLabel(d.type)) + '</div><div class="m400Meta">Revision ' + escapeHtml(d.revision || 1) + ' · ' + escapeHtml(d.holeCount || 0) + ' populated holes<br>' + escapeHtml(formatTime(d.updatedAt)) + ' · ' + escapeHtml(d.sourceDevice || "Unknown device") + '</div></div><div class="m400DocActions"><button type="button" class="primary m407OpenDoc">Open</button>' + (hasPermission("cloudDelete") ? '<details class="m407DocMenu"><summary aria-label="More document actions">⋯</summary><div class="m407DocMenuPanel"><button type="button" class="danger m407DeleteDoc">Delete Cloud Copy</button><div class="m407Technical">Contract v' + escapeHtml(d.documentContractVersion || 1) + ' · ' + escapeHtml(item.id) + '</div></div></details>' : "") + '</div>';
+      row.querySelector(".m407OpenDoc").addEventListener("click", function () { downloadCloud(item.id, d); });
+      var deleteButton = row.querySelector(".m407DeleteDoc");
+      if (deleteButton) deleteButton.addEventListener("click", function () { deleteCloud(item.id, d); });
       box.appendChild(row);
     });
   }
-  function downloadCloud(id, data) {
+  function downloadCloud(id, data, options) {
+    options = options || {};
     if (!hasPermission("cloudRead")) return restrictedMessage("Cloud download");
     var adapter = window.MithrilDocument;
     if (!adapter) return;
     var warning = "Open cloud revision " + (data.revision || 1) + " of:\n\n" + (data.title || docTypeLabel(data.type)) + "\nSaved from " + (data.sourceDevice || "Unknown device") + "\n\nThis replaces the current local " + docTypeLabel(data.type) + " on this device.";
-    if (!confirm(warning)) { setCloudStatus("Download cancelled. Nothing was changed.", ""); return; }
+    if (!options.skipConfirm && !confirm(warning)) { setCloudStatus("Download cancelled. Nothing was changed.", ""); return; }
     setCloudStatus("Downloading and applying the cloud document through the shared document interface…", "wait");
     try {
       var cloudSnapshot = normalizedSnapshot(data.payload || data);
@@ -1988,6 +2159,51 @@
       var modal = byId("m400CloudModal"); if (modal) modal.classList.remove("show");
       showToast((data.title || docTypeLabel(data.type)) + " — cloud revision " + (data.revision || 1) + " loaded. Undo Cloud Download is available.");
     } catch (error) { setCloudStatus(friendlyError(error), "bad"); }
+  }
+  function firebaseWithAuthenticatedUser() {
+    return loadFirebase().then(function (fb) {
+      if (fb.auth.currentUser) {
+        currentUser = fb.auth.currentUser;
+        return { fb: fb, user: currentUser };
+      }
+      return new Promise(function (resolve, reject) {
+        var settled = false, unsubscribe = fb.authMod.onAuthStateChanged(fb.auth, function (user) {
+          if (settled) return;
+          settled = true;
+          try { unsubscribe(); } catch (error) {}
+          if (!user) reject(new Error("Sign in is required to open this cloud document."));
+          else {
+            currentUser = user;
+            resolve({ fb: fb, user: user });
+          }
+        });
+        setTimeout(function () {
+          if (settled) return;
+          settled = true;
+          try { unsubscribe(); } catch (error) {}
+          reject(new Error("MITHRIL could not verify the signed-in account."));
+        }, 6500);
+      });
+    });
+  }
+  function consumePendingCloudOpen() {
+    if (!window.MithrilDocument) return;
+    var pending = null;
+    try { pending = JSON.parse(sessionStorage.getItem(PENDING_CLOUD_OPEN_KEY) || "null"); } catch (error) {}
+    if (!pending || !pending.id || pending.type !== window.MithrilDocument.type) return;
+    try { sessionStorage.removeItem(PENDING_CLOUD_OPEN_KEY); } catch (error2) {}
+    showToast("Opening " + (pending.title || docTypeLabel(pending.type)) + " from the cloud…");
+    firebaseWithAuthenticatedUser().then(function (result) {
+      if (pending.ownerUid && result.user.uid !== pending.ownerUid) throw new Error("This cloud document belongs to a different signed-in account.");
+      return result.fb.storeMod.getDoc(result.fb.storeMod.doc(result.fb.db, "users", result.user.uid, "documents", pending.id)).then(function (snap) {
+        if (!snap.exists()) throw new Error("The selected cloud document is no longer available.");
+        var data = snap.data();
+        if (!data || data.type !== window.MithrilDocument.type) throw new Error("The selected cloud document does not match this workspace.");
+        downloadCloud(pending.id, data, { skipConfirm: true });
+      });
+    }).catch(function (error) {
+      showToast(friendlyError(error), "bad");
+    });
   }
   function undoCloudDownload() {
     var adapter = window.MithrilDocument, record = cloudRecord();
@@ -2410,7 +2626,7 @@
     Array.prototype.forEach.call(labels, function (el) {
       var value = text(el.textContent);
       if (/installed version:/i.test(value)) el.textContent = "Installed version: " + RELEASE_VERSION;
-      else if (/^m\d/i.test(value)) el.textContent = RELEASE_VERSION + " standardized document architecture";
+      else if (/^m\d/i.test(value)) el.textContent = RELEASE_VERSION + " field operations dashboard";
       else if (/m\d+\.\d+/i.test(value)) el.textContent = value.replace(/m\d+(?:\.\d+)+/i, RELEASE_VERSION);
     });
     if (/MITHRIL/i.test(document.title)) document.title = document.title.replace(/m\d+(?:\.\d+)+/i, RELEASE_VERSION);
@@ -2438,7 +2654,7 @@
         script.id = CHILD_SCRIPT_ID;
         script.src = CHILD_SCRIPT_SRC;
         doc.head.appendChild(script);
-      } catch (error) { console.warn("MITHRIL m40.6.2 could not attach the standardized document layer to the Shot Diagram.", error); }
+      } catch (error) { console.warn("MITHRIL m40.7.0 could not attach the standardized document layer to the Shot Diagram.", error); }
     }
     frame.addEventListener("load", function () { setTimeout(inject, 80); });
     setTimeout(inject, 120);
@@ -2459,6 +2675,7 @@
   function bootDocument() {
     ensureStyles();
     updateVersionLabels();
+    if (!byId("templateStart")) rememberDocumentType(docType());
     installIdentityGuards();
     installShotHeaderPreservation();
     var adapter = installAdapter();
@@ -2470,6 +2687,7 @@
     installCloudButton();
     installTimingSeparationCheck();
     installDesktopSelectionRedraw();
+    setTimeout(consumePendingCloudOpen, 180);
     if (isShot()) setTimeout(openImportReview, 100);
     var attempts = 0;
     var timer = setInterval(function () {
