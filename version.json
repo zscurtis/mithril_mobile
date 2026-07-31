@@ -1,13 +1,14 @@
 {
-  "version": "m40.9.1.1",
-  "title": "Desktop Interaction Repair",
+  "version": "m40.9.2",
+  "title": "Timing Directions and Page Order",
   "released": "2026-07-30",
   "minimumOfflineVersion": "m39.6.3",
   "notes": [
-    "Prevents right-clicks from falling through into normal hole entry or canvas panning.",
-    "Suppresses the standard browser context menu on the MITHRIL canvas so the MITHRIL menu opens by itself.",
-    "Clears the Shot Diagram pointer gesture normally before opening Shot Info from the printed header.",
-    "Preserves the m40.9.1 Sync shortcut, context actions, whole-page activation, and copy/paste behavior.",
+    "Adds Top to Bottom and Bottom to Top to Shot Diagram Timing Sequence.",
+    "Sorts selected timing fills by column for vertical directions and by row for horizontal directions.",
+    "Makes desktop Shift-click fill a complete column when a vertical direction is active.",
+    "Adds Page Order / Renumber under Shot Diagram Page Tools.",
+    "Renumbers pages in report order while preserving every sheet's canvas position.",
     "Does not change Firebase rules, cloud revision handling, calculations, imports, or document formats."
   ]
 }

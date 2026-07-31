@@ -1,8 +1,8 @@
 (function () {
   "use strict";
 
-  var RELEASE_VERSION = "m40.9.1.1";
-  var RELEASE_LABEL = "desktop interaction repair";
+  var RELEASE_VERSION = "m40.9.2";
+  var RELEASE_LABEL = "timing directions and page order";
   var THEME_STORAGE_KEY = "mithrilCanvasThemeV1";
   var THEME_CLASS_PREFIX = "m395-theme-";
   var THEME_OPTIONS = [
@@ -201,7 +201,7 @@
         var script = childDocument.createElement("script");
         script.id = "mithrilMenuM395ChildLoader";
         script.setAttribute("data-mithril-release", RELEASE_VERSION);
-        script.src = "./mithril-menu-m397.js?v=40.9.1.1-frame";
+        script.src = "./mithril-menu-m397.js?v=40.9.2-frame";
         (childDocument.head || childDocument.documentElement).appendChild(script);
         return true;
       } catch (error) {
@@ -246,6 +246,14 @@
       ".m395DirectionGrid button{min-height:50px;padding:7px 5px}",
       ".m395Up{grid-area:up}.m395Left{grid-area:left}.m395Center{grid-area:center}.m395Right{grid-area:right}.m395Down{grid-area:down}",
       ".m395Spacer{visibility:hidden;pointer-events:none}",
+      ".m4092PageOrderList{display:grid;gap:8px;margin:12px 0}",
+      ".m4092PageOrderRow{display:grid;grid-template-columns:58px minmax(0,1fr) 48px 48px;gap:7px;align-items:center;padding:8px;border:1px solid #c7c7c7;border-radius:10px;background:#f8f8f8}",
+      ".m4092PageOrderNumber{font-size:12px;font-weight:950;color:#555;text-align:center}",
+      ".m4092PageOrderDetails{min-width:0;font-size:14px;font-weight:900;color:#222}",
+      ".m4092PageOrderDetails small{display:block;margin-top:2px;font-size:11px;font-weight:750;color:#666}",
+      ".m4092PageOrderRow button{min-height:42px;padding:5px;font-size:20px}",
+      ".m4092PageOrderRow.active{border-color:#1f6feb;background:#eef5ff}",
+      ".m4092PageOrderNote{margin:0;color:#444;font-size:13px;font-weight:750;line-height:1.4}",
       ".m395DangerZone{margin-top:10px;padding-top:10px;border-top:1px solid #d6aaaa}",
       ".m395DangerZone button{width:100%;min-height:50px}",
       ".m395BackMenu{grid-column:1/-1;background:#eef4ff;border-color:#7aa2d8}",
@@ -267,7 +275,7 @@
       "html.m395-theme-copper-quarry,body.m395-theme-copper-quarry{background-color:#5a2b11 !important;background-image:radial-gradient(circle at 25% 30%, rgba(255,170,100,.28) 0 14%, transparent 26%),radial-gradient(circle at 72% 68%, rgba(255,210,130,.16) 0 10%, transparent 24%),repeating-linear-gradient(45deg, rgba(255,255,255,.02) 0 12px, rgba(0,0,0,.08) 12px 22px),linear-gradient(135deg,#4c200c,#8a481f) !important;background-attachment:fixed !important}",
       "html.m395-theme-cobalt-topo,body.m395-theme-cobalt-topo{background-color:#041c3a !important;background-image:radial-gradient(circle at 18% 72%, transparent 0 40px, rgba(0,180,255,.24) 41px 42px, transparent 43px 54px, rgba(0,180,255,.18) 55px 56px, transparent 57px),radial-gradient(circle at 78% 62%, transparent 0 50px, rgba(0,180,255,.22) 51px 52px, transparent 53px 66px, rgba(0,180,255,.18) 67px 68px, transparent 69px),radial-gradient(circle at 56% 22%, transparent 0 32px, rgba(0,180,255,.18) 33px 34px, transparent 35px 48px, rgba(0,180,255,.15) 49px 50px, transparent 51px),linear-gradient(135deg,#031325,#09447a) !important;background-attachment:fixed !important}",
       "html.m395-theme-signal-red-slate,body.m395-theme-signal-red-slate{background-color:#120b0b !important;background-image:radial-gradient(circle at 18% 78%, rgba(255,70,40,.34) 0 18%, transparent 30%),radial-gradient(circle at 84% 20%, rgba(255,60,30,.28) 0 12%, transparent 24%),repeating-linear-gradient(90deg, rgba(255,60,30,.16) 0 2px, transparent 2px 48px),linear-gradient(135deg,#0b0b0b,#272222) !important;background-attachment:fixed !important}",
-      "@media(max-width:520px){.m395QuickButton{font-size:0}.m395QuickButton:after{content:'Quick';font-size:14px}.m395FitButton{font-size:0}.m395FitButton:after{content:'Fit';font-size:14px}.m395ActionGrid{grid-template-columns:1fr}.m395ActionGrid .wide{grid-column:auto}.m395DirectionGrid{grid-template-columns:1fr 1fr 1fr}.m395ThemeGrid{grid-template-columns:1fr}}"
+      "@media(max-width:520px){.m395QuickButton{font-size:0}.m395QuickButton:after{content:'Quick';font-size:14px}.m395FitButton{font-size:0}.m395FitButton:after{content:'Fit';font-size:14px}.m395ActionGrid{grid-template-columns:1fr}.m395ActionGrid .wide{grid-column:auto}.m395DirectionGrid{grid-template-columns:1fr 1fr 1fr}.m395ThemeGrid{grid-template-columns:1fr}.m4092PageOrderRow{grid-template-columns:48px minmax(0,1fr) 44px 44px;padding:7px 5px}}"
     ].join("");
     document.head.appendChild(style);
   }
@@ -948,6 +956,156 @@
     }
   }
 
+  var m4092PageOrder = [];
+
+  function m4092EnsurePageOrderModal() {
+    var modal = byId("m4092PageOrderModal");
+    if (modal) return modal;
+    modal = document.createElement("div");
+    modal.id = "m4092PageOrderModal";
+    modal.className = "modal";
+    modal.innerHTML = [
+      '<div class="box">',
+      '  <div class="boxHead"><span>Page Order</span><button type="button" id="m4092PageOrderClose">Close</button></div>',
+      '  <p class="m4092PageOrderNote">Arrange the pages in the order they should appear in the report. Applying the order renumbers them 1, 2, 3… without moving any sheet on the canvas.</p>',
+      '  <div id="m4092PageOrderList" class="m4092PageOrderList"></div>',
+      '  <div class="buttonGrid"><button type="button" class="primary" id="m4092PageOrderApply">Apply Page Order</button><button type="button" id="m4092PageOrderCancel">Cancel</button></div>',
+      '</div>'
+    ].join("");
+    document.body.appendChild(modal);
+    byId("m4092PageOrderClose").addEventListener("click", m4092ClosePageOrder);
+    byId("m4092PageOrderCancel").addEventListener("click", m4092ClosePageOrder);
+    byId("m4092PageOrderApply").addEventListener("click", m4092ApplyPageOrder);
+    return modal;
+  }
+
+  function m4092PagePositionLabel(pageNum) {
+    var meta = (typeof pageMeta !== "undefined" && pageMeta) ? pageMeta[String(pageNum)] : null;
+    if (!meta) return "Canvas position unchanged";
+    var gx = Number(meta.gx || 0);
+    var gy = Number(meta.gy || 0);
+    return "Canvas position " + gx + ", " + gy;
+  }
+
+  function m4092RenderPageOrder() {
+    var list = byId("m4092PageOrderList");
+    if (!list) return;
+    list.innerHTML = "";
+    for (var i = 0; i < m4092PageOrder.length; i += 1) {
+      var oldPage = Number(m4092PageOrder[i]);
+      var row = document.createElement("div");
+      row.className = "m4092PageOrderRow" + (Number(currentPage) === oldPage ? " active" : "");
+      row.setAttribute("data-m4092-page-index", String(i));
+      row.innerHTML = [
+        '<div class="m4092PageOrderNumber">NEW<br>' + (i + 1) + '</div>',
+        '<div class="m4092PageOrderDetails">Current Page ' + oldPage + (Number(currentPage) === oldPage ? ' — ACTIVE' : '') + '<small>' + m4092PagePositionLabel(oldPage) + '</small></div>',
+        '<button type="button" data-m4092-page-up="' + i + '" aria-label="Move Current Page ' + oldPage + ' earlier" ' + (i === 0 ? 'disabled' : '') + '>↑</button>',
+        '<button type="button" data-m4092-page-down="' + i + '" aria-label="Move Current Page ' + oldPage + ' later" ' + (i === m4092PageOrder.length - 1 ? 'disabled' : '') + '>↓</button>'
+      ].join("");
+      list.appendChild(row);
+    }
+    var upButtons = list.querySelectorAll("[data-m4092-page-up]");
+    var downButtons = list.querySelectorAll("[data-m4092-page-down]");
+    var j;
+    for (j = 0; j < upButtons.length; j += 1) {
+      upButtons[j].addEventListener("click", function () {
+        var index = Number(this.getAttribute("data-m4092-page-up"));
+        if (index <= 0 || index >= m4092PageOrder.length) return;
+        var page = m4092PageOrder.splice(index, 1)[0];
+        m4092PageOrder.splice(index - 1, 0, page);
+        m4092RenderPageOrder();
+      });
+    }
+    for (j = 0; j < downButtons.length; j += 1) {
+      downButtons[j].addEventListener("click", function () {
+        var index = Number(this.getAttribute("data-m4092-page-down"));
+        if (index < 0 || index >= m4092PageOrder.length - 1) return;
+        var page = m4092PageOrder.splice(index, 1)[0];
+        m4092PageOrder.splice(index + 1, 0, page);
+        m4092RenderPageOrder();
+      });
+    }
+  }
+
+  function m4092OpenPageOrder() {
+    if (typeof pagesData === "undefined" || typeof pageMeta === "undefined" || typeof getPageNumbers !== "function") {
+      alert("MITHRIL could not open Page Order. Refresh the Shot Diagram and try again.");
+      return;
+    }
+    closeMenu();
+    m4092EnsurePageOrderModal();
+    m4092PageOrder = getPageNumbers().map(Number);
+    m4092RenderPageOrder();
+    byId("m4092PageOrderModal").classList.add("show");
+  }
+
+  function m4092ClosePageOrder() {
+    var modal = byId("m4092PageOrderModal");
+    if (modal) modal.classList.remove("show");
+  }
+
+  function m4092RemapShotSelection(pageMap) {
+    if (typeof shotEditSelection === "undefined" || !shotEditSelection) return;
+    var remapped = {};
+    Object.keys(shotEditSelection).forEach(function (key) {
+      var entry = shotEditSelection[key];
+      if (!entry || pageMap[String(entry.pageNum)] == null) return;
+      var newPage = Number(pageMap[String(entry.pageNum)]);
+      var newKey = typeof shotEditKey === "function" ? shotEditKey(newPage, entry.holeId) : (String(newPage) + "|" + String(entry.holeId));
+      remapped[newKey] = { pageNum: newPage, holeId: String(entry.holeId) };
+    });
+    shotEditSelection = remapped;
+  }
+
+  function m4092ApplyPageOrder() {
+    if (!m4092PageOrder.length || typeof pagesData === "undefined" || typeof pageMeta === "undefined") return;
+    var actualPages = typeof getPageNumbers === "function" ? getPageNumbers().map(Number) : [];
+    if (actualPages.length !== m4092PageOrder.length) {
+      alert("The page list changed while Page Order was open. Close it and try again.");
+      return;
+    }
+    var pageMap = {};
+    for (var i = 0; i < m4092PageOrder.length; i += 1) pageMap[String(m4092PageOrder[i])] = i + 1;
+
+    var newPages = {};
+    var newMeta = {};
+    for (var orderIndex = 0; orderIndex < m4092PageOrder.length; orderIndex += 1) {
+      var oldPage = Number(m4092PageOrder[orderIndex]);
+      var newPage = orderIndex + 1;
+      var records = deepClone(pagesData[String(oldPage)] || {});
+      Object.keys(records).forEach(function (holeId) {
+        if (!records[holeId]) return;
+        records[holeId].PageNumber = newPage;
+        records[holeId].HoleID = String(holeId);
+      });
+      newPages[String(newPage)] = records;
+      var meta = deepClone(pageMeta[String(oldPage)] || { gx: orderIndex, gy: 0 });
+      meta.name = "Page " + newPage;
+      newMeta[String(newPage)] = meta;
+    }
+
+    var oldCurrentPage = Number(currentPage);
+    pagesData = newPages;
+    pageMeta = newMeta;
+    currentPage = Number(pageMap[String(oldCurrentPage)] || 1);
+    holeData = pagesData[String(currentPage)] || {};
+    m4092RemapShotSelection(pageMap);
+    if (typeof shotEditUndoHistory !== "undefined") shotEditUndoHistory = [];
+    if (typeof m397TimingUndoHistory !== "undefined") m397TimingUndoHistory = [];
+    if (typeof shotEditClipboard !== "undefined") shotEditClipboard = null;
+    if (typeof shotEditPasteArmed !== "undefined") shotEditPasteArmed = false;
+    if (typeof shotPersistEditedState === "function") shotPersistEditedState();
+    else {
+      try { if (typeof saveData === "function") saveData(); } catch (error) {}
+      try { if (typeof markDirty === "function") markDirty(); } catch (error2) {}
+      try { if (typeof refreshPageSelect === "function") refreshPageSelect(); } catch (error3) {}
+    }
+    try { if (typeof draw === "function") draw(); } catch (error4) {}
+    try { if (typeof updateStatus === "function") updateStatus(); } catch (error5) {}
+    m4092ClosePageOrder();
+    alert("Page order updated. The sheets stayed in their existing canvas positions.");
+  }
+
   function patchShotMenu() {
     var menu = byId("menuModal");
     if (!menu || menu.getAttribute("data-m395-patched") === "shot") return;
@@ -977,6 +1135,7 @@
       '        </div>',
       '      </div>',
       '      <button type="button" data-m395-action="fitAll">Fit All Pages</button>',
+      '      <button type="button" data-m395-action="pageOrder">Page Order / Renumber</button>',
       '      <button type="button" class="danger" data-m395-action="deletePage">Delete Current Page</button>',
       '    </div>',
       '  </div>',
@@ -1020,6 +1179,7 @@
     wireAction(box, '[data-m395-action="info"]', function () { runAndClose("openShotInfo"); });
     wireAction(box, '[data-m395-action="editHoles"]', function () { closeMenu(); startShotEditMode(); });
     wireAction(box, '[data-m395-action="fitAll"]', function () { runAndClose("fitAllPages"); });
+    wireAction(box, '[data-m395-action="pageOrder"]', m4092OpenPageOrder);
     wireAction(box, '[data-m395-action="deletePage"]', function () { runAndClose("deleteCurrentPage"); });
     wireAction(box, '[data-m395-action="shareCsv"]', function () { runAndClose("emailCSV"); });
     wireAction(box, '[data-m395-action="csv"]', function () { runAndClose("exportCSV"); });
@@ -7421,6 +7581,24 @@
     return isFinite(number) ? number : null;
   }
 
+  function m397NormalizeDirection(value) {
+    var direction = String(value || "ltr").toLowerCase();
+    return /^(?:ltr|rtl|ttb|btt)$/.test(direction) ? direction : "ltr";
+  }
+
+  function m397DirectionLabel(value) {
+    var direction = m397NormalizeDirection(value);
+    if (direction === "rtl") return "R → L";
+    if (direction === "ttb") return "T ↓ B";
+    if (direction === "btt") return "B ↑ T";
+    return "L → R";
+  }
+
+  function m397VerticalDirection(value) {
+    var direction = m397NormalizeDirection(value);
+    return direction === "ttb" || direction === "btt";
+  }
+
   function m397NormalizeTimingState(raw) {
     var source = raw || {};
     var start = m397FiniteNumber(source.start);
@@ -7433,7 +7611,7 @@
       start: start,
       interval: interval,
       next: next,
-      direction: String(source.direction || "ltr").toLowerCase() === "rtl" ? "rtl" : "ltr",
+      direction: m397NormalizeDirection(source.direction),
       overwrite: String(source.overwrite || "blank").toLowerCase() === "overwrite" ? "overwrite" : "blank",
       active: source.active === true || String(source.active || "").toLowerCase() === "true"
     };
@@ -7509,10 +7687,14 @@
   }
 
   function m397TimingSortLocations(locations, direction) {
-    var dir = String(direction || "ltr") === "rtl" ? "rtl" : "ltr";
+    var dir = m397NormalizeDirection(direction);
     return (locations || []).slice().sort(function (a, b) {
       var ga = shotLocationToGlobal(a.pageNum, a.holeId);
       var gb = shotLocationToGlobal(b.pageNum, b.holeId);
+      if (m397VerticalDirection(dir)) {
+        if (ga.col !== gb.col) return ga.col - gb.col;
+        return dir === "btt" ? gb.row - ga.row : ga.row - gb.row;
+      }
       if (ga.row !== gb.row) return ga.row - gb.row;
       return dir === "rtl" ? gb.col - ga.col : ga.col - gb.col;
     });
@@ -7526,6 +7708,18 @@
       var record = data[holeId];
       var pos = parseHoleID(holeId);
       if (pos.row === target.row && m397TimingRecordEligible(record)) locations.push({ pageNum: Number(hit.pageNum), holeId: String(holeId) });
+    });
+    return m397TimingSortLocations(locations, m397TimingState.direction);
+  }
+
+  function m397TimingColumnLocations(hit) {
+    var data = pagesData[String(hit.pageNum)] || {};
+    var target = parseHoleID(hit.holeId);
+    var locations = [];
+    Object.keys(data).forEach(function (holeId) {
+      var record = data[holeId];
+      var pos = parseHoleID(holeId);
+      if (pos.col === target.col && m397TimingRecordEligible(record)) locations.push({ pageNum: Number(hit.pageNum), holeId: String(holeId) });
     });
     return m397TimingSortLocations(locations, m397TimingState.direction);
   }
@@ -7667,6 +7861,21 @@
     m397ApplyTimingLocations(locations, "filled row " + rowLabel, true, false);
   }
 
+  function m397FillTimingColumn(hit) {
+    var locations = m397TimingColumnLocations(hit);
+    if (!locations.length) {
+      m397SetTimingHint("That column has no eligible saved holes.");
+      return;
+    }
+    var columnNumber = parseHoleID(hit.holeId).col + 1;
+    m397ApplyTimingLocations(locations, "filled column " + columnNumber, true, false);
+  }
+
+  function m397FillTimingDirectionGroup(hit) {
+    if (m397VerticalDirection(m397TimingState.direction)) m397FillTimingColumn(hit);
+    else m397FillTimingRow(hit);
+  }
+
   function m397FillTimingSelection() {
     var locations = m397TimingSelectedLocations();
     if (!locations.length) {
@@ -7715,7 +7924,7 @@
       '  <div class="formGrid">',
       '    <label>Row Starting Time (ms)<input id="m397TimingStart" type="number" min="0" step="1" inputmode="decimal"></label>',
       '    <label>Interval (ms)<input id="m397TimingInterval" type="number" min="0.001" step="1" inputmode="decimal"></label>',
-      '    <label>Fill Direction<select id="m397TimingDirection"><option value="ltr">Left to Right</option><option value="rtl">Right to Left</option></select></label>',
+      '    <label>Fill Direction<select id="m397TimingDirection"><option value="ltr">Left to Right</option><option value="rtl">Right to Left</option><option value="ttb">Top to Bottom</option><option value="btt">Bottom to Top</option></select></label>',
       '    <label>Existing Timing<select id="m397TimingOverwrite"><option value="blank">Keep existing timing</option><option value="overwrite">Overwrite existing timing</option></select></label>',
       '  </div>',
       '  <div class="buttonGrid"><button type="button" class="primary" id="m397TimingActivate">Set Row Start &amp; Activate</button><button type="button" id="m397TimingCancel">Cancel</button></div>',
@@ -7781,12 +7990,12 @@
     m397TimingState.start = start;
     m397TimingState.next = start;
     m397TimingState.interval = interval;
-    m397TimingState.direction = byId("m397TimingDirection").value === "rtl" ? "rtl" : "ltr";
+    m397TimingState.direction = m397NormalizeDirection(byId("m397TimingDirection").value);
     m397TimingState.overwrite = byId("m397TimingOverwrite").value === "overwrite" ? "overwrite" : "blank";
     m397TimingState.active = true;
     m397PersistTimingState();
     m397CloseTimingModal();
-    m397SetTimingHint("Tap or click saved holes to assign timing. Shift-click fills a complete saved row on desktop.");
+    m397SetTimingHint("Tap or click saved holes to assign timing. Shift-click fills a complete saved row or column on desktop.");
     m397UpdateTimingUI();
   }
 
@@ -7817,7 +8026,7 @@
     bar.id = "m397TimingBar";
     bar.className = "m397TimingBar";
     bar.innerHTML = [
-      '<div class="m397TimingHead"><div><div class="m397TimingTitle">TIMING FILL ACTIVE</div><div class="m397TimingStatus">Click = one hole • Shift-click = whole row</div></div><button type="button" class="m397TimingDone" id="m397TimingDone">Done</button></div>',
+      '<div class="m397TimingHead"><div><div class="m397TimingTitle">TIMING FILL ACTIVE</div><div class="m397TimingStatus">Click = one hole • Shift-click = direction row / column</div></div><button type="button" class="m397TimingDone" id="m397TimingDone">Done</button></div>',
       '<div class="m397TimingStats">',
       '  <div class="m397TimingStat"><b>Next</b><span id="m397TimingNextValue">0 ms</span></div>',
       '  <div class="m397TimingStat"><b>Interval</b><span id="m397TimingIntervalValue">25 ms</span></div>',
@@ -7860,7 +8069,7 @@
     var undo = byId("m397TimingUndo");
     if (next) next.textContent = m397FormatTiming(m397TimingState.next) + " ms";
     if (interval) interval.textContent = m397FormatTiming(m397TimingState.interval) + " ms";
-    if (direction) direction.textContent = m397TimingState.direction === "rtl" ? "R → L" : "L → R";
+    if (direction) direction.textContent = m397DirectionLabel(m397TimingState.direction);
     if (undo) undo.disabled = !m397TimingUndoHistory.length;
     m397UpdateTimingMenuButton();
     m397RefreshTimingEditButtons();
@@ -7968,7 +8177,7 @@
         try { if (typeof pointerState !== "undefined" && pointerState) pointerState.moved = true; } catch (error) {}
         var hit = m397CanvasHit(event, canvas);
         if (!hit) { m397SetTimingHint("Tap inside a saved hole cell."); return; }
-        if (event.shiftKey) m397FillTimingRow(hit);
+        if (event.shiftKey) m397FillTimingDirectionGroup(hit);
         else m397FillSingleTiming(hit);
       }, true);
       canvas.addEventListener("pointercancel", function (event) { delete m397TimingPointerStarts[String(event.pointerId)]; }, true);
@@ -8234,7 +8443,7 @@
   };
 
   // ---------------------------------------------------------------------------
-  // m40.9.1.1 workspace interaction repair
+  // m40.9.1.1 workspace interaction repair (preserved in m40.9.2)
   // ---------------------------------------------------------------------------
 
   var m4091HoleClipboard = null;
