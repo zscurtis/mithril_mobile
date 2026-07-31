@@ -1,14 +1,13 @@
 {
-  "version": "m40.9.1",
-  "title": "Workspace Interaction Shortcuts",
+  "version": "m40.9.1.1",
+  "title": "Desktop Interaction Repair",
   "released": "2026-07-30",
   "minimumOfflineVersion": "m39.6.3",
   "notes": [
-    "Adds a MITHRIL right-click menu on Drill Log and Shot Diagram canvases while preserving normal browser copy and paste inside text fields.",
-    "Provides Edit Hole, Copy Hole, Paste Here, Edit Holes, document info, Page Tools, and Cloud Sync actions based on where the user right-clicks.",
-    "Adds a Sync shortcut to the workspace header without changing cloud revision or conflict behavior.",
-    "Makes any clicked sheet active, even when the click is outside the hole grid.",
-    "Opens Shot Info when the date, Shot ID, job, or blaster area is clicked.",
-    "Preserves all m40.9.0 landing and cloud presentation changes."
+    "Prevents right-clicks from falling through into normal hole entry or canvas panning.",
+    "Suppresses the standard browser context menu on the MITHRIL canvas so the MITHRIL menu opens by itself.",
+    "Clears the Shot Diagram pointer gesture normally before opening Shot Info from the printed header.",
+    "Preserves the m40.9.1 Sync shortcut, context actions, whole-page activation, and copy/paste behavior.",
+    "Does not change Firebase rules, cloud revision handling, calculations, imports, or document formats."
   ]
 }

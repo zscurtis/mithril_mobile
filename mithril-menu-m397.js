@@ -1,8 +1,8 @@
 (function () {
   "use strict";
 
-  var RELEASE_VERSION = "m40.9.1";
-  var RELEASE_LABEL = "workspace interaction shortcuts";
+  var RELEASE_VERSION = "m40.9.1.1";
+  var RELEASE_LABEL = "desktop interaction repair";
   var THEME_STORAGE_KEY = "mithrilCanvasThemeV1";
   var THEME_CLASS_PREFIX = "m395-theme-";
   var THEME_OPTIONS = [
@@ -201,7 +201,7 @@
         var script = childDocument.createElement("script");
         script.id = "mithrilMenuM395ChildLoader";
         script.setAttribute("data-mithril-release", RELEASE_VERSION);
-        script.src = "./mithril-menu-m397.js?v=40.9.1-frame";
+        script.src = "./mithril-menu-m397.js?v=40.9.1.1-frame";
         (childDocument.head || childDocument.documentElement).appendChild(script);
         return true;
       } catch (error) {
@@ -8234,7 +8234,7 @@
   };
 
   // ---------------------------------------------------------------------------
-  // m40.9.1 workspace interaction shortcuts
+  // m40.9.1.1 workspace interaction repair
   // ---------------------------------------------------------------------------
 
   var m4091HoleClipboard = null;
@@ -8443,6 +8443,7 @@
   function m4091ShowContextMenu(type, canvas, event) {
     event.preventDefault();
     event.stopPropagation();
+    if (typeof event.stopImmediatePropagation === "function") event.stopImmediatePropagation();
     m4091CloseContextMenu();
     var point = m4091ScreenPoint(event, canvas);
     var pageNum = m4091PageAtPoint(type, point);
@@ -8512,10 +8513,17 @@
 
     canvas.addEventListener("contextmenu", function (event) {
       m4091ShowContextMenu(type, canvas, event);
-    });
+    }, true);
 
     canvas.addEventListener("pointerdown", function (event) {
       m4091CloseContextMenu();
+      if (event.pointerType === "mouse" && event.button !== 0) {
+        delete m4091PointerStarts[event.pointerId];
+        event.preventDefault();
+        event.stopPropagation();
+        if (typeof event.stopImmediatePropagation === "function") event.stopImmediatePropagation();
+        return;
+      }
       m4091PointerStarts[event.pointerId] = m4091ScreenPoint(event, canvas);
     }, true);
 
@@ -8526,7 +8534,13 @@
     canvas.addEventListener("pointerup", function (event) {
       var start = m4091PointerStarts[event.pointerId];
       delete m4091PointerStarts[event.pointerId];
-      if (!start || (event.pointerType === "mouse" && event.button !== 0)) return;
+      if (event.pointerType === "mouse" && event.button !== 0) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (typeof event.stopImmediatePropagation === "function") event.stopImmediatePropagation();
+        return;
+      }
+      if (!start) return;
       var point = m4091ScreenPoint(event, canvas);
       if (Math.hypot(point.x - start.x, point.y - start.y) > 7) return;
       var pageNum = m4091PageAtPoint(type, point);
@@ -8534,8 +8548,8 @@
       m4091ActivatePage(type, pageNum);
       if (type === "shot" && !m4091EditorIsOpen(type) && m4091PointOnShotHeader(point, pageNum)) {
         event.preventDefault();
-        event.stopPropagation();
-        if (typeof event.stopImmediatePropagation === "function") event.stopImmediatePropagation();
+        // Do not stop this pointer-up. The original Shot Diagram handler must
+        // finish its normal pointer cleanup before the modal opens.
         window.setTimeout(function () { m4091OpenInfo("shot"); }, 0);
       }
     }, true);
