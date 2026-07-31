@@ -1,13 +1,13 @@
 {
-  "version": "m40.8.3",
-  "title": "Reliable Cloud Load Status",
+  "version": "m40.9.0",
+  "title": "Landing and Cloud Presentation",
   "released": "2026-07-30",
   "minimumOfflineVersion": "m39.6.3",
   "notes": [
-    "Clears the temporary Syncing state after a cloud revision is successfully loaded onto the device.",
-    "Makes the workspace indicator immediately recalculate as Cloud synced after the loaded snapshot and sync fingerprint are saved.",
-    "Fixes the status-only issue observed on iPad and Samsung after using Load cloud.",
-    "Does not change cloud writes, Firebase rules, document formats, calculations, or permissions.",
-    "Preserves the m40.8.2 workspace header fix and removal of legacy Finish and Send to Blaster controls."
+    "Adds the MITHRIL Mobile creator and copyright notice to the landing page.",
+    "Shows loaded holes, excluding dirt and bad holes, in Recent cloud documents.",
+    "Improves the Load cloud revision confirmation with stronger contrast, clearer wording, and a readable primary action.",
+    "Does not change Firebase rules, document identity, revision blocking, recovery, calculations, or permissions.",
+    "Preserves the m40.8.3 cloud-load status fix and m40.8.2 workspace header correction."
   ]
 }

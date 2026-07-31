@@ -1,9 +1,9 @@
 (function () {
   "use strict";
 
-  var RELEASE_VERSION = "m40.8.3";
+  var RELEASE_VERSION = "m40.9.0";
   var CHILD_SCRIPT_ID = "mithrilCoreM400ChildLoader";
-  var CHILD_SCRIPT_SRC = "./mithril-core-m400.js?rev=4083-frame";
+  var CHILD_SCRIPT_SRC = "./mithril-core-m400.js?rev=4090-frame";
   var TRANSFER_KEY = "mithrilDrillToShotTransferM400";
   var UNDO_KEY = "mithrilDrillToShotUndoM400";
   var DEVICE_KEY = "mithrilCloudDeviceNameM399";
@@ -181,6 +181,21 @@
     });
     return count;
   }
+  function recordFlagged(record, key) {
+    var value = record && record[key];
+    if (value === true || value === 1) return true;
+    return /^(?:yes|true|1)$/i.test(text(value));
+  }
+  function countLoadedHoles(pages) {
+    var count = 0;
+    Object.keys(pages || {}).forEach(function (pageKey) {
+      Object.keys((pages || {})[pageKey] || {}).forEach(function (holeKey) {
+        var record = pages[pageKey][holeKey];
+        if (meaningfulRecord(record) && !recordFlagged(record, "DirtHole") && !recordFlagged(record, "BadHole")) count += 1;
+      });
+    });
+    return count;
+  }
   function showToast(message, kind) {
     ensureStyles();
     var region = byId("m408ToastRegion");
@@ -239,7 +254,7 @@
       ".m401Compare{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:10px 0}.m401Side{border:1px solid #9ab8df;border-radius:9px;padding:10px;background:#f7faff}.m401Side.cloud{border-color:#8dbb96;background:#f3fbf4}.m401Side h3{margin:0 0 6px;font-size:12px;letter-spacing:.08em;color:#516174}.m401Side b{display:block;font-size:15px;margin-bottom:4px}.m401Side span{display:block;font-size:12px;line-height:1.4;color:#4d5866;font-weight:750}",
       ".m400Docs{display:grid;gap:8px}.m400Doc{border:1px solid #bdc6d1;border-radius:11px;padding:10px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;background:#fff}.m400DocTitle{font-size:15px;font-weight:900}.m400Meta{font-size:12px;color:#596777;font-weight:750;line-height:1.4;margin-top:3px}.m400DocActions{display:flex;gap:6px;align-items:center}.m407DocMenu{position:relative}.m407DocMenu summary{list-style:none;display:flex;align-items:center;justify-content:center;width:42px;min-height:44px;border:1px solid #8996a5;border-radius:8px;background:#f4f4f4;font-size:22px;font-weight:900;cursor:pointer}.m407DocMenu summary::-webkit-details-marker{display:none}.m407DocMenuPanel{position:absolute;right:0;top:48px;z-index:3;width:190px;padding:7px;border:1px solid #aab3bf;border-radius:9px;background:#fff;box-shadow:0 8px 22px rgba(0,0,0,.2)}.m407DocMenuPanel button{width:100%}.m407Technical{margin-top:5px;font-size:10px;color:#8792a0;font-weight:750}",
       ".m408ToastRegion{position:fixed;left:50%;bottom:max(16px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:22000;width:min(720px,calc(100vw - 24px));display:grid;gap:8px;pointer-events:none}.m400Toast{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;padding:12px 12px 12px 16px;border:2px solid #4f9a61;border-radius:11px;background:#e9f8ec;color:#173d20;font-size:14px;font-weight:850;line-height:1.35;box-shadow:0 8px 28px rgba(0,0,0,.35);text-align:left;pointer-events:auto;animation:m408ToastIn .18s ease-out}.m400Toast.bad{background:#ffeaea;border-color:#c66;color:#720000}.m400Toast.wait{background:#fff7d8;border-color:#c7aa45;color:#5f4800}.m400Toast.leaving{opacity:0;transform:translateY(8px);transition:opacity .18s,transform .18s}.m408ToastClose{width:34px;min-height:34px!important;padding:0!important;border:0!important;background:transparent!important;color:inherit!important;font-size:24px!important;line-height:1!important}@keyframes m408ToastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}",
-      ".m408FeedbackModal{z-index:26000}.m408FeedbackBox{width:min(560px,100%);padding:0;overflow:hidden;border-color:#64748b}.m408FeedbackHead{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid #d6dbe2;background:#f8fafc}.m408FeedbackIcon{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:#eaf3ff;color:#1f5fae;font-size:19px;font-weight:950}.m408FeedbackBox.bad .m408FeedbackIcon,.m408FeedbackBox.danger .m408FeedbackIcon{background:#ffe5e5;color:#8b1e1e}.m408FeedbackBox.warning .m408FeedbackIcon{background:#fff0c2;color:#725000}.m408FeedbackTitle{font-size:19px;font-weight:950}.m408FeedbackMessage{padding:16px;white-space:pre-wrap;font-size:14px;line-height:1.48;color:#26313f}.m408FeedbackActions{position:sticky;bottom:0;display:grid;grid-template-columns:1fr 1fr;gap:9px;padding:12px 16px;border-top:1px solid #d6dbe2;background:#fff}.m408FeedbackActions.one{grid-template-columns:1fr}.m408FeedbackActions button{min-height:48px}.m408FeedbackActions .danger{background:#b42318;color:#fff;border-color:#8f1b13}",
+      ".m408FeedbackModal{z-index:26000}.m408FeedbackBox{width:min(560px,100%);padding:0;overflow:hidden;border-color:#64748b}.m408FeedbackHead{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid #d6dbe2;background:#f8fafc}.m408FeedbackIcon{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:#eaf3ff;color:#1f5fae;font-size:19px;font-weight:950}.m408FeedbackBox.bad .m408FeedbackIcon,.m408FeedbackBox.danger .m408FeedbackIcon{background:#ffe5e5;color:#8b1e1e}.m408FeedbackBox.warning .m408FeedbackIcon{background:#fff0c2;color:#725000}.m408FeedbackTitle{font-size:20px;font-weight:950;color:#161b22}.m408FeedbackMessage{padding:18px 16px;white-space:pre-wrap;font-size:15px;font-weight:800;line-height:1.55;color:#161b22;background:#fff}.m408FeedbackBox.warning .m408FeedbackMessage{border-left:5px solid #d59a16;background:#fffaf0}.m408FeedbackActions{position:sticky;bottom:0;display:grid;grid-template-columns:1fr 1fr;gap:9px;padding:12px 16px;border-top:1px solid #c8d0da;background:#f8fafc}.m408FeedbackActions.one{grid-template-columns:1fr}.m408FeedbackActions button{min-height:50px;font-size:15px}.m400Box .m408FeedbackActions button.danger{background:#b42318;color:#fff;border-color:#8f1b13}",
       "#status.m408StatusHost{display:grid!important;grid-template-columns:minmax(0,1fr) auto;gap:5px 10px;align-items:center;padding:6px 9px!important;border:1px solid #c7cfd9;border-radius:9px;background:#f8fafc;min-height:38px;box-sizing:border-box;color:#26313f!important;white-space:normal!important;overflow:visible!important}.m408DocTitle{font-size:13px;font-weight:950;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.m408DocMeta{grid-column:1/-1;font-size:10px;font-weight:750;color:#657284;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.m408StatusChip{display:inline-flex;align-items:center;gap:6px;min-height:24px;padding:3px 8px;border-radius:999px;border:1px solid #9aa7b5;background:#edf1f5;color:#435160;font-size:10px;font-weight:950;white-space:nowrap}.m408StatusChip::before{content:'';width:7px;height:7px;border-radius:50%;background:#7a8795}.m408StatusChip.synced{border-color:#6aa978;background:#e9f8ec;color:#225a2f}.m408StatusChip.synced::before{background:#2f8a45}.m408StatusChip.unsynced{border-color:#caa444;background:#fff7d8;color:#6b5100}.m408StatusChip.unsynced::before{background:#d39412}.m408StatusChip.offline{border-color:#c79c43;background:#fff2cf;color:#6b4d00}.m408StatusChip.offline::before{background:#d39412}.m408StatusChip.readonly{border-color:#9b71df;background:#f2eaff;color:#4b287b}.m408StatusChip.readonly::before{background:#7b4ac5}.m408StatusChip.syncing::before{background:#1f6feb;animation:m408Pulse 1s infinite alternate}@keyframes m408Pulse{to{opacity:.28}}",
       "button.finishBtn,#finishSendBtn{display:none!important}",
       "@media(min-width:1100px){:root{--toolbar-h:96px}header{grid-template-columns:minmax(0,1fr) minmax(255px,.7fr)!important;grid-template-rows:40px 38px!important;align-items:center}header>.topRow{grid-column:1!important;grid-row:1!important}header>.zoomRow{grid-column:2!important;grid-row:1!important}header>#status{grid-column:1/-1!important;grid-row:2!important}header>#status.m408StatusHost{grid-template-columns:minmax(0,1fr) minmax(0,.7fr) auto;min-height:38px;padding:4px 8px!important;gap:8px}header>#status.m408StatusHost .m408DocMeta{grid-column:auto;grid-row:auto}}",
@@ -1591,8 +1606,10 @@
     }
     items.slice(0, 4).forEach(function (item) {
       var d = item.data, row = document.createElement("div"), action = document.createElement("button");
+      var cloudPages = d && d.payload && (d.payload.pagesData || d.payload.pages);
+      var loadedCount = cloudPages ? countLoadedHoles(cloudPages) : Number(d.loadedHoleCount != null ? d.loadedHoleCount : d.holeCount || 0);
       row.className = "m407CloudItem";
-      row.innerHTML = '<div><strong>' + escapeHtml(d.title || docTypeLabel(d.type)) + '</strong><span>' + escapeHtml(docTypeLabel(d.type)) + ' · Revision ' + escapeHtml(d.revision || 1) + ' · ' + escapeHtml(d.holeCount || 0) + ' holes</span></div>';
+      row.innerHTML = '<div><strong>' + escapeHtml(d.title || docTypeLabel(d.type)) + '</strong><span>' + escapeHtml(docTypeLabel(d.type)) + ' · Revision ' + escapeHtml(d.revision || 1) + ' · ' + escapeHtml(loadedCount) + ' loaded hole' + (loadedCount === 1 ? '' : 's') + '</span></div>';
       action.type = "button";
       action.textContent = "Load cloud";
       action.addEventListener("click", function () { openLandingCloudDocument(item.id, d); });
@@ -1637,9 +1654,10 @@
     if (type === "drillLog" && !hasPermission("drill")) return restrictedMessage("Drill Log");
     var label = data.title || docTypeLabel(type);
     if (!options.skipConfirm) {
-      mithrilConfirm(label + "\nRevision " + (data.revision || 1) + "\n\nThis replaces the current local " + docTypeLabel(type) + " on this device. Undo Cloud Download will remain available.", {
+      mithrilConfirm(label + "\nRevision " + (data.revision || 1) + "\n\nReplace this device's current " + docTypeLabel(type) + " with the cloud revision?\n\nUndo Cloud Download will remain available.", {
         title: "Load cloud revision?",
-        primaryLabel: "Load cloud"
+        primaryLabel: "Load cloud",
+        kind: "warning"
       }).then(function (approved) {
         if (approved) openLandingCloudDocument(id, data, { skipConfirm: true });
       });
@@ -2172,7 +2190,8 @@
       documentNumber: info.documentNumber,
       fieldDate: info.fieldDate,
       person: info.person,
-      holeCount: countHoles(snapshot.pagesData),
+      holeCount: countLoadedHoles(snapshot.pagesData),
+      loadedHoleCount: countLoadedHoles(snapshot.pagesData),
       payload: snapshot
     };
   }
@@ -3050,7 +3069,7 @@
         script.id = CHILD_SCRIPT_ID;
         script.src = CHILD_SCRIPT_SRC;
         doc.head.appendChild(script);
-      } catch (error) { console.warn("MITHRIL m40.8.3 could not attach the standardized document layer to the Shot Diagram.", error); }
+      } catch (error) { console.warn("MITHRIL m40.9.0 could not attach the standardized document layer to the Shot Diagram.", error); }
     }
     frame.addEventListener("load", function () { setTimeout(inject, 80); });
     setTimeout(inject, 120);
