@@ -1,8 +1,8 @@
 (function () {
   "use strict";
 
-  var RELEASE_VERSION = "m40.9.0";
-  var RELEASE_LABEL = "landing and cloud presentation";
+  var RELEASE_VERSION = "m40.9.1";
+  var RELEASE_LABEL = "workspace interaction shortcuts";
   var THEME_STORAGE_KEY = "mithrilCanvasThemeV1";
   var THEME_CLASS_PREFIX = "m395-theme-";
   var THEME_OPTIONS = [
@@ -201,7 +201,7 @@
         var script = childDocument.createElement("script");
         script.id = "mithrilMenuM395ChildLoader";
         script.setAttribute("data-mithril-release", RELEASE_VERSION);
-        script.src = "./mithril-menu-m397.js?v=40.9.0-frame";
+        script.src = "./mithril-menu-m397.js?v=40.9.1-frame";
         (childDocument.head || childDocument.documentElement).appendChild(script);
         return true;
       } catch (error) {
@@ -8233,6 +8233,324 @@
     shotLoadSummary: m395ShotLoadSummary
   };
 
+  // ---------------------------------------------------------------------------
+  // m40.9.1 workspace interaction shortcuts
+  // ---------------------------------------------------------------------------
+
+  var m4091HoleClipboard = null;
+  var m4091ContextTarget = null;
+  var m4091PointerStarts = {};
+
+  function injectM4091InteractionStyles() {
+    if (byId("mithrilM4091InteractionStyles")) return;
+    var style = document.createElement("style");
+    style.id = "mithrilM4091InteractionStyles";
+    style.textContent = [
+      ".m4091ContextMenu{position:fixed;z-index:28000;width:min(250px,calc(100vw - 20px));padding:7px;border:1px solid #7e8996;border-radius:11px;background:#f8fafc;color:#17202b;box-shadow:0 14px 38px rgba(0,0,0,.38);font-family:Arial,sans-serif}",
+      ".m4091ContextTitle{padding:6px 8px 8px;color:#526071;font-size:11px;font-weight:950;letter-spacing:.06em;text-transform:uppercase}",
+      ".m4091ContextMenu button{display:block;width:100%;min-height:42px;margin:0 0 5px;text-align:left;border-color:#a9b2bd;background:#fff;color:#17202b;font-size:14px}",
+      ".m4091ContextMenu button:last-child{margin-bottom:0}",
+      ".m4091ContextMenu button.primary{border-color:#1f6feb;background:#1f6feb;color:#fff}",
+      ".m4091ContextMenu button:disabled{background:#eef1f4;color:#8a949f}",
+      ".m4091ContextDivider{height:1px;margin:6px 2px;background:#d5dbe2}"
+    ].join("");
+    document.head.appendChild(style);
+  }
+
+  function m4091Notify(message, kind) {
+    if (window.MithrilFeedback && typeof window.MithrilFeedback.toast === "function") {
+      window.MithrilFeedback.toast(message, kind || "good");
+      return;
+    }
+    alert(message);
+  }
+
+  function m4091ScreenPoint(event, canvas) {
+    return preciseCanvasPoint(event, canvas);
+  }
+
+  function m4091PageAtPoint(type, point) {
+    var world;
+    try {
+      world = screenToWorld(point.x, point.y);
+      if (type === "shot" && typeof getPageAtWorldPoint === "function") return getPageAtWorldPoint(world.x, world.y);
+      if (type === "drill" && typeof pageAtWorldPoint === "function") return pageAtWorldPoint(world.x, world.y);
+    } catch (error) {}
+    return gpsPageAtScreenPoint(type, point);
+  }
+
+  function m4091HoleAtPoint(type, point) {
+    try {
+      var world = screenToWorld(point.x, point.y);
+      if (type === "shot" && typeof hitTestHole === "function") return hitTestHole(world.x, world.y);
+      if (type === "drill" && typeof hitTestWorld === "function") return hitTestWorld(world.x, world.y);
+    } catch (error) {}
+    return null;
+  }
+
+  function m4091ActivatePage(type, pageNum) {
+    pageNum = Number(pageNum);
+    if (!pageNum) return false;
+    try {
+      if (Number(currentPage) === pageNum) return true;
+      if (type === "shot" && typeof switchToPage === "function") switchToPage(pageNum);
+      else if (type === "drill" && typeof switchPage === "function") switchPage(pageNum, false);
+      else {
+        currentPage = pageNum;
+        if (typeof refreshPageSelect === "function") refreshPageSelect();
+        if (typeof window.draw === "function") window.draw();
+      }
+      return true;
+    } catch (error) {
+      console.warn("MITHRIL could not activate Page " + pageNum + ".", error);
+      return false;
+    }
+  }
+
+  function m4091PointOnShotHeader(point, pageNum) {
+    try {
+      var world = screenToWorld(point.x, point.y);
+      var local = worldToPageLocal(pageNum, world.x, world.y);
+      var left = IMG_W * Number(headerPos.leftPct || 67.7) / 100;
+      var right = left + IMG_W * Number(headerPos.widthPct || 22.5) / 100;
+      var top = IMG_H * Math.max(0, Number(headerPos.dateTop || 5.8) - 1.8) / 100;
+      var bottom = IMG_H * Math.min(100, Number(headerPos.blasterTop || 13) + 1.8) / 100;
+      return local.x >= left && local.x <= right && local.y >= top && local.y <= bottom;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function m4091EditorIsOpen(type) {
+    var bar = byId(type === "shot" ? "m395ShotEditBar" : "m395DrillEditBar");
+    return !!bar && bar.classList.contains("show");
+  }
+
+  function m4091OpenInfo(type) {
+    if (type === "shot") callGlobal("openShotInfo");
+    else callGlobal("openInfo");
+  }
+
+  function m4091OpenPageTools(type) {
+    if (typeof window.openMenu === "function") window.openMenu();
+    var sectionId = type === "shot" ? "m395ShotPages" : "m395DrillPages";
+    var button = document.querySelector('[data-m395-section="' + sectionId + '"]');
+    if (button && button.getAttribute("aria-expanded") !== "true") button.click();
+  }
+
+  function m4091OpenEditTool(type) {
+    if (type === "shot") startShotEditMode();
+    else startDrillEditMode();
+  }
+
+  function m4091OpenCloud() {
+    if (window.MithrilCloudSync && typeof window.MithrilCloudSync.open === "function") {
+      window.MithrilCloudSync.open();
+      return;
+    }
+    var button = byId("m400CloudSyncButton");
+    if (button) {
+      button.click();
+      return;
+    }
+    m4091Notify("Cloud Sync is still loading. Try again in a moment.", "bad");
+  }
+
+  function m4091Clone(value) {
+    return JSON.parse(JSON.stringify(value));
+  }
+
+  function m4091CopyHole(type, pageNum, holeId) {
+    var source = pagesData && pagesData[String(pageNum)] && pagesData[String(pageNum)][holeId];
+    if (!source) {
+      m4091Notify("Hole " + holeId + " has no saved data to copy.", "bad");
+      return;
+    }
+    m4091HoleClipboard = {
+      type: type,
+      pageNum: Number(pageNum),
+      holeId: holeId,
+      data: m4091Clone(source)
+    };
+    m4091Notify("Copied Page " + pageNum + " · Hole " + holeId + ".");
+  }
+
+  function m4091PasteHole(type, pageNum, holeId) {
+    if (!m4091HoleClipboard || m4091HoleClipboard.type !== type) {
+      m4091Notify("Copy a " + (type === "shot" ? "Shot Diagram" : "Drill Log") + " hole first.", "bad");
+      return;
+    }
+    if (document.body && document.body.classList.contains("m405ReadOnly")) {
+      m4091Notify("This document is read only.", "bad");
+      return;
+    }
+    var pageKey = String(pageNum);
+    if (!pagesData[pageKey]) pagesData[pageKey] = {};
+    var existing = pagesData[pageKey][holeId];
+    if (existing && !confirm("Replace the saved data in Page " + pageNum + " · Hole " + holeId + "?")) return;
+    var next = m4091Clone(m4091HoleClipboard.data);
+    next.HoleID = holeId;
+    next.Timestamp = new Date().toLocaleString();
+    pagesData[pageKey][holeId] = next;
+    m4091ActivatePage(type, pageNum);
+    if (type === "shot") {
+      holeData = pagesData[pageKey];
+      if (typeof saveData === "function") saveData();
+    } else {
+      if (typeof invalidatePageCache === "function") invalidatePageCache(pageNum);
+      if (typeof saveState === "function") saveState();
+    }
+    if (typeof markDirty === "function") markDirty();
+    if (typeof window.draw === "function") window.draw();
+    m4091Notify("Pasted into Page " + pageNum + " · Hole " + holeId + ".");
+  }
+
+  function m4091EditHole(type, pageNum, holeId) {
+    if (!holeId) return;
+    m4091ActivatePage(type, pageNum);
+    if (typeof openHole === "function") openHole(holeId);
+  }
+
+  function m4091CloseContextMenu() {
+    var menu = byId("m4091ContextMenu");
+    if (menu && menu.parentNode) menu.parentNode.removeChild(menu);
+    m4091ContextTarget = null;
+  }
+
+  function m4091ContextButton(label, action, options) {
+    options = options || {};
+    var button = document.createElement("button");
+    button.type = "button";
+    button.textContent = label;
+    if (options.primary) button.className = "primary";
+    button.disabled = !!options.disabled;
+    button.addEventListener("click", function (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      var target = m4091ContextTarget;
+      m4091CloseContextMenu();
+      if (!button.disabled && target) action(target);
+    });
+    return button;
+  }
+
+  function m4091ContextDivider() {
+    var divider = document.createElement("div");
+    divider.className = "m4091ContextDivider";
+    return divider;
+  }
+
+  function m4091ShowContextMenu(type, canvas, event) {
+    event.preventDefault();
+    event.stopPropagation();
+    m4091CloseContextMenu();
+    var point = m4091ScreenPoint(event, canvas);
+    var pageNum = m4091PageAtPoint(type, point);
+    var hit = m4091HoleAtPoint(type, point);
+    if (hit && hit.pageNum) pageNum = hit.pageNum;
+    if (pageNum) m4091ActivatePage(type, pageNum);
+    m4091ContextTarget = {
+      type: type,
+      pageNum: Number(pageNum || 0),
+      holeId: hit && hit.holeId || ""
+    };
+
+    var menu = document.createElement("div");
+    menu.id = "m4091ContextMenu";
+    menu.className = "m4091ContextMenu";
+    menu.setAttribute("role", "menu");
+    var title = document.createElement("div");
+    title.className = "m4091ContextTitle";
+    title.textContent = hit ? ("Page " + pageNum + " · Hole " + hit.holeId) : (pageNum ? "Page " + pageNum : "MITHRIL Workspace");
+    menu.appendChild(title);
+
+    var readOnly = document.body && document.body.classList.contains("m405ReadOnly");
+    if (hit) {
+      menu.appendChild(m4091ContextButton("Edit Hole", function (target) {
+        m4091EditHole(target.type, target.pageNum, target.holeId);
+      }, { disabled: readOnly }));
+      menu.appendChild(m4091ContextButton("Copy Hole", function (target) {
+        m4091CopyHole(target.type, target.pageNum, target.holeId);
+      }, { disabled: !pagesData[String(pageNum)] || !pagesData[String(pageNum)][hit.holeId] }));
+      menu.appendChild(m4091ContextButton("Paste Here", function (target) {
+        m4091PasteHole(target.type, target.pageNum, target.holeId);
+      }, { disabled: readOnly || !m4091HoleClipboard || m4091HoleClipboard.type !== type }));
+      menu.appendChild(m4091ContextButton("Open Edit Holes Tool", function (target) {
+        m4091ActivatePage(target.type, target.pageNum);
+        m4091OpenEditTool(target.type);
+      }, { disabled: readOnly }));
+      menu.appendChild(m4091ContextDivider());
+    }
+    if (pageNum) {
+      menu.appendChild(m4091ContextButton(type === "shot" ? "Shot Info" : "Drill Log Info", function (target) {
+        m4091ActivatePage(target.type, target.pageNum);
+        m4091OpenInfo(target.type);
+      }));
+      menu.appendChild(m4091ContextButton("Page Tools", function (target) {
+        m4091ActivatePage(target.type, target.pageNum);
+        m4091OpenPageTools(target.type);
+      }));
+    }
+    menu.appendChild(m4091ContextButton("Cloud Sync", function () {
+      m4091OpenCloud();
+    }, { primary: true }));
+    document.body.appendChild(menu);
+
+    var left = Number(event.clientX || 0);
+    var top = Number(event.clientY || 0);
+    var rect = menu.getBoundingClientRect();
+    left = Math.max(10, Math.min(left, window.innerWidth - rect.width - 10));
+    top = Math.max(10, Math.min(top, window.innerHeight - rect.height - 10));
+    menu.style.left = left + "px";
+    menu.style.top = top + "px";
+  }
+
+  function installM4091WorkspaceInteractions(type, canvas) {
+    if (!canvas || canvas.getAttribute("data-m4091-interactions") === "true") return;
+    canvas.setAttribute("data-m4091-interactions", "true");
+    injectM4091InteractionStyles();
+
+    canvas.addEventListener("contextmenu", function (event) {
+      m4091ShowContextMenu(type, canvas, event);
+    });
+
+    canvas.addEventListener("pointerdown", function (event) {
+      m4091CloseContextMenu();
+      m4091PointerStarts[event.pointerId] = m4091ScreenPoint(event, canvas);
+    }, true);
+
+    canvas.addEventListener("pointercancel", function (event) {
+      delete m4091PointerStarts[event.pointerId];
+    }, true);
+
+    canvas.addEventListener("pointerup", function (event) {
+      var start = m4091PointerStarts[event.pointerId];
+      delete m4091PointerStarts[event.pointerId];
+      if (!start || (event.pointerType === "mouse" && event.button !== 0)) return;
+      var point = m4091ScreenPoint(event, canvas);
+      if (Math.hypot(point.x - start.x, point.y - start.y) > 7) return;
+      var pageNum = m4091PageAtPoint(type, point);
+      if (!pageNum) return;
+      m4091ActivatePage(type, pageNum);
+      if (type === "shot" && !m4091EditorIsOpen(type) && m4091PointOnShotHeader(point, pageNum)) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (typeof event.stopImmediatePropagation === "function") event.stopImmediatePropagation();
+        window.setTimeout(function () { m4091OpenInfo("shot"); }, 0);
+      }
+    }, true);
+
+    document.addEventListener("pointerdown", function (event) {
+      var menu = byId("m4091ContextMenu");
+      if (menu && !menu.contains(event.target)) m4091CloseContextMenu();
+    }, true);
+    document.addEventListener("keydown", function (event) {
+      if (event.key === "Escape") m4091CloseContextMenu();
+    });
+    window.addEventListener("blur", m4091CloseContextMenu);
+    window.addEventListener("resize", m4091CloseContextMenu);
+  }
+
 
   function initialize() {
     window.MithrilM395Calculations = {
@@ -8245,6 +8563,7 @@
     installClosestPolyfill();
     injectStyles();
     injectM406WorkspaceStyles();
+    injectM4091InteractionStyles();
     injectMultiQuickStyles();
     injectGPSStyles();
     updateRuntimeLabels();
@@ -8274,6 +8593,7 @@
       enableWheelZoom(drillCanvas);
       installPhysicalKeyboardEntry("drill");
       installAdaptiveFieldEntry("drill");
+      installM4091WorkspaceInteractions("drill", drillCanvas);
     } else if (shotCanvas) {
       installPrecisionCanvasCoordinates(shotCanvas, "shot");
       updateToolbar(true);
@@ -8290,6 +8610,7 @@
       installPhysicalKeyboardEntry("shot");
       installAdaptiveFieldEntry("shot");
       installShotTimingSequence(shotCanvas);
+      installM4091WorkspaceInteractions("shot", shotCanvas);
     } else if (byId("shotFrame")) {
       installShotFrameBridge();
     }

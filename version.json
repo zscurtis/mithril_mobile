@@ -1,13 +1,14 @@
 {
-  "version": "m40.9.0",
-  "title": "Landing and Cloud Presentation",
+  "version": "m40.9.1",
+  "title": "Workspace Interaction Shortcuts",
   "released": "2026-07-30",
   "minimumOfflineVersion": "m39.6.3",
   "notes": [
-    "Adds the MITHRIL Mobile creator and copyright notice to the landing page.",
-    "Shows loaded holes, excluding dirt and bad holes, in Recent cloud documents.",
-    "Improves the Load cloud revision confirmation with stronger contrast, clearer wording, and a readable primary action.",
-    "Does not change Firebase rules, document identity, revision blocking, recovery, calculations, or permissions.",
-    "Preserves the m40.8.3 cloud-load status fix and m40.8.2 workspace header correction."
+    "Adds a MITHRIL right-click menu on Drill Log and Shot Diagram canvases while preserving normal browser copy and paste inside text fields.",
+    "Provides Edit Hole, Copy Hole, Paste Here, Edit Holes, document info, Page Tools, and Cloud Sync actions based on where the user right-clicks.",
+    "Adds a Sync shortcut to the workspace header without changing cloud revision or conflict behavior.",
+    "Makes any clicked sheet active, even when the click is outside the hole grid.",
+    "Opens Shot Info when the date, Shot ID, job, or blaster area is clicked.",
+    "Preserves all m40.9.0 landing and cloud presentation changes."
   ]
 }
