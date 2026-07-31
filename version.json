@@ -1,13 +1,15 @@
 {
-  "version": "m40.9.2.1",
-  "title": "iPad Clipped Controls Repair",
+  "version": "m40.9.2.2",
+  "title": "Inferred Timing Range",
   "released": "2026-07-31",
   "minimumOfflineVersion": "m39.6.3",
   "notes": [
-    "Prevents the portrait iPad Hole Entry action row from clipping Bad hole and Wet hole controls while the keypad is open.",
-    "Adds Top to Bottom and Bottom to Top to Shot Diagram Timing Sequence.",
-    "Sorts selected timing fills by column for vertical directions and by row for horizontal directions.",
-    "Makes desktop Shift-click fill a complete column when a vertical direction is active.",
+    "Removes the manual Timing Fill direction selector.",
+    "Uses the first tapped hole as the origin and the second tapped hole as the endpoint.",
+    "Infers left, right, down, or up from the two taps and fills only between them.",
+    "Rejects diagonal endpoints that do not share the origin hole's row or column.",
+    "Skips Dirt and Bad holes inside a valid timing range.",
+    "Preserves the portrait iPad Hole Entry clipped-controls repair.",
     "Adds Page Order / Renumber under Shot Diagram Page Tools.",
     "Renumbers pages in report order while preserving every sheet's canvas position.",
     "Does not change Firebase rules, cloud revision handling, calculations, imports, or document formats."

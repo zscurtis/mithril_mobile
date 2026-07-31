@@ -1,8 +1,8 @@
 (function () {
   "use strict";
 
-  var RELEASE_VERSION = "m40.9.2.1";
-  var RELEASE_LABEL = "iPad clipped controls repair";
+  var RELEASE_VERSION = "m40.9.2.2";
+  var RELEASE_LABEL = "inferred timing range";
   var THEME_STORAGE_KEY = "mithrilCanvasThemeV1";
   var THEME_CLASS_PREFIX = "m395-theme-";
   var THEME_OPTIONS = [
@@ -201,7 +201,7 @@
         var script = childDocument.createElement("script");
         script.id = "mithrilMenuM395ChildLoader";
         script.setAttribute("data-mithril-release", RELEASE_VERSION);
-        script.src = "./mithril-menu-m397.js?v=40.9.2.1-frame";
+        script.src = "./mithril-menu-m397.js?v=40.9.2.2-frame";
         (childDocument.head || childDocument.documentElement).appendChild(script);
         return true;
       } catch (error) {
@@ -5055,6 +5055,7 @@
         (window.requestAnimationFrame || function (callback) { return window.setTimeout(callback, 16); })(function () {
           shotEditOverlayFramePending = false;
           drawShotEditOverlay();
+          if (typeof m397DrawTimingOriginOverlay === "function") m397DrawTimingOriginOverlay();
         });
       }
       return result;
@@ -7571,6 +7572,7 @@
   var m397TimingUndoHistory = [];
   var m397TimingPointerStarts = {};
   var m397TimingTouchStart = null;
+  var m397TimingOrigin = null;
   var m397TimingModalPurpose = "start";
   var m397TimingQuickWasEnabled = false;
 
@@ -7650,8 +7652,10 @@
   }
 
   function m397RestoreTimingState(state) {
+    m397TimingOrigin = null;
     m397TimingState = m397NormalizeTimingState(state || {});
     m397PersistTimingState();
+    try { if (typeof draw === "function") draw(); } catch (error) {}
   }
 
   function m397FormatTiming(value) {
@@ -7684,6 +7688,40 @@
   function m397RecordAt(location) {
     var page = pagesData && pagesData[String(location.pageNum)];
     return page ? page[String(location.holeId)] : null;
+  }
+
+  function m397TimingRangeDetails(origin, endpoint) {
+    var originGlobal = shotLocationToGlobal(origin.pageNum, origin.holeId);
+    var endpointGlobal = shotLocationToGlobal(endpoint.pageNum, endpoint.holeId);
+    var sameRow = originGlobal.row === endpointGlobal.row;
+    var sameColumn = originGlobal.col === endpointGlobal.col;
+    if (!sameRow && !sameColumn) {
+      return {
+        valid: false,
+        message: "Timing fill must remain within the origin hole's row or column."
+      };
+    }
+
+    var rowStep = sameColumn ? (endpointGlobal.row >= originGlobal.row ? 1 : -1) : 0;
+    var columnStep = sameRow ? (endpointGlobal.col >= originGlobal.col ? 1 : -1) : 0;
+    var direction = sameRow ? (columnStep < 0 ? "rtl" : "ltr") : (rowStep < 0 ? "btt" : "ttb");
+    var distance = Math.max(
+      Math.abs(endpointGlobal.row - originGlobal.row),
+      Math.abs(endpointGlobal.col - originGlobal.col)
+    );
+    var locations = [];
+
+    for (var step = 0; step <= distance; step += 1) {
+      var globalRow = originGlobal.row + rowStep * step;
+      var globalColumn = originGlobal.col + columnStep * step;
+      var grid = shotGlobalToGrid(globalRow, globalColumn);
+      var pageNum = shotFindPageAtGrid(grid.gx, grid.gy);
+      if (pageNum === null) continue;
+      var location = { pageNum: Number(pageNum), holeId: String(holeID(grid.row, grid.col)) };
+      if (m397RecordAt(location)) locations.push(location);
+    }
+
+    return { valid: true, direction: direction, locations: locations };
   }
 
   function m397TimingSortLocations(locations, direction) {
@@ -7775,8 +7813,9 @@
     if (hint) hint.textContent = message || "";
   }
 
-  function m397ApplyTimingLocations(locations, label, groupFill, useShotUndo) {
-    var ordered = m397TimingSortLocations(locations || [], m397TimingState.direction);
+  function m397ApplyTimingLocations(locations, label, groupFill, useShotUndo, direction) {
+    var fillDirection = m397NormalizeDirection(direction || m397TimingState.direction);
+    var ordered = m397TimingSortLocations(locations || [], fillDirection);
     if (!ordered.length) {
       m397SetTimingHint("No eligible saved holes were found. Dirt and bad holes are skipped.");
       if (typeof shotEditSetHint === "function" && typeof shotEditMode !== "undefined" && shotEditMode) shotEditSetHint("No eligible saved holes were found for timing.");
@@ -7850,6 +7889,59 @@
     m397ApplyTimingLocations([hit], "timed " + m397TimingLocationLabel(hit), false, false);
   }
 
+  function m397ClearTimingOrigin(message) {
+    m397TimingOrigin = null;
+    if (message) m397SetTimingHint(message);
+    try { if (typeof draw === "function") draw(); } catch (error) {}
+    m397UpdateTimingUI();
+  }
+
+  function m397SetTimingOrigin(hit) {
+    var record = m397RecordAt(hit);
+    if (!record) {
+      m397SetTimingHint("Hole " + m397TimingLocationLabel(hit) + " has no saved data. Choose a saved loaded hole as the origin.");
+      return false;
+    }
+    if (!m397TimingRecordEligible(record)) {
+      m397SetTimingHint("Hole " + m397TimingLocationLabel(hit) + " is marked dirt or bad. Choose a loaded hole as the origin.");
+      return false;
+    }
+    m397TimingOrigin = { pageNum: Number(hit.pageNum), holeId: String(hit.holeId) };
+    m397SetTimingHint("Origin " + m397TimingLocationLabel(m397TimingOrigin) + " selected. Tap the ending hole in the same row or column.");
+    try { if (typeof draw === "function") draw(); } catch (error) {}
+    m397UpdateTimingUI();
+    return true;
+  }
+
+  function m397HandleTimingTap(hit) {
+    if (!m397TimingOrigin) {
+      m397SetTimingOrigin(hit);
+      return;
+    }
+
+    var endpointRecord = m397RecordAt(hit);
+    if (!endpointRecord) {
+      m397SetTimingHint("Hole " + m397TimingLocationLabel(hit) + " has no saved data. Choose a saved ending hole.");
+      return;
+    }
+
+    var origin = { pageNum: Number(m397TimingOrigin.pageNum), holeId: String(m397TimingOrigin.holeId) };
+    var range = m397TimingRangeDetails(origin, hit);
+    if (!range.valid) {
+      m397SetTimingHint(range.message + " Origin " + m397TimingLocationLabel(origin) + " remains selected.");
+      alert(range.message);
+      return;
+    }
+
+    m397TimingState.direction = range.direction;
+    var label = "filled " + m397TimingLocationLabel(origin) + " to " + m397TimingLocationLabel(hit);
+    var result = m397ApplyTimingLocations(range.locations, label, true, false, range.direction);
+    m397TimingOrigin = null;
+    try { if (typeof draw === "function") draw(); } catch (error) {}
+    m397UpdateTimingUI();
+    return result;
+  }
+
   function m397FillTimingRow(hit) {
     var locations = m397TimingRowLocations(hit);
     if (!locations.length) {
@@ -7883,6 +7975,24 @@
       return;
     }
     m397ApplyTimingLocations(locations, "fill timing sequence", true, true);
+  }
+
+  function m397DrawTimingOriginOverlay() {
+    if (!m397TimingState || !m397TimingState.active || !m397TimingOrigin || !ctx || !view) return;
+    var pos = parseHoleID(m397TimingOrigin.holeId);
+    if (!pos) return;
+    var rect = holeRect(pos.row, pos.col);
+    var page = pageOrigin(m397TimingOrigin.pageNum);
+    ctx.save();
+    ctx.translate(view.x, view.y);
+    ctx.scale(view.scale, view.scale);
+    ctx.translate(page.x, page.y);
+    ctx.fillStyle = "rgba(255,193,7,.24)";
+    ctx.strokeStyle = "#d00000";
+    ctx.lineWidth = Math.max(4, 6 / Math.max(.25, view.scale));
+    ctx.fillRect(rect.x + 2, rect.y + 2, rect.w - 4, rect.h - 4);
+    ctx.strokeRect(rect.x + 3, rect.y + 3, rect.w - 6, rect.h - 6);
+    ctx.restore();
   }
 
   function m397EnsureTimingStyles() {
@@ -7920,14 +8030,13 @@
     modal.innerHTML = [
       '<div class="box">',
       '  <div class="boxHead"><span id="m397TimingModalTitle">Timing Sequence</span><button type="button" id="m397TimingClose">Close</button></div>',
-      '  <p class="m397TimingHelp">Set the first time for this row and the interval. Example: row start 42 with interval 25 produces 42, 67, 92, 117…</p>',
+      '  <p class="m397TimingHelp">Set the first timing value and interval. Then tap the origin hole and the ending hole. MITHRIL will fill in the direction you tap.</p>',
       '  <div class="formGrid">',
-      '    <label>Row Starting Time (ms)<input id="m397TimingStart" type="number" min="0" step="1" inputmode="decimal"></label>',
+      '    <label>Starting Time (ms)<input id="m397TimingStart" type="number" min="0" step="1" inputmode="decimal"></label>',
       '    <label>Interval (ms)<input id="m397TimingInterval" type="number" min="0.001" step="1" inputmode="decimal"></label>',
-      '    <label>Fill Direction<select id="m397TimingDirection"><option value="ltr">Left to Right</option><option value="rtl">Right to Left</option><option value="ttb">Top to Bottom</option><option value="btt">Bottom to Top</option></select></label>',
       '    <label>Existing Timing<select id="m397TimingOverwrite"><option value="blank">Keep existing timing</option><option value="overwrite">Overwrite existing timing</option></select></label>',
       '  </div>',
-      '  <div class="buttonGrid"><button type="button" class="primary" id="m397TimingActivate">Set Row Start &amp; Activate</button><button type="button" id="m397TimingCancel">Cancel</button></div>',
+      '  <div class="buttonGrid"><button type="button" class="primary" id="m397TimingActivate">Activate Timing Fill</button><button type="button" id="m397TimingCancel">Cancel</button></div>',
       '</div>'
     ].join("");
     document.body.appendChild(modal);
@@ -7941,10 +8050,9 @@
     m397EnsureTimingModal();
     m397TimingModalPurpose = purpose || "start";
     var startValue = m397TimingModalPurpose === "row" ? m397TimingState.next : m397TimingState.start;
-    byId("m397TimingModalTitle").textContent = m397TimingModalPurpose === "row" ? "Set Next Row Start" : "Timing Sequence";
+    byId("m397TimingModalTitle").textContent = m397TimingModalPurpose === "row" ? "Set Next Starting Time" : "Timing Sequence";
     byId("m397TimingStart").value = m397FormatTiming(startValue);
     byId("m397TimingInterval").value = m397FormatTiming(m397TimingState.interval);
-    byId("m397TimingDirection").value = m397TimingState.direction;
     byId("m397TimingOverwrite").value = m397TimingState.overwrite;
     byId("m397TimingModal").classList.add("show");
     window.setTimeout(function () {
@@ -7990,20 +8098,23 @@
     m397TimingState.start = start;
     m397TimingState.next = start;
     m397TimingState.interval = interval;
-    m397TimingState.direction = m397NormalizeDirection(byId("m397TimingDirection").value);
     m397TimingState.overwrite = byId("m397TimingOverwrite").value === "overwrite" ? "overwrite" : "blank";
     m397TimingState.active = true;
+    m397TimingOrigin = null;
     m397PersistTimingState();
     m397CloseTimingModal();
-    m397SetTimingHint("Tap or click saved holes to assign timing. Shift-click fills a complete saved row or column on desktop.");
+    m397SetTimingHint("Tap the origin hole, then tap the ending hole in the same row or column.");
+    try { if (typeof draw === "function") draw(); } catch (error) {}
     m397UpdateTimingUI();
   }
 
   function m397FinishTimingMode() {
     m397TimingState.active = false;
+    m397TimingOrigin = null;
     m397PersistTimingState();
     m397ResumeQuickFill();
     m397SetTimingHint("");
+    try { if (typeof draw === "function") draw(); } catch (error) {}
   }
 
   function m397AdjustNext(multiplier) {
@@ -8026,21 +8137,21 @@
     bar.id = "m397TimingBar";
     bar.className = "m397TimingBar";
     bar.innerHTML = [
-      '<div class="m397TimingHead"><div><div class="m397TimingTitle">TIMING FILL ACTIVE</div><div class="m397TimingStatus">Click = one hole • Shift-click = direction row / column</div></div><button type="button" class="m397TimingDone" id="m397TimingDone">Done</button></div>',
+      '<div class="m397TimingHead"><div><div class="m397TimingTitle">TIMING FILL ACTIVE</div><div class="m397TimingStatus">Tap origin → tap endpoint in the same row or column</div></div><button type="button" class="m397TimingDone" id="m397TimingDone">Done</button></div>',
       '<div class="m397TimingStats">',
       '  <div class="m397TimingStat"><b>Next</b><span id="m397TimingNextValue">0 ms</span></div>',
       '  <div class="m397TimingStat"><b>Interval</b><span id="m397TimingIntervalValue">25 ms</span></div>',
-      '  <div class="m397TimingStat"><b>Direction</b><span id="m397TimingDirectionValue">L → R</span></div>',
+      '  <div class="m397TimingStat"><b>Origin</b><span id="m397TimingOriginValue">Not set</span></div>',
       '</div>',
       '<div class="m397TimingActions">',
-      '  <button type="button" id="m397TimingSetRow">Set Row Start</button>',
+      '  <button type="button" id="m397TimingSetRow">Set Starting Time</button>',
       '  <button type="button" id="m397TimingBack">− Interval</button>',
       '  <button type="button" id="m397TimingAdvance">+ Interval</button>',
       '  <button type="button" id="m397TimingReset">Reset to Start</button>',
       '  <button type="button" id="m397TimingUndo">Undo Timing</button>',
-      '  <button type="button" id="m397TimingEditHoles">Select Holes</button>',
+      '  <button type="button" id="m397TimingClearOrigin">Clear Origin</button>',
       '</div>',
-      '<div id="m397TimingHint" class="m397TimingHint">Tap or click saved holes to assign the next timing value.</div>'
+      '<div id="m397TimingHint" class="m397TimingHint">Tap the origin hole, then tap the ending hole.</div>'
     ].join("");
     document.body.appendChild(bar);
     byId("m397TimingDone").addEventListener("click", m397FinishTimingMode);
@@ -8049,7 +8160,7 @@
     byId("m397TimingAdvance").addEventListener("click", function () { m397AdjustNext(1); });
     byId("m397TimingReset").addEventListener("click", m397ResetNextToStart);
     byId("m397TimingUndo").addEventListener("click", m397UndoLastTiming);
-    byId("m397TimingEditHoles").addEventListener("click", function () { if (typeof startShotEditMode === "function") startShotEditMode(); });
+    byId("m397TimingClearOrigin").addEventListener("click", function () { m397ClearTimingOrigin("Origin cleared. Tap a new origin hole."); });
     return bar;
   }
 
@@ -8065,12 +8176,14 @@
     if (bar) bar.classList.toggle("show", !!m397TimingState.active && !editing);
     var next = byId("m397TimingNextValue");
     var interval = byId("m397TimingIntervalValue");
-    var direction = byId("m397TimingDirectionValue");
+    var origin = byId("m397TimingOriginValue");
     var undo = byId("m397TimingUndo");
+    var clearOrigin = byId("m397TimingClearOrigin");
     if (next) next.textContent = m397FormatTiming(m397TimingState.next) + " ms";
     if (interval) interval.textContent = m397FormatTiming(m397TimingState.interval) + " ms";
-    if (direction) direction.textContent = m397DirectionLabel(m397TimingState.direction);
+    if (origin) origin.textContent = m397TimingOrigin ? m397TimingLocationLabel(m397TimingOrigin) : "Not set";
     if (undo) undo.disabled = !m397TimingUndoHistory.length;
+    if (clearOrigin) clearOrigin.disabled = !m397TimingOrigin;
     m397UpdateTimingMenuButton();
     m397RefreshTimingEditButtons();
   }
@@ -8177,8 +8290,7 @@
         try { if (typeof pointerState !== "undefined" && pointerState) pointerState.moved = true; } catch (error) {}
         var hit = m397CanvasHit(event, canvas);
         if (!hit) { m397SetTimingHint("Tap inside a saved hole cell."); return; }
-        if (event.shiftKey) m397FillTimingDirectionGroup(hit);
-        else m397FillSingleTiming(hit);
+        m397HandleTimingTap(hit);
       }, true);
       canvas.addEventListener("pointercancel", function (event) { delete m397TimingPointerStarts[String(event.pointerId)]; }, true);
     } else {
@@ -8202,7 +8314,7 @@
         if (typeof event.stopImmediatePropagation === "function") event.stopImmediatePropagation();
         var hit = m397CanvasHit(event, canvas);
         if (!hit) { m397SetTimingHint("Tap inside a saved hole cell."); return; }
-        m397FillSingleTiming(hit);
+        m397HandleTimingTap(hit);
       }, true);
       canvas.addEventListener("touchcancel", function () { m397TimingTouchStart = null; }, true);
     }
@@ -8254,6 +8366,7 @@
       window.normalizeLoadedHeaderData = function (payload) {
         var normalized = originalNormalizeHeader.apply(this, arguments) || {};
         var source = payload && (payload.headerData || payload.shotInfo || payload.header) || {};
+        m397TimingOrigin = null;
         m397TimingState = m397NormalizeTimingState(source.TimingSequence || source.timingSequence || payload && payload.TimingSequence || m397TimingState || {});
         normalized.TimingSequence = m397BackupTimingState();
         m397PersistTimingState();
@@ -8270,7 +8383,6 @@
     m397EnsureTimingModal();
     m397EnsureTimingBar();
     m397AugmentShotMenu();
-    m397AugmentShotEditBar();
     m397InstallShotEditTimingBridge();
     m397InstallTimingCanvasInteraction(canvas);
     m397InstallTimingKeyboardShortcuts();
@@ -8283,6 +8395,9 @@
     sequenceValues: m397SequenceValues,
     formatTiming: m397FormatTiming,
     sortLocations: m397TimingSortLocations,
+    rangeDetails: m397TimingRangeDetails,
+    handleTap: m397HandleTimingTap,
+    getOrigin: function () { return m397TimingOrigin ? deepClone(m397TimingOrigin) : null; },
     restoreState: m397RestoreTimingState,
     fillSelection: m397FillTimingSelection,
     undo: m397UndoLastTiming
