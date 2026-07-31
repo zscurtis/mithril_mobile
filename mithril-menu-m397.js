@@ -1,8 +1,8 @@
 (function () {
   "use strict";
 
-  var RELEASE_VERSION = "m40.9.2";
-  var RELEASE_LABEL = "timing directions and page order";
+  var RELEASE_VERSION = "m40.9.2.1";
+  var RELEASE_LABEL = "iPad clipped controls repair";
   var THEME_STORAGE_KEY = "mithrilCanvasThemeV1";
   var THEME_CLASS_PREFIX = "m395-theme-";
   var THEME_OPTIONS = [
@@ -201,7 +201,7 @@
         var script = childDocument.createElement("script");
         script.id = "mithrilMenuM395ChildLoader";
         script.setAttribute("data-mithril-release", RELEASE_VERSION);
-        script.src = "./mithril-menu-m397.js?v=40.9.2-frame";
+        script.src = "./mithril-menu-m397.js?v=40.9.2.1-frame";
         (childDocument.head || childDocument.documentElement).appendChild(script);
         return true;
       } catch (error) {
@@ -7486,7 +7486,7 @@
       ".m408FieldActions button{min-height:48px}.m408FieldActions .m408SaveNext{background:var(--m408-primary)!important;border-color:var(--m408-primary)!important;color:#fff!important}.m408FieldActions .m408SaveOnly{background:#eef3f8!important;border-color:#9aa8b7!important;color:#243247!important}",
       "#numberPad.show,#loadKeypad.show{overscroll-behavior:contain;touch-action:manipulation}",
       "#numberPad .padTitle,#loadKeypad .loadKeypadTitle{color:#526277;font-size:11px;text-transform:uppercase;letter-spacing:.06em}",
-      "@media (pointer:coarse) and (orientation:portrait){#holeBox.padOpen .m408FieldActions,#holeEditorBox.keypadOpen .m408FieldActions{bottom:330px}}",
+      "@media (pointer:coarse) and (orientation:portrait){#holeBox.padOpen .m408FieldActions,#holeEditorBox.keypadOpen .m408FieldActions{position:static!important;bottom:auto!important}}",
       "@media (pointer:coarse) and (orientation:landscape) and (min-width:700px){",
       " #numberPad.show,#loadKeypad.show{left:auto!important;right:8px!important;top:max(74px,env(safe-area-inset-top))!important;bottom:8px!important;width:min(360px,42vw)!important;overflow:auto!important}",
       " #holeBox.padOpen,#holeEditorBox.keypadOpen{width:calc(100vw - 390px)!important;max-width:760px!important;margin-left:12px!important;margin-right:auto!important;padding-bottom:14px!important}",

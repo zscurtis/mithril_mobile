@@ -1,9 +1,10 @@
 {
-  "version": "m40.9.2",
-  "title": "Timing Directions and Page Order",
-  "released": "2026-07-30",
+  "version": "m40.9.2.1",
+  "title": "iPad Clipped Controls Repair",
+  "released": "2026-07-31",
   "minimumOfflineVersion": "m39.6.3",
   "notes": [
+    "Prevents the portrait iPad Hole Entry action row from clipping Bad hole and Wet hole controls while the keypad is open.",
     "Adds Top to Bottom and Bottom to Top to Shot Diagram Timing Sequence.",
     "Sorts selected timing fills by column for vertical directions and by row for horizontal directions.",
     "Makes desktop Shift-click fill a complete column when a vertical direction is active.",
