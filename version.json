@@ -1,17 +1,17 @@
 {
-  "version": "m40.9.2.2",
-  "title": "Inferred Timing Range",
-  "released": "2026-07-31",
+  "version": "m40.9.3.1",
+  "title": "Stemming and Dink Correction",
+  "released": "2026-08-01",
   "minimumOfflineVersion": "m39.6.3",
   "notes": [
-    "Removes the manual Timing Fill direction selector.",
-    "Uses the first tapped hole as the origin and the second tapped hole as the endpoint.",
-    "Infers left, right, down, or up from the two taps and fills only between them.",
-    "Rejects diagonal endpoints that do not share the origin hole's row or column.",
-    "Skips Dirt and Bad holes inside a valid timing range.",
-    "Preserves the portrait iPad Hole Entry clipped-controls repair.",
-    "Adds Page Order / Renumber under Shot Diagram Page Tools.",
-    "Renumbers pages in report order while preserving every sheet's canvas position.",
-    "Does not change Firebase rules, cloud revision handling, calculations, imports, or document formats."
+    "Corrects the import calculator default to 7 ft minimum stemming and a 1 ft hold into rock.",
+    "Calculates stemming as the greater of the minimum or overburden plus the rock hold.",
+    "Calculates Primary Load as drilled depth minus stemming and stores the result as ANFO footage with an A designator.",
+    "Treats each manually entered dink as 3 ft and recalculates ANFO as depth minus stemming minus dink footage.",
+    "Supports dink-only Secondary Load entries such as 1D or 2D without repeatedly subtracting from an earlier ANFO value.",
+    "Previews loaded holes, total ANFO footage, Dirt/Bad skips, and holes requiring review before import.",
+    "Leaves timing blank and never calculates Dirt or Bad holes.",
+    "Uses the existing Drill Log import undo snapshot to restore the prior Shot Diagram.",
+    "Preserves inferred two-tap timing, Page Order / Renumber, iPad entry layout, right-click shortcuts, and cloud sync behavior."
   ]
 }

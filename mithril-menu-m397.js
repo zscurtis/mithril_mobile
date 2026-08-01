@@ -1,8 +1,8 @@
 (function () {
   "use strict";
 
-  var RELEASE_VERSION = "m40.9.2.2";
-  var RELEASE_LABEL = "inferred timing range";
+  var RELEASE_VERSION = "m40.9.3.1";
+  var RELEASE_LABEL = "stemming and dink correction";
   var THEME_STORAGE_KEY = "mithrilCanvasThemeV1";
   var THEME_CLASS_PREFIX = "m395-theme-";
   var THEME_OPTIONS = [
@@ -201,7 +201,7 @@
         var script = childDocument.createElement("script");
         script.id = "mithrilMenuM395ChildLoader";
         script.setAttribute("data-mithril-release", RELEASE_VERSION);
-        script.src = "./mithril-menu-m397.js?v=40.9.2.2-frame";
+        script.src = "./mithril-menu-m397.js?v=40.9.3.1-frame";
         (childDocument.head || childDocument.documentElement).appendChild(script);
         return true;
       } catch (error) {
@@ -8889,6 +8889,186 @@
     window.addEventListener("resize", m4091CloseContextMenu);
   }
 
+  // ---------------------------------------------------------------------------
+  // m40.9.3.1 dink-aware ANFO footage
+  // ---------------------------------------------------------------------------
+  var M40931_DINK_LENGTH_FT = 3;
+  var m40931PreviousSecondaryLoad = "";
+
+  function m40931NonnegativeFootage(value, allowZero) {
+    var raw = String(value == null ? "" : value).trim();
+    if (!/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(raw)) return null;
+    var number = Number(raw);
+    if (!isFinite(number) || number < 0 || (!allowZero && number === 0)) return null;
+    return number;
+  }
+
+  function m40931FormatFootage(value) {
+    var rounded = Math.round(Number(value) * 100) / 100;
+    if (!isFinite(rounded)) return "";
+    return String(rounded).replace(/\.0+$/, "").replace(/(\.\d*?)0+$/, "$1");
+  }
+
+  function m40931ParseDinkOnlyLoad(value) {
+    var raw = String(value == null ? "" : value).trim().toUpperCase();
+    if (!raw) return { valid: true, count: 0 };
+    var pattern = /(\d+)D/g;
+    var count = 0;
+    var match;
+    var lastEnd = 0;
+    while ((match = pattern.exec(raw)) !== null) {
+      if (!/^[\s,+]*$/.test(raw.slice(lastEnd, match.index))) return { valid: false, count: 0 };
+      var amount = Number(match[1]);
+      if (!isFinite(amount) || amount <= 0 || Math.floor(amount) !== amount) return { valid: false, count: 0 };
+      count += amount;
+      lastEnd = match.index + match[0].length;
+    }
+    if (!count || !/^[\s,+]*$/.test(raw.slice(lastEnd))) return { valid: false, count: 0 };
+    return { valid: true, count: count };
+  }
+
+  function m40931AnfoOnly(value) {
+    var raw = String(value == null ? "" : value).trim();
+    return !raw || /^(?:\d+(?:\.\d*)?|\.\d+)A$/i.test(raw);
+  }
+
+  function m40931ApplyDinkAdjustment(row, previousSecondaryLoad) {
+    row = row || {};
+    var currentDinks = m40931ParseDinkOnlyLoad(row.SecondaryLoad);
+    var previousDinks = m40931ParseDinkOnlyLoad(previousSecondaryLoad);
+    if (!currentDinks.valid) return { status: "unsupported-secondary", row: row, dinkCount: 0 };
+    if (currentDinks.count === 0 && (!previousDinks.valid || previousDinks.count === 0)) {
+      return { status: "inactive", row: row, dinkCount: 0 };
+    }
+    if (!m40931AnfoOnly(row.PrimaryLoad)) {
+      return { status: "non-anfo-primary", row: row, dinkCount: currentDinks.count };
+    }
+
+    var depth = m40931NonnegativeFootage(row.Depth, false);
+    var stemming = m40931NonnegativeFootage(row.Stemming, true);
+    if (depth === null || stemming === null || stemming > depth) {
+      return { status: "missing-footage", row: row, dinkCount: currentDinks.count };
+    }
+
+    var dinkFeet = currentDinks.count * M40931_DINK_LENGTH_FT;
+    var anfoFeet = depth - stemming - dinkFeet;
+    if (anfoFeet < -0.0000001) {
+      row.PrimaryLoad = "";
+      return { status: "no-room", row: row, dinkCount: currentDinks.count, dinkFeet: dinkFeet, availableFeet: depth - stemming };
+    }
+    anfoFeet = Math.max(0, anfoFeet);
+    row.PrimaryLoad = anfoFeet > 0 ? m40931FormatFootage(anfoFeet) + "A" : "";
+    return { status: "adjusted", row: row, dinkCount: currentDinks.count, dinkFeet: dinkFeet, anfoFeet: anfoFeet };
+  }
+
+  function m40931EnsureDinkNote() {
+    var existing = byId("m40931DinkNote");
+    if (existing) return existing;
+    var secondary = byId("secondaryLoad");
+    var label = secondary && secondary.closest ? secondary.closest("label") : null;
+    if (!label || !label.parentNode) return null;
+    var note = document.createElement("div");
+    note.id = "m40931DinkNote";
+    note.className = "m40931DinkNote";
+    note.textContent = "Dink rule: 1D reserves 3 ft. ANFO recalculates from Depth − Stemming − dink footage.";
+    label.parentNode.insertBefore(note, label.nextSibling);
+    return note;
+  }
+
+  function m40931PaintDinkNote(result) {
+    var note = m40931EnsureDinkNote();
+    if (!note) return;
+    note.classList.remove("warning", "success");
+    if (!result || result.status === "inactive") {
+      note.textContent = "Dink rule: 1D reserves 3 ft. ANFO recalculates from Depth − Stemming − dink footage.";
+      return;
+    }
+    if (result.status === "adjusted") {
+      note.classList.add("success");
+      note.textContent = result.dinkCount ?
+        result.dinkCount + "D reserves " + m40931FormatFootage(result.dinkFeet) + " ft; Primary Load recalculated to " + (result.row.PrimaryLoad || "no ANFO") + "." :
+        "Dinks removed; Primary Load restored to " + (result.row.PrimaryLoad || "no ANFO") + ".";
+      return;
+    }
+    note.classList.add("warning");
+    if (result.status === "no-room") {
+      note.textContent = result.dinkCount + "D requires " + m40931FormatFootage(result.dinkFeet) + " ft, but only " + m40931FormatFootage(result.availableFeet) + " ft is available below stemming.";
+    } else if (result.status === "non-anfo-primary") {
+      note.textContent = "ANFO was not changed because Primary Load is not blank or ANFO footage ending in A.";
+    } else if (result.status === "unsupported-secondary") {
+      note.textContent = "Automatic ANFO adjustment requires a dink-only Secondary Load such as 1D or 2D.";
+    } else {
+      note.textContent = "Enter valid Depth and Stemming before MITHRIL can subtract dink footage from ANFO.";
+    }
+  }
+
+  function m40931RefreshDinkAnfo() {
+    var depth = byId("depth");
+    var stemming = byId("stemming");
+    var primary = byId("primaryLoad");
+    var secondary = byId("secondaryLoad");
+    if (!depth || !stemming || !primary || !secondary) return null;
+    var row = {
+      Depth: depth.value,
+      Stemming: stemming.value,
+      PrimaryLoad: primary.value,
+      SecondaryLoad: secondary.value
+    };
+    var result = m40931ApplyDinkAdjustment(row, m40931PreviousSecondaryLoad);
+    if (result.status === "adjusted" || result.status === "no-room") primary.value = result.row.PrimaryLoad;
+    m40931PaintDinkNote(result);
+    return result;
+  }
+
+  function m40931InjectDinkStyles() {
+    if (byId("mithrilDinkCalculatorM40931Styles")) return;
+    var style = document.createElement("style");
+    style.id = "mithrilDinkCalculatorM40931Styles";
+    style.textContent = [
+      ".m40931DinkNote{grid-column:1/-1;margin:-2px 0 3px;padding:7px 9px;border:1px solid #9eb1c7;border-radius:8px;background:#f4f7fb;color:#3b4f67;font-size:12px;font-weight:800;line-height:1.35}",
+      ".m40931DinkNote.success{border-color:#75a887;background:#edf8f0;color:#245d34}",
+      ".m40931DinkNote.warning{border-color:#cf9b48;background:#fff7e7;color:#744b08}"
+    ].join("");
+    document.head.appendChild(style);
+  }
+
+  function installDinkAnfoCalculator() {
+    if (window.__mithrilM40931DinkCalculator) return;
+    var secondary = byId("secondaryLoad");
+    if (!secondary || typeof window.readHoleForm !== "function") return;
+    window.__mithrilM40931DinkCalculator = true;
+    m40931InjectDinkStyles();
+    m40931EnsureDinkNote();
+
+    var originalOpenHole = window.openHole;
+    if (typeof originalOpenHole === "function") {
+      window.openHole = function (holeId) {
+        try { m40931PreviousSecondaryLoad = String(holeData && holeData[holeId] && holeData[holeId].SecondaryLoad || ""); }
+        catch (error) { m40931PreviousSecondaryLoad = ""; }
+        var result = originalOpenHole.apply(this, arguments);
+        window.setTimeout(m40931RefreshDinkAnfo, 0);
+        return result;
+      };
+    }
+
+    var originalReadHoleForm = window.readHoleForm;
+    window.readHoleForm = function () {
+      var row = originalReadHoleForm.apply(this, arguments) || {};
+      return m40931ApplyDinkAdjustment(row, m40931PreviousSecondaryLoad).row;
+    };
+
+    ["depth", "stemming", "secondaryLoad"].forEach(function (id) {
+      var field = byId(id);
+      if (field) field.addEventListener("input", m40931RefreshDinkAnfo);
+    });
+  }
+
+  window.MithrilM40931DinkCalculator = {
+    dinkLengthFeet: M40931_DINK_LENGTH_FT,
+    parseDinkOnlyLoad: m40931ParseDinkOnlyLoad,
+    apply: m40931ApplyDinkAdjustment
+  };
+
 
   function initialize() {
     window.MithrilM395Calculations = {
@@ -8947,6 +9127,7 @@
       enableWheelZoom(shotCanvas);
       installPhysicalKeyboardEntry("shot");
       installAdaptiveFieldEntry("shot");
+      installDinkAnfoCalculator();
       installShotTimingSequence(shotCanvas);
       installM4091WorkspaceInteractions("shot", shotCanvas);
     } else if (byId("shotFrame")) {

@@ -1,9 +1,9 @@
 (function () {
   "use strict";
 
-  var RELEASE_VERSION = "m40.9.2.2";
+  var RELEASE_VERSION = "m40.9.3.1";
   var CHILD_SCRIPT_ID = "mithrilCoreM400ChildLoader";
-  var CHILD_SCRIPT_SRC = "./mithril-core-m400.js?rev=40922-frame";
+  var CHILD_SCRIPT_SRC = "./mithril-core-m400.js?rev=4093-frame";
   var TRANSFER_KEY = "mithrilDrillToShotTransferM400";
   var UNDO_KEY = "mithrilDrillToShotUndoM400";
   var DEVICE_KEY = "mithrilCloudDeviceNameM399";
@@ -255,6 +255,7 @@
       ".m400Docs{display:grid;gap:8px}.m400Doc{border:1px solid #bdc6d1;border-radius:11px;padding:10px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;background:#fff}.m400DocTitle{font-size:15px;font-weight:900}.m400Meta{font-size:12px;color:#596777;font-weight:750;line-height:1.4;margin-top:3px}.m400DocActions{display:flex;gap:6px;align-items:center}.m407DocMenu{position:relative}.m407DocMenu summary{list-style:none;display:flex;align-items:center;justify-content:center;width:42px;min-height:44px;border:1px solid #8996a5;border-radius:8px;background:#f4f4f4;font-size:22px;font-weight:900;cursor:pointer}.m407DocMenu summary::-webkit-details-marker{display:none}.m407DocMenuPanel{position:absolute;right:0;top:48px;z-index:3;width:190px;padding:7px;border:1px solid #aab3bf;border-radius:9px;background:#fff;box-shadow:0 8px 22px rgba(0,0,0,.2)}.m407DocMenuPanel button{width:100%}.m407Technical{margin-top:5px;font-size:10px;color:#8792a0;font-weight:750}",
       ".m408ToastRegion{position:fixed;left:50%;bottom:max(16px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:22000;width:min(720px,calc(100vw - 24px));display:grid;gap:8px;pointer-events:none}.m400Toast{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;padding:12px 12px 12px 16px;border:2px solid #4f9a61;border-radius:11px;background:#e9f8ec;color:#173d20;font-size:14px;font-weight:850;line-height:1.35;box-shadow:0 8px 28px rgba(0,0,0,.35);text-align:left;pointer-events:auto;animation:m408ToastIn .18s ease-out}.m400Toast.bad{background:#ffeaea;border-color:#c66;color:#720000}.m400Toast.wait{background:#fff7d8;border-color:#c7aa45;color:#5f4800}.m400Toast.leaving{opacity:0;transform:translateY(8px);transition:opacity .18s,transform .18s}.m408ToastClose{width:34px;min-height:34px!important;padding:0!important;border:0!important;background:transparent!important;color:inherit!important;font-size:24px!important;line-height:1!important}@keyframes m408ToastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}",
       ".m408FeedbackModal{z-index:26000}.m408FeedbackBox{width:min(560px,100%);padding:0;overflow:hidden;border-color:#64748b}.m408FeedbackHead{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid #d6dbe2;background:#f8fafc}.m408FeedbackIcon{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:#eaf3ff;color:#1f5fae;font-size:19px;font-weight:950}.m408FeedbackBox.bad .m408FeedbackIcon,.m408FeedbackBox.danger .m408FeedbackIcon{background:#ffe5e5;color:#8b1e1e}.m408FeedbackBox.warning .m408FeedbackIcon{background:#fff0c2;color:#725000}.m408FeedbackTitle{font-size:20px;font-weight:950;color:#161b22}.m408FeedbackMessage{padding:18px 16px;white-space:pre-wrap;font-size:15px;font-weight:800;line-height:1.55;color:#161b22;background:#fff}.m408FeedbackBox.warning .m408FeedbackMessage{border-left:5px solid #d59a16;background:#fffaf0}.m408FeedbackActions{position:sticky;bottom:0;display:grid;grid-template-columns:1fr 1fr;gap:9px;padding:12px 16px;border-top:1px solid #c8d0da;background:#f8fafc}.m408FeedbackActions.one{grid-template-columns:1fr}.m408FeedbackActions button{min-height:50px;font-size:15px}.m400Box .m408FeedbackActions button.danger{background:#b42318;color:#fff;border-color:#8f1b13}",
+      ".m4093LoadPanel{margin:11px 0;padding:11px;border:2px solid #7198c5;border-radius:11px;background:#f4f8fd}.m4093LoadToggle{display:flex!important;grid-column:1/-1;align-items:center;gap:10px;min-height:46px;padding:8px 10px;border:1px solid #93abc6;border-radius:8px;background:#e9f2fc;color:#173f70!important;font-size:14px!important}.m4093LoadToggle input{width:24px!important;height:24px!important;min-height:24px!important;margin:0;flex:0 0 auto}.m4093LoadFields{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:9px}.m4093LoadPanel.disabled .m4093LoadFields,.m4093LoadPanel.disabled .m4093Formula{opacity:.48}.m4093Formula{margin:9px 0 0;font-size:12px;font-weight:850;line-height:1.45;color:#314b68}.m4093Preview{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin-top:9px}.m4093Preview .m400Stat{min-height:64px}.m4093PreviewNote{margin:8px 0 0}.m4093ReviewList{margin:5px 0 0;padding-left:19px}.m4093ReviewList li{margin:2px 0}",
       "header>.topRow{grid-template-columns:minmax(0,1fr) auto auto auto auto!important}.m4091HeaderSync{min-width:58px;border-color:#7e9fc7;background:#edf5ff;color:#174f91}.m4091HeaderSync:active{background:#d8eaff}@media(max-width:520px){.m4091HeaderSync{min-width:48px;padding-left:6px;padding-right:6px}}",
       "#status.m408StatusHost{display:grid!important;grid-template-columns:minmax(0,1fr) auto;gap:5px 10px;align-items:center;padding:6px 9px!important;border:1px solid #c7cfd9;border-radius:9px;background:#f8fafc;min-height:38px;box-sizing:border-box;color:#26313f!important;white-space:normal!important;overflow:visible!important}.m408DocTitle{font-size:13px;font-weight:950;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.m408DocMeta{grid-column:1/-1;font-size:10px;font-weight:750;color:#657284;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.m408StatusChip{display:inline-flex;align-items:center;gap:6px;min-height:24px;padding:3px 8px;border-radius:999px;border:1px solid #9aa7b5;background:#edf1f5;color:#435160;font-size:10px;font-weight:950;white-space:nowrap}.m408StatusChip::before{content:'';width:7px;height:7px;border-radius:50%;background:#7a8795}.m408StatusChip.synced{border-color:#6aa978;background:#e9f8ec;color:#225a2f}.m408StatusChip.synced::before{background:#2f8a45}.m408StatusChip.unsynced{border-color:#caa444;background:#fff7d8;color:#6b5100}.m408StatusChip.unsynced::before{background:#d39412}.m408StatusChip.offline{border-color:#c79c43;background:#fff2cf;color:#6b4d00}.m408StatusChip.offline::before{background:#d39412}.m408StatusChip.readonly{border-color:#9b71df;background:#f2eaff;color:#4b287b}.m408StatusChip.readonly::before{background:#7b4ac5}.m408StatusChip.syncing::before{background:#1f6feb;animation:m408Pulse 1s infinite alternate}@keyframes m408Pulse{to{opacity:.28}}",
       "button.finishBtn,#finishSendBtn{display:none!important}",
@@ -263,7 +264,7 @@
       ".m404LandingAuth{color:#fff}.m404LandingHead{display:flex;justify-content:space-between;gap:10px;align-items:center}.m404LandingHead strong{font-size:18px}.m404AuthState{font-size:11px;font-weight:900;color:#b9c7da;letter-spacing:.04em}.m404AuthForm{display:grid;grid-template-columns:1fr 1fr auto;gap:9px;margin-top:11px}.m404AuthForm input{min-width:0;min-height:46px;border:1px solid #697585;border-radius:9px;padding:9px 11px;background:#f8fafc;font-size:16px}.m404AuthForm button{min-width:105px;background:#1f6feb;border-color:#1f6feb;color:#fff}.m404SignedIn{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-top:10px;padding:11px;border:1px solid #3f7650;border-radius:11px;background:rgba(37,110,57,.2)}.m404UserName{font-size:16px;font-weight:950}.m404UserMeta{font-size:12px;color:#c9d7cc;font-weight:800;margin-top:3px}.m404AuthMessage{display:none;margin-top:9px;font-size:12px;line-height:1.35;font-weight:800;color:#ffd37a}.m404AuthMessage.show{display:block}.m404TemplateLocked{opacity:.42;pointer-events:none;filter:grayscale(.55)}",
       ".m405UserActions{display:flex;gap:8px;flex-wrap:wrap}.m405AdminBox{width:min(900px,100%)}.m405AdminRows{display:grid;gap:8px;margin-top:10px}.m405AdminRow{display:grid;grid-template-columns:minmax(0,1fr) 150px 125px auto;gap:8px;align-items:center;border:1px solid #aaa;border-radius:9px;padding:9px}.m405AdminName{font-weight:900}.m405AdminMeta{font-size:11px;color:#555;font-weight:750;overflow-wrap:anywhere}.m405AccessBanner{position:fixed;left:50%;top:8px;transform:translateX(-50%);z-index:19000;padding:8px 13px;border:2px solid #9b71df;border-radius:10px;background:#f2eaff;color:#3d226d;font:900 13px Arial,sans-serif;box-shadow:0 5px 18px rgba(0,0,0,.28)}body.m405ReadOnly canvas{pointer-events:none!important}body.m405ReadOnly [data-m405-mutation=true]{display:none!important}",
       "@media(max-width:700px){.m405AdminRow{grid-template-columns:1fr 1fr}.m405AdminIdentity{grid-column:1/-1}.m405AdminRow button{grid-column:1/-1}}",
-      "@media(max-width:600px){.m400Grid,.m400Actions,.m401Compare,.m404AuthForm,.m407CloudPrimary{grid-template-columns:1fr}.m400Wide{grid-column:auto}.m400Stats{grid-template-columns:1fr 1fr}.m400Doc{grid-template-columns:1fr}.m400DocActions{justify-content:stretch}.m400DocActions>.primary{flex:1}.m404SignedIn{align-items:flex-start;flex-direction:column}.m404SignedIn button{width:100%}.m405UserActions{width:100%;display:grid}.m407LastRefresh{text-align:left}.m407CloudCurrentHead{display:grid}.m407DocMenuPanel{right:auto;left:0}.m408FeedbackActions{grid-template-columns:1fr}.m408DocTitle{font-size:12px}.m408StatusChip{padding:3px 7px}}"
+      "@media(max-width:600px){.m400Grid,.m400Actions,.m401Compare,.m404AuthForm,.m407CloudPrimary,.m4093LoadFields{grid-template-columns:1fr}.m400Wide{grid-column:auto}.m400Stats{grid-template-columns:1fr 1fr}.m4093Preview{grid-template-columns:1fr 1fr}.m400Doc{grid-template-columns:1fr}.m400DocActions{justify-content:stretch}.m400DocActions>.primary{flex:1}.m404SignedIn{align-items:flex-start;flex-direction:column}.m404SignedIn button{width:100%}.m405UserActions{width:100%;display:grid}.m407LastRefresh{text-align:left}.m407CloudCurrentHead{display:grid}.m407DocMenuPanel{right:auto;left:0}.m408FeedbackActions{grid-template-columns:1fr}.m408DocTitle{font-size:12px}.m408StatusChip{padding:3px 7px}}"
     ].join("");
     document.head.appendChild(style);
   }
@@ -938,6 +939,101 @@
     return "Keep orientation";
   }
 
+  function parseImportFootage(value, allowZero) {
+    var raw = text(value);
+    if (!/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(raw)) return null;
+    var number = Number(raw);
+    if (!isFinite(number) || number < 0 || (!allowZero && number === 0)) return null;
+    return number;
+  }
+
+  function formatImportFootage(value) {
+    var rounded = Math.round(Number(value) * 100) / 100;
+    if (!isFinite(rounded)) return "";
+    return String(rounded).replace(/\.0+$/, "").replace(/(\.\d*?)0+$/, "$1");
+  }
+
+  function normalizedImportLoadRules(value) {
+    value = value || {};
+    var minimum = parseImportFootage(value.minimumStemming, true);
+    var hold = parseImportFootage(value.holdIntoRock, true);
+    return {
+      enabled: value.enabled === true,
+      valid: minimum !== null && hold !== null,
+      minimumStemming: minimum === null ? 7 : minimum,
+      holdIntoRock: hold === null ? 1 : hold,
+      loadType: "ANFO"
+    };
+  }
+
+  function emptyImportLoadStats(rules) {
+    return {
+      enabled: rules.enabled,
+      valid: rules.valid,
+      minimumStemming: rules.minimumStemming,
+      holdIntoRock: rules.holdIntoRock,
+      calculated: 0,
+      totalAnfoFeet: 0,
+      skippedCondition: 0,
+      needsReview: 0,
+      missingData: 0,
+      noLoadRoom: 0,
+      reviewHoles: []
+    };
+  }
+
+  function calculateImportedHoleLoad(record, rules) {
+    if (!rules.enabled) return { status: "disabled" };
+    if (flagYes(record && record.DirtHole) || flagYes(record && record.BadHole)) return { status: "condition" };
+    var depth = parseImportFootage(record && record.Depth, false);
+    var overburden = parseImportFootage(record && record.Overburden, true);
+    if (depth === null || overburden === null) return { status: "missing" };
+    var stemming = Math.max(rules.minimumStemming, overburden + rules.holdIntoRock);
+    var anfoFeet = depth - stemming;
+    if (!(anfoFeet > 0)) return { status: "no-room", depth: depth, overburden: overburden, stemming: stemming };
+    return {
+      status: "calculated",
+      stemming: stemming,
+      anfoFeet: anfoFeet,
+      stemmingText: formatImportFootage(stemming),
+      primaryLoadText: formatImportFootage(anfoFeet) + "A"
+    };
+  }
+
+  function addImportLoadResult(stats, calculation, label) {
+    if (calculation.status === "calculated") {
+      stats.calculated += 1;
+      stats.totalAnfoFeet += calculation.anfoFeet;
+      return;
+    }
+    if (calculation.status === "condition") {
+      stats.skippedCondition += 1;
+      return;
+    }
+    if (calculation.status === "missing" || calculation.status === "no-room") {
+      stats.needsReview += 1;
+      if (calculation.status === "missing") stats.missingData += 1;
+      else stats.noLoadRoom += 1;
+      if (stats.reviewHoles.length < 8) stats.reviewHoles.push(label);
+    }
+  }
+
+  function importLoadRulesFromControls() {
+    var enabled = byId("m4093CalculateLoads");
+    return normalizedImportLoadRules({
+      enabled: !!(enabled && enabled.checked),
+      minimumStemming: byId("m4093MinimumStemming") ? byId("m4093MinimumStemming").value : "7",
+      holdIntoRock: byId("m4093HoldIntoRock") ? byId("m4093HoldIntoRock").value : "1"
+    });
+  }
+
+  function importLoadSummaryText(stats) {
+    if (!stats || !stats.enabled) return "Stemming and load fields will remain blank.";
+    return "Calculated " + stats.calculated + " loaded hole" + (stats.calculated === 1 ? "" : "s") +
+      " using Stemming = max(" + formatImportFootage(stats.minimumStemming) + ", overburden + " + formatImportFootage(stats.holdIntoRock) + "). " +
+      "Total ANFO footage: " + formatImportFootage(stats.totalAnfoFeet) + " ft.";
+  }
+
   function sourcePoints(payload) {
     var pages = payload.pages || payload.pagesData || {};
     var meta = payload.pageMeta || {};
@@ -1014,7 +1110,9 @@
 
   function buildShotImport(payload, orientation) {
     var points = transformPoints(sourcePoints(payload), orientation);
-    if (!points.length) return { pages: {}, pageMeta: {}, headerData: {}, pageCount: 0, holeCount: 0, orientation: orientation };
+    var loadRules = normalizedImportLoadRules(payload && payload.loadCalculation);
+    var loadStats = emptyImportLoadStats(loadRules);
+    if (!points.length) return { pages: {}, pageMeta: {}, headerData: {}, pageCount: 0, holeCount: 0, orientation: orientation, loadStats: loadStats };
     var tiles = {};
     points.forEach(function (point) {
       var gx = Math.floor(point.x / 16), gy = Math.floor(point.y / 15);
@@ -1054,6 +1152,12 @@
         next.Timestamp = new Date().toLocaleString();
         next.SourceDrillPage = Number(item.point.sourcePage) || item.point.sourcePage;
         next.SourceDrillHoleID = item.point.sourceHoleId;
+        var calculation = calculateImportedHoleLoad(next, loadRules);
+        if (calculation.status === "calculated") {
+          next.Stemming = calculation.stemmingText;
+          next.PrimaryLoad = calculation.primaryLoadText;
+        }
+        addImportLoadResult(loadStats, calculation, "P" + next.SourceDrillPage + " " + next.SourceDrillHoleID);
         pages[pageKey][id] = next;
         holeCount += 1;
       });
@@ -1069,6 +1173,14 @@
     header.DrillLogImportRelease = RELEASE_VERSION;
     header.DrillLogImportOrientation = orientation;
     header.DrillLogImportedAt = new Date().toISOString();
+    header.DrillLogImportLoadCalculation = loadRules.enabled ? {
+      type: "ANFO",
+      minimumStemming: loadRules.minimumStemming,
+      holdIntoRock: loadRules.holdIntoRock,
+      calculatedHoles: loadStats.calculated,
+      totalAnfoFeet: Math.round(loadStats.totalAnfoFeet * 100) / 100,
+      needsReview: loadStats.needsReview
+    } : null;
     writeIdentity(header, {
       documentId: randomUuid(),
       createdAt: new Date().toISOString(),
@@ -1076,7 +1188,7 @@
       sourceDocumentId: text(payload.sourceDocumentId),
       origin: "converted"
     });
-    return { pages: pages, pageMeta: pageMeta, headerData: header, pageCount: ordered.length, holeCount: holeCount, orientation: orientation };
+    return { pages: pages, pageMeta: pageMeta, headerData: header, pageCount: ordered.length, holeCount: holeCount, orientation: orientation, loadStats: loadStats };
   }
 
   function orientationCounts(payload) {
@@ -1095,7 +1207,7 @@
     modal.className = "m400Modal";
     modal.innerHTML = [
       '<div class="m400Box">',
-      '<div class="m400Head"><strong>Create Shot Diagram from Drill Log — m40.0</strong><button type="button" id="m400TransferClose">Close</button></div>',
+      '<div class="m400Head"><strong>Create Shot Diagram from Drill Log — m40.9.3.1</strong><button type="button" id="m400TransferClose">Close</button></div>',
       '<div id="m400TransferStats" class="m400Stats"></div>',
       '<div class="m400Grid">',
       '<label class="m400Wide">Shot orientation<select id="m400Orientation"></select></label>',
@@ -1104,9 +1216,19 @@
       '<label>Job<input id="m400Job" type="text"></label>',
       '<label>Blaster<input id="m400Blaster" type="text"></label>',
       '</div>',
+      '<div id="m4093LoadPanel" class="m4093LoadPanel">',
+      '<label class="m4093LoadToggle"><input id="m4093CalculateLoads" type="checkbox" checked><span>Calculate stemming and ANFO footage during import</span></label>',
+      '<div class="m4093LoadFields">',
+      '<label>Minimum stemming (ft)<input id="m4093MinimumStemming" type="number" min="0" step="0.1" inputmode="decimal" value="7"></label>',
+      '<label>Hold into rock (ft)<input id="m4093HoldIntoRock" type="number" min="0" step="0.1" inputmode="decimal" value="1"></label>',
+      '</div>',
+      '<p class="m4093Formula">Rule: Stemming = greater of the minimum stemming or overburden + hold into rock. Primary Load = depth − stemming, stored as ANFO footage (A).</p>',
+      '<div id="m4093LoadPreview" class="m4093Preview"></div>',
+      '<div id="m4093LoadPreviewNote" class="m400Note m4093PreviewNote"></div>',
+      '</div>',
       '<div id="m400OrientationNote" class="m400Note m400Warning"></div>',
       '<div class="m400Note">MITHRIL tiles only populated holes onto 16 × 15 Shot Diagram pages. Empty result pages are not created, and destination pages are numbered consecutively.</div>',
-      '<div class="m400Note">Depth, overburden, conditions, and notes are copied. Stemming, explosive loads, and timing start blank.</div>',
+      '<div class="m400Note">Depth, overburden, conditions, and notes are copied. Timing remains blank. Dirt and Bad holes are never given calculated stemming or ANFO.</div>',
       '<div class="m400Actions"><button type="button" id="m400TransferCancel">Cancel</button><button type="button" class="primary" id="m400TransferStart">Open Shot Diagram</button></div>',
       '</div>'
     ].join("");
@@ -1115,6 +1237,9 @@
     byId("m400TransferCancel").addEventListener("click", function () { modal.classList.remove("show"); });
     byId("m400TransferStart").addEventListener("click", stageTransfer);
     byId("m400Orientation").addEventListener("change", updateTransferPreview);
+    byId("m4093CalculateLoads").addEventListener("change", updateTransferPreview);
+    byId("m4093MinimumStemming").addEventListener("input", updateTransferPreview);
+    byId("m4093HoldIntoRock").addEventListener("input", updateTransferPreview);
     return modal;
   }
 
@@ -1128,13 +1253,47 @@
     var modal = byId("m400TransferModal");
     if (!modal || !modal.__payload) return;
     var selected = selectedOrientation(modal), counts = modal.__orientationInfo.counts;
-    var result = buildShotImport(modal.__payload, selected);
+    var loadRules = importLoadRulesFromControls();
+    var previewPayload = clone(modal.__payload);
+    previewPayload.loadCalculation = loadRules;
+    var result = buildShotImport(previewPayload, selected);
+    modal.__loadCalculation = loadRules;
+    modal.__previewResult = result;
     byId("m400TransferStats").innerHTML = [
       stat(numericKeys(modal.__payload.pages || {}).filter(function (key) { return Object.keys((modal.__payload.pages || {})[key] || {}).some(function (id) { return meaningfulRecord(modal.__payload.pages[key][id]); }); }).length, "Drill Log pages"),
       stat(result.pageCount, "Shot Diagram pages"),
       stat(result.holeCount, "Holes copied")
     ].join("");
     byId("m400OrientationNote").textContent = orientationLabel(selected) + " produces " + result.pageCount + " populated Shot Diagram page" + (result.pageCount === 1 ? "" : "s") + ". Page counts — keep: " + counts.keep + ", right: " + counts.right + ", left: " + counts.left + ", 180°: " + counts["180"] + ".";
+    var panel = byId("m4093LoadPanel");
+    if (panel) panel.classList.toggle("disabled", !loadRules.enabled);
+    var preview = byId("m4093LoadPreview");
+    var note = byId("m4093LoadPreviewNote");
+    if (!loadRules.enabled) {
+      if (preview) preview.innerHTML = [stat("Off", "Calculator"), stat(result.holeCount, "Fields left blank")].join("");
+      if (note) { note.className = "m400Note m4093PreviewNote"; note.textContent = "Stemming and load fields will remain blank for manual entry."; }
+      return;
+    }
+    if (!loadRules.valid) {
+      if (preview) preview.innerHTML = [stat("—", "Calculated holes"), stat("—", "ANFO footage")].join("");
+      if (note) { note.className = "m400Note m400Danger m4093PreviewNote"; note.textContent = "Enter valid zero-or-greater values for minimum stemming and hold into rock."; }
+      return;
+    }
+    var stats = result.loadStats;
+    if (preview) preview.innerHTML = [
+      stat(stats.calculated, "Loaded holes"),
+      stat(formatImportFootage(stats.totalAnfoFeet) + " ft", "ANFO footage"),
+      stat(stats.skippedCondition, "Dirt / Bad skipped"),
+      stat(stats.needsReview, "Needs review")
+    ].join("");
+    if (note) {
+      note.className = "m400Note " + (stats.needsReview ? "m400Warning " : "") + "m4093PreviewNote";
+      note.innerHTML = escapeHtml(importLoadSummaryText(stats));
+      if (stats.needsReview) {
+        note.innerHTML += "<br>Needs review: " + stats.missingData + " missing/invalid depth or overburden; " + stats.noLoadRoom + " with no room for a positive load.";
+        if (stats.reviewHoles.length) note.innerHTML += '<ul class="m4093ReviewList"><li>' + stats.reviewHoles.map(escapeHtml).join("</li><li>") + "</li></ul>";
+      }
+    }
   }
 
   function openTransfer() {
@@ -1170,6 +1329,9 @@
     byId("m400ShotID").value = defaults.ShotID;
     byId("m400Job").value = defaults.JobName;
     byId("m400Blaster").value = defaults.Blaster;
+    byId("m4093CalculateLoads").checked = true;
+    byId("m4093MinimumStemming").value = "7";
+    byId("m4093HoldIntoRock").value = "1";
     updateTransferPreview();
     modal.classList.add("show");
   }
@@ -1177,7 +1339,10 @@
   function stageTransfer() {
     var modal = byId("m400TransferModal"), payload = modal && modal.__payload;
     if (!payload) { alert("The Drill Log transfer is no longer available."); return; }
+    var loadRules = importLoadRulesFromControls();
+    if (loadRules.enabled && !loadRules.valid) { alert("Enter valid zero-or-greater values for minimum stemming and hold into rock."); return; }
     payload.orientation = selectedOrientation(modal);
+    payload.loadCalculation = loadRules;
     payload.shotInfo = {
       FieldDate: text(byId("m400Date").value),
       ShotID: text(byId("m400ShotID").value),
@@ -1223,6 +1388,7 @@
       '<div class="m400Head"><strong>Import Drill Log into Shot Diagram</strong><button type="button" id="m400ImportClose">Cancel</button></div>',
       '<div id="m400ImportStats" class="m400Stats"></div>',
       '<div id="m400ImportOrientation" class="m400Note m400Warning"></div>',
+      '<div id="m4093ImportLoadSummary" class="m400Note"></div>',
       '<div id="m400ImportExisting" class="m400Note m400Danger" style="display:none"></div>',
       '<div class="m400Note">Only populated result pages are created. Pages are numbered 1, 2, 3… with no gaps. The current Shot Diagram is saved as an undo snapshot before replacement.</div>',
       '<div class="m400Actions"><button type="button" id="m400ImportCancel">Cancel Import</button><button type="button" class="primary" id="m400ImportConfirm">Import Drill Log</button></div>',
@@ -1247,6 +1413,18 @@
     modal.__result = result;
     byId("m400ImportStats").innerHTML = [stat(result.holeCount, "Holes imported"), stat(result.pageCount, "Shot Diagram pages"), stat(orientationLabel(result.orientation), "Orientation")].join("");
     byId("m400ImportOrientation").textContent = orientationLabel(result.orientation) + " was selected. Empty pages were removed before numbering.";
+    var loadSummary = byId("m4093ImportLoadSummary"), loadStats = result.loadStats;
+    if (loadSummary) {
+      if (!loadStats || !loadStats.enabled) {
+        loadSummary.className = "m400Note";
+        loadSummary.textContent = "Stemming and explosive loads will remain blank for manual entry.";
+      } else {
+        loadSummary.className = "m400Note " + (loadStats.needsReview ? "m400Warning" : "");
+        loadSummary.textContent = importLoadSummaryText(loadStats) +
+          (loadStats.skippedCondition ? " Dirt/Bad holes skipped: " + loadStats.skippedCondition + "." : "") +
+          (loadStats.needsReview ? " Holes still requiring manual review: " + loadStats.needsReview + "." : " All eligible holes are ready.");
+      }
+    }
     var existing = window.MithrilDocument ? window.MithrilDocument.countHoles() : 0;
     var warning = byId("m400ImportExisting");
     warning.style.display = existing ? "block" : "none";
@@ -1273,7 +1451,8 @@
       localStorage.removeItem(TRANSFER_KEY);
       modal.classList.remove("show");
       updateUndoButton();
-      showToast("Imported " + result.holeCount + " Drill Log holes onto " + result.pageCount + " consecutively numbered Shot Diagram page" + (result.pageCount === 1 ? "" : "s") + ".");
+      var calculated = result.loadStats && result.loadStats.enabled ? " Calculated stemming and ANFO for " + result.loadStats.calculated + " loaded hole" + (result.loadStats.calculated === 1 ? "" : "s") + "." : "";
+      showToast("Imported " + result.holeCount + " Drill Log holes onto " + result.pageCount + " consecutively numbered Shot Diagram page" + (result.pageCount === 1 ? "" : "s") + "." + calculated);
     } catch (error) {
       try { adapter.applySnapshot(before, { markDirty: false, fitAll: true }); } catch (restoreError) {}
       clearUndo();
@@ -3097,7 +3276,7 @@
         script.id = CHILD_SCRIPT_ID;
         script.src = CHILD_SCRIPT_SRC;
         doc.head.appendChild(script);
-      } catch (error) { console.warn("MITHRIL m40.9.2.2 could not attach the standardized document layer to the Shot Diagram.", error); }
+      } catch (error) { console.warn("MITHRIL m40.9.3.1 could not attach the standardized document layer to the Shot Diagram.", error); }
     }
     frame.addEventListener("load", function () { setTimeout(inject, 80); });
     setTimeout(inject, 120);
