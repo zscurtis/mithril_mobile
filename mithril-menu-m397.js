@@ -1,8 +1,8 @@
 (function () {
   "use strict";
 
-  var RELEASE_VERSION = "m40.9.3.2";
-  var RELEASE_LABEL = "configurable auto load calculator";
+  var RELEASE_VERSION = "m40.9.3.3";
+  var RELEASE_LABEL = "Auto ANFO toggle and manual emulsion mode";
   var THEME_STORAGE_KEY = "mithrilCanvasThemeV1";
   var THEME_CLASS_PREFIX = "m395-theme-";
   var THEME_OPTIONS = [
@@ -201,7 +201,7 @@
         var script = childDocument.createElement("script");
         script.id = "mithrilMenuM395ChildLoader";
         script.setAttribute("data-mithril-release", RELEASE_VERSION);
-        script.src = "./mithril-menu-m397.js?v=40.9.3.2-frame";
+        script.src = "./mithril-menu-m397.js?v=40.9.3.3-frame";
         (childDocument.head || childDocument.documentElement).appendChild(script);
         return true;
       } catch (error) {
@@ -8890,7 +8890,7 @@
   }
 
   // ---------------------------------------------------------------------------
-  // m40.9.3.2 configurable automatic stemming / ANFO calculation
+  // m40.9.3.3 configurable automatic stemming / ANFO calculation
   // ---------------------------------------------------------------------------
   var M40931_DINK_LENGTH_FT = 3;
   var m40931PreviousSecondaryLoad = "";
@@ -9016,6 +9016,56 @@
     return note;
   }
 
+  function m40933EnsureAutoAnfoToggle() {
+    var existing = byId("m40933AutoAnfoToggle");
+    if (existing) return existing;
+    var note = m40931EnsureDinkNote();
+    if (!note || !note.parentNode) return null;
+    var control = document.createElement("div");
+    control.id = "m40933AutoAnfoToggle";
+    control.className = "m40933AutoAnfoToggle";
+    control.innerHTML = [
+      '<span class="m40933AutoAnfoText"><strong>Auto ANFO</strong><small id="m40933AutoAnfoStatus"></small></span>',
+      '<button type="button" id="m40933AutoAnfoButton" role="switch" aria-checked="true">ON</button>'
+    ].join("");
+    note.parentNode.insertBefore(control, note);
+    byId("m40933AutoAnfoButton").addEventListener("click", function (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      m40933SetAutoAnfoEnabled(!m40932CurrentRules().enabled);
+    });
+    return control;
+  }
+
+  function m40933SyncAutoAnfoToggle() {
+    var control = m40933EnsureAutoAnfoToggle();
+    var button = byId("m40933AutoAnfoButton");
+    var status = byId("m40933AutoAnfoStatus");
+    if (!control || !button || !status) return;
+    var enabled = m40932CurrentRules().enabled;
+    control.classList.toggle("off", !enabled);
+    button.classList.toggle("off", !enabled);
+    button.textContent = enabled ? "ON" : "OFF";
+    button.setAttribute("aria-checked", enabled ? "true" : "false");
+    status.textContent = enabled ? "Stemming and ANFO calculate automatically" : "Manual / emulsion mode — enter pumped pounds";
+  }
+
+  function m40933SetAutoAnfoEnabled(enabled) {
+    var source = headerData && headerData.LoadCalculationSettings || {};
+    headerData.LoadCalculationSettings = {
+      enabled: !!enabled,
+      minimumStemming: source.minimumStemming == null ? 7 : source.minimumStemming,
+      holdIntoRock: source.holdIntoRock == null ? 1 : source.holdIntoRock,
+      dinkLengthFeet: source.dinkLengthFeet == null ? 3 : source.dinkLengthFeet,
+      loadType: "ANFO"
+    };
+    try { if (typeof saveState === "function") saveState(); } catch (error1) {}
+    try { if (typeof markDirty === "function") markDirty(); } catch (error2) {}
+    m40933SyncAutoAnfoToggle();
+    window.dispatchEvent(new CustomEvent("mithril-load-settings-changed", { detail: headerData.LoadCalculationSettings }));
+    m40931PaintDinkNote({ status: "ready", rules: m40932CurrentRules() });
+  }
+
   function m40931PaintDinkNote(result) {
     var note = m40931EnsureDinkNote();
     if (!note) return;
@@ -9023,12 +9073,12 @@
     if (!result || result.status === "ready") {
       var readyRules = result && result.rules || m40932CurrentRules();
       note.textContent = readyRules.enabled ?
-        "Auto calculator ON — minimum " + m40931FormatFootage(readyRules.minimumStemming) + " ft, rock hold " + m40931FormatFootage(readyRules.holdIntoRock) + " ft, " + m40931FormatFootage(readyRules.dinkLengthFeet) + " ft per dink." :
-        "Auto calculator is OFF for this Shot Diagram.";
+        "Auto ANFO ON — minimum " + m40931FormatFootage(readyRules.minimumStemming) + " ft, rock hold " + m40931FormatFootage(readyRules.holdIntoRock) + " ft, " + m40931FormatFootage(readyRules.dinkLengthFeet) + " ft per dink." :
+        "Auto ANFO OFF — manual/emulsion entries will not be changed.";
       return;
     }
     if (result.status === "disabled") {
-      note.textContent = "Auto calculator is OFF for this Shot Diagram.";
+      note.textContent = "Auto ANFO OFF — manual/emulsion entries will not be changed.";
       return;
     }
     if (result.status === "calculated") {
@@ -9096,7 +9146,14 @@
     style.textContent = [
       ".m40931DinkNote{grid-column:1/-1;margin:-2px 0 3px;padding:7px 9px;border:1px solid #9eb1c7;border-radius:8px;background:#f4f7fb;color:#3b4f67;font-size:12px;font-weight:800;line-height:1.35}",
       ".m40931DinkNote.success{border-color:#75a887;background:#edf8f0;color:#245d34}",
-      ".m40931DinkNote.warning{border-color:#cf9b48;background:#fff7e7;color:#744b08}"
+      ".m40931DinkNote.warning{border-color:#cf9b48;background:#fff7e7;color:#744b08}",
+      ".m40933AutoAnfoToggle{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:10px;margin:1px 0 6px;padding:8px 10px;border:1px solid #75a887;border-radius:9px;background:#edf8f0;color:#245d34}",
+      ".m40933AutoAnfoToggle.off{border-color:#9ca6b1;background:#f1f3f5;color:#3e4b59}",
+      ".m40933AutoAnfoText{display:grid;gap:1px;text-align:left}",
+      ".m40933AutoAnfoText strong{font-size:13px;font-weight:950}",
+      ".m40933AutoAnfoText small{font-size:11px;font-weight:750;line-height:1.25}",
+      ".m40933AutoAnfoToggle button{flex:0 0 auto;min-width:62px;min-height:38px;padding:6px 12px;border:2px solid #2f7a43;border-radius:19px;background:#2f8a4b;color:#fff;font-size:13px;font-weight:950}",
+      ".m40933AutoAnfoToggle button.off{border-color:#727d89;background:#727d89}"
     ].join("");
     document.head.appendChild(style);
   }
@@ -9108,6 +9165,8 @@
     window.__mithrilM40931DinkCalculator = true;
     m40931InjectDinkStyles();
     m40931EnsureDinkNote();
+    m40933EnsureAutoAnfoToggle();
+    m40933SyncAutoAnfoToggle();
 
     var originalOpenHole = window.openHole;
     if (typeof originalOpenHole === "function") {
@@ -9115,7 +9174,7 @@
         try { m40931PreviousSecondaryLoad = String(holeData && holeData[holeId] && holeData[holeId].SecondaryLoad || ""); }
         catch (error) { m40931PreviousSecondaryLoad = ""; }
         var result = originalOpenHole.apply(this, arguments);
-        window.setTimeout(function () { m40932RefreshAutoCalculation("open"); }, 0);
+        window.setTimeout(function () { m40933SyncAutoAnfoToggle(); m40932RefreshAutoCalculation("open"); }, 0);
         return result;
       };
     }
@@ -9143,6 +9202,7 @@
       if (field) field.addEventListener("change", function () { m40932RefreshAutoCalculation("full"); });
     });
     window.addEventListener("mithril-load-settings-changed", function () {
+      m40933SyncAutoAnfoToggle();
       var modal = byId("holeModal");
       if (modal && modal.classList.contains("show")) m40932RefreshAutoCalculation("full");
     });
@@ -9158,6 +9218,11 @@
     currentRules: m40932CurrentRules,
     calculate: m40932ApplyAutomaticCalculation,
     refreshHoleEntry: m40932RefreshAutoCalculation
+  };
+
+  window.MithrilM40933AutoAnfo = {
+    setEnabled: m40933SetAutoAnfoEnabled,
+    sync: m40933SyncAutoAnfoToggle
   };
 
 

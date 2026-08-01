@@ -1,9 +1,9 @@
 (function () {
   "use strict";
 
-  var RELEASE_VERSION = "m40.9.3.2";
+  var RELEASE_VERSION = "m40.9.3.3";
   var CHILD_SCRIPT_ID = "mithrilCoreM400ChildLoader";
-  var CHILD_SCRIPT_SRC = "./mithril-core-m400.js?rev=40932-frame";
+  var CHILD_SCRIPT_SRC = "./mithril-core-m400.js?rev=40933-frame";
   var TRANSFER_KEY = "mithrilDrillToShotTransferM400";
   var UNDO_KEY = "mithrilDrillToShotUndoM400";
   var LOAD_CALCULATOR_UNDO_KEY = "mithrilShotLoadCalculatorUndoM40932";
@@ -256,7 +256,7 @@
       ".m400Docs{display:grid;gap:8px}.m400Doc{border:1px solid #bdc6d1;border-radius:11px;padding:10px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;background:#fff}.m400DocTitle{font-size:15px;font-weight:900}.m400Meta{font-size:12px;color:#596777;font-weight:750;line-height:1.4;margin-top:3px}.m400DocActions{display:flex;gap:6px;align-items:center}.m407DocMenu{position:relative}.m407DocMenu summary{list-style:none;display:flex;align-items:center;justify-content:center;width:42px;min-height:44px;border:1px solid #8996a5;border-radius:8px;background:#f4f4f4;font-size:22px;font-weight:900;cursor:pointer}.m407DocMenu summary::-webkit-details-marker{display:none}.m407DocMenuPanel{position:absolute;right:0;top:48px;z-index:3;width:190px;padding:7px;border:1px solid #aab3bf;border-radius:9px;background:#fff;box-shadow:0 8px 22px rgba(0,0,0,.2)}.m407DocMenuPanel button{width:100%}.m407Technical{margin-top:5px;font-size:10px;color:#8792a0;font-weight:750}",
       ".m408ToastRegion{position:fixed;left:50%;bottom:max(16px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:22000;width:min(720px,calc(100vw - 24px));display:grid;gap:8px;pointer-events:none}.m400Toast{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;padding:12px 12px 12px 16px;border:2px solid #4f9a61;border-radius:11px;background:#e9f8ec;color:#173d20;font-size:14px;font-weight:850;line-height:1.35;box-shadow:0 8px 28px rgba(0,0,0,.35);text-align:left;pointer-events:auto;animation:m408ToastIn .18s ease-out}.m400Toast.bad{background:#ffeaea;border-color:#c66;color:#720000}.m400Toast.wait{background:#fff7d8;border-color:#c7aa45;color:#5f4800}.m400Toast.leaving{opacity:0;transform:translateY(8px);transition:opacity .18s,transform .18s}.m408ToastClose{width:34px;min-height:34px!important;padding:0!important;border:0!important;background:transparent!important;color:inherit!important;font-size:24px!important;line-height:1!important}@keyframes m408ToastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}",
       ".m408FeedbackModal{z-index:26000}.m408FeedbackBox{width:min(560px,100%);padding:0;overflow:hidden;border-color:#64748b}.m408FeedbackHead{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid #d6dbe2;background:#f8fafc}.m408FeedbackIcon{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:#eaf3ff;color:#1f5fae;font-size:19px;font-weight:950}.m408FeedbackBox.bad .m408FeedbackIcon,.m408FeedbackBox.danger .m408FeedbackIcon{background:#ffe5e5;color:#8b1e1e}.m408FeedbackBox.warning .m408FeedbackIcon{background:#fff0c2;color:#725000}.m408FeedbackTitle{font-size:20px;font-weight:950;color:#161b22}.m408FeedbackMessage{padding:18px 16px;white-space:pre-wrap;font-size:15px;font-weight:800;line-height:1.55;color:#161b22;background:#fff}.m408FeedbackBox.warning .m408FeedbackMessage{border-left:5px solid #d59a16;background:#fffaf0}.m408FeedbackActions{position:sticky;bottom:0;display:grid;grid-template-columns:1fr 1fr;gap:9px;padding:12px 16px;border-top:1px solid #c8d0da;background:#f8fafc}.m408FeedbackActions.one{grid-template-columns:1fr}.m408FeedbackActions button{min-height:50px;font-size:15px}.m400Box .m408FeedbackActions button.danger{background:#b42318;color:#fff;border-color:#8f1b13}",
-      ".m4093LoadPanel{margin:11px 0;padding:11px;border:2px solid #7198c5;border-radius:11px;background:#f4f8fd}.m4093LoadToggle{display:flex!important;grid-column:1/-1;align-items:center;gap:10px;min-height:46px;padding:8px 10px;border:1px solid #93abc6;border-radius:8px;background:#e9f2fc;color:#173f70!important;font-size:14px!important}.m4093LoadToggle input{width:24px!important;height:24px!important;min-height:24px!important;margin:0;flex:0 0 auto}.m4093LoadFields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-top:9px}.m4093LoadPanel.disabled .m4093LoadFields,.m4093LoadPanel.disabled .m4093Formula{opacity:.48}.m4093Formula{margin:9px 0 0;font-size:12px;font-weight:850;line-height:1.45;color:#314b68}.m4093Preview{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin-top:9px}.m4093Preview .m400Stat{min-height:64px}.m4093PreviewNote{margin:8px 0 0}.m4093ReviewList{margin:5px 0 0;padding-left:19px}.m4093ReviewList li{margin:2px 0}.m40932CalculatorBox{width:min(760px,100%)}.m40932SettingsGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-top:10px}.m40932SettingsGrid label{display:grid;gap:4px;color:#3e4b59;font-size:12px;font-weight:900}.m40932SettingsGrid input{width:100%;min-height:44px;border:1px solid #8794a3;border-radius:8px;padding:8px;font-size:16px;box-sizing:border-box}.m40932Preview{grid-template-columns:repeat(4,minmax(0,1fr))}.m40932Actions{grid-template-columns:1fr 1fr}.m40932Actions .wide{grid-column:1/-1}.m40932Undo{margin-top:8px;width:100%}",
+      ".m4093LoadPanel{margin:11px 0;padding:11px;border:2px solid #7198c5;border-radius:11px;background:#f4f8fd}.m4093LoadToggle{display:flex!important;grid-column:1/-1;align-items:center;gap:10px;min-height:46px;padding:8px 10px;border:1px solid #93abc6;border-radius:8px;background:#e9f2fc;color:#173f70!important;font-size:14px!important}.m4093LoadToggle input{width:24px!important;height:24px!important;min-height:24px!important;margin:0;flex:0 0 auto}.m4093LoadToggle span{display:grid;gap:2px}.m4093LoadToggle strong{font-size:14px}.m4093LoadToggle small{color:#526b86;font-size:11px;font-weight:750;line-height:1.3}.m4093LoadFields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-top:9px}.m4093LoadPanel.disabled .m4093LoadFields,.m4093LoadPanel.disabled .m4093Formula{opacity:.48}.m4093Formula{margin:9px 0 0;font-size:12px;font-weight:850;line-height:1.45;color:#314b68}.m4093Preview{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin-top:9px}.m4093Preview .m400Stat{min-height:64px}.m4093PreviewNote{margin:8px 0 0}.m4093ReviewList{margin:5px 0 0;padding-left:19px}.m4093ReviewList li{margin:2px 0}.m40932CalculatorBox{width:min(760px,100%)}.m40932SettingsGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-top:10px}.m40932SettingsGrid label{display:grid;gap:4px;color:#3e4b59;font-size:12px;font-weight:900}.m40932SettingsGrid input{width:100%;min-height:44px;border:1px solid #8794a3;border-radius:8px;padding:8px;font-size:16px;box-sizing:border-box}.m40932Preview{grid-template-columns:repeat(4,minmax(0,1fr))}.m40932Actions{grid-template-columns:1fr 1fr}.m40932Actions .wide{grid-column:1/-1}.m40932Undo{margin-top:8px;width:100%}",
       "header>.topRow{grid-template-columns:minmax(0,1fr) auto auto auto auto!important}.m4091HeaderSync{min-width:58px;border-color:#7e9fc7;background:#edf5ff;color:#174f91}.m4091HeaderSync:active{background:#d8eaff}@media(max-width:520px){.m4091HeaderSync{min-width:48px;padding-left:6px;padding-right:6px}}",
       "#status.m408StatusHost{display:grid!important;grid-template-columns:minmax(0,1fr) auto;gap:5px 10px;align-items:center;padding:6px 9px!important;border:1px solid #c7cfd9;border-radius:9px;background:#f8fafc;min-height:38px;box-sizing:border-box;color:#26313f!important;white-space:normal!important;overflow:visible!important}.m408DocTitle{font-size:13px;font-weight:950;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.m408DocMeta{grid-column:1/-1;font-size:10px;font-weight:750;color:#657284;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.m408StatusChip{display:inline-flex;align-items:center;gap:6px;min-height:24px;padding:3px 8px;border-radius:999px;border:1px solid #9aa7b5;background:#edf1f5;color:#435160;font-size:10px;font-weight:950;white-space:nowrap}.m408StatusChip::before{content:'';width:7px;height:7px;border-radius:50%;background:#7a8795}.m408StatusChip.synced{border-color:#6aa978;background:#e9f8ec;color:#225a2f}.m408StatusChip.synced::before{background:#2f8a45}.m408StatusChip.unsynced{border-color:#caa444;background:#fff7d8;color:#6b5100}.m408StatusChip.unsynced::before{background:#d39412}.m408StatusChip.offline{border-color:#c79c43;background:#fff2cf;color:#6b4d00}.m408StatusChip.offline::before{background:#d39412}.m408StatusChip.readonly{border-color:#9b71df;background:#f2eaff;color:#4b287b}.m408StatusChip.readonly::before{background:#7b4ac5}.m408StatusChip.syncing::before{background:#1f6feb;animation:m408Pulse 1s infinite alternate}@keyframes m408Pulse{to{opacity:.28}}",
       "button.finishBtn,#finishSendBtn{display:none!important}",
@@ -1275,7 +1275,7 @@
     modal.className = "m400Modal";
     modal.innerHTML = [
       '<div class="m400Box">',
-      '<div class="m400Head"><strong>Create Shot Diagram from Drill Log — m40.9.3.2</strong><button type="button" id="m400TransferClose">Close</button></div>',
+      '<div class="m400Head"><strong>Create Shot Diagram from Drill Log — m40.9.3.3</strong><button type="button" id="m400TransferClose">Close</button></div>',
       '<div id="m400TransferStats" class="m400Stats"></div>',
       '<div class="m400Grid">',
       '<label class="m400Wide">Shot orientation<select id="m400Orientation"></select></label>',
@@ -1285,7 +1285,7 @@
       '<label>Blaster<input id="m400Blaster" type="text"></label>',
       '</div>',
       '<div id="m4093LoadPanel" class="m4093LoadPanel">',
-      '<label class="m4093LoadToggle"><input id="m4093CalculateLoads" type="checkbox" checked><span>Auto-calculate stemming and ANFO in the new Shot Diagram</span></label>',
+      '<label class="m4093LoadToggle"><input id="m4093CalculateLoads" type="checkbox" checked><span><strong id="m4093CalculateLoadsText">Auto ANFO: ON</strong><small>Turn OFF for pumped emulsion; stemming and Primary Load will remain available for manual entry.</small></span></label>',
       '<div class="m4093LoadFields">',
       '<label>Minimum stemming (ft)<input id="m4093MinimumStemming" type="number" min="0" step="0.1" inputmode="decimal" value="7"></label>',
       '<label>Hold into rock (ft)<input id="m4093HoldIntoRock" type="number" min="0" step="0.1" inputmode="decimal" value="1"></label>',
@@ -1337,6 +1337,8 @@
     byId("m400OrientationNote").textContent = orientationLabel(selected) + " produces " + result.pageCount + " populated Shot Diagram page" + (result.pageCount === 1 ? "" : "s") + ". Page counts — keep: " + counts.keep + ", right: " + counts.right + ", left: " + counts.left + ", 180°: " + counts["180"] + ".";
     var panel = byId("m4093LoadPanel");
     if (panel) panel.classList.toggle("disabled", !loadRules.enabled);
+    var toggleText = byId("m4093CalculateLoadsText");
+    if (toggleText) toggleText.textContent = "Auto ANFO: " + (loadRules.enabled ? "ON" : "OFF");
     var preview = byId("m4093LoadPreview");
     var note = byId("m4093LoadPreviewNote");
     if (!loadRules.enabled) {
@@ -1673,7 +1675,7 @@
     modal.innerHTML = [
       '<div class="m400Box m40932CalculatorBox">',
       '<div class="m400Head"><strong>Shot Diagram Load Calculator</strong><button type="button" id="m40932CalculatorClose">Close</button></div>',
-      '<label class="m4093LoadToggle"><input id="m40932AutoEnabled" type="checkbox" checked><span>Auto-calculate when a Shot Diagram hole is entered or edited</span></label>',
+      '<label class="m4093LoadToggle"><input id="m40932AutoEnabled" type="checkbox" checked><span><strong>Auto ANFO calculation</strong><small>ON calculates stemming and ANFO. OFF is manual/emulsion mode and preserves pumped-pound entries.</small></span></label>',
       '<div class="m40932SettingsGrid">',
       '<label>Minimum stemming (ft)<input id="m40932MinimumStemming" type="number" min="0" step="0.1" inputmode="decimal"></label>',
       '<label>Hold into rock (ft)<input id="m40932HoldIntoRock" type="number" min="0" step="0.1" inputmode="decimal"></label>',
@@ -1731,7 +1733,7 @@
       stat(result.needsReview, "Needs review")
     ].join("");
     note.className = "m400Note " + (result.needsReview ? "m400Warning" : "");
-    note.innerHTML = (rules.enabled ? "Automatic Hole Entry calculation is ON. " : "Automatic Hole Entry calculation is OFF; batch recalculation remains available. ") +
+    note.innerHTML = (rules.enabled ? "Auto ANFO is ON. " : "Auto ANFO is OFF — manual/emulsion entries will not be overwritten; batch recalculation remains available. ") +
       "Dirt/Bad skipped: " + result.skippedCondition + ". Non-ANFO skipped: " + result.skippedNonAnfo + ".";
     if (result.needsReview) {
       note.innerHTML += " Missing/invalid depth or overburden: " + result.missingData + "; no load room: " + result.noLoadRoom + "; unsupported Secondary Load: " + result.unsupportedSecondary + ".";
@@ -1818,7 +1820,7 @@
     var button = document.createElement("button");
     button.id = "m40932LoadCalculatorButton";
     button.type = "button";
-    button.textContent = "Load Calculator / Parameters";
+    button.textContent = "Load Calculator / Auto ANFO";
     button.setAttribute("data-m405-mutation", "true");
     button.addEventListener("click", openShotLoadCalculator);
     var timing = byId("m397TimingMenuButton");
@@ -3589,7 +3591,7 @@
         script.id = CHILD_SCRIPT_ID;
         script.src = CHILD_SCRIPT_SRC;
         doc.head.appendChild(script);
-      } catch (error) { console.warn("MITHRIL m40.9.3.2 could not attach the standardized document layer to the Shot Diagram.", error); }
+      } catch (error) { console.warn("MITHRIL m40.9.3.3 could not attach the standardized document layer to the Shot Diagram.", error); }
     }
     frame.addEventListener("load", function () { setTimeout(inject, 80); });
     setTimeout(inject, 120);

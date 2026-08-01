@@ -1,15 +1,19 @@
 {
-  "version": "m40.9.3.2",
-  "title": "Configurable Automatic Load Calculator",
+  "version": "m40.9.3.3",
+  "title": "Auto ANFO Toggle and Manual Emulsion Mode",
   "released": "2026-08-01",
   "minimumOfflineVersion": "m39.6.3",
   "notes": [
-    "Extends automatic stemming and ANFO calculation to manually created and edited Shot Diagram holes.",
+    "Adds a clear document-level Auto ANFO ON/OFF toggle directly inside Hole Entry.",
+    "Auto ANFO OFF is manual/emulsion mode and never overwrites stemming or Primary Load while a hole is entered or edited.",
+    "Manual Primary Load entries can contain the pumped pounds reported by the emulsion truck.",
+    "Keeps the same Auto ANFO setting in the Load Calculator / Auto ANFO parameter window.",
+    "Retains automatic stemming and ANFO calculation for manually created, edited, and Drill Log-converted Shot Diagram holes when enabled.",
     "Adds document-level parameters for minimum stemming, hold into rock, and feet occupied per dink.",
     "Defaults to 7 ft minimum stemming, a 1 ft hold into rock, and 3 ft per dink.",
     "Calculates stemming as max(minimum stemming, overburden plus rock hold).",
     "Calculates ANFO as depth minus stemming minus dink footage.",
-    "Adds a Load Calculator / Parameters tool with preview, settings-only save, existing-hole recalculation, and undo.",
+    "Adds a Load Calculator / Auto ANFO tool with preview, settings-only save, existing-hole recalculation, and undo.",
     "Skips Dirt and Bad holes, non-ANFO Primary Loads, and unsupported mixed Secondary Loads.",
     "Keeps Drill Log conversion connected to the same configurable Shot Diagram rules.",
     "Preserves inferred two-tap timing, Page Order / Renumber, iPad entry layout, right-click shortcuts, and cloud sync behavior."
