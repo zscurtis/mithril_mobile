@@ -1,8 +1,8 @@
 (function () {
   "use strict";
 
-  var RELEASE_VERSION = "m40.9.3.3";
-  var RELEASE_LABEL = "Auto ANFO toggle and manual emulsion mode";
+  var RELEASE_VERSION = "m40.9.3.4";
+  var RELEASE_LABEL = "Load calculator menu access repair";
   var THEME_STORAGE_KEY = "mithrilCanvasThemeV1";
   var THEME_CLASS_PREFIX = "m395-theme-";
   var THEME_OPTIONS = [
@@ -201,7 +201,7 @@
         var script = childDocument.createElement("script");
         script.id = "mithrilMenuM395ChildLoader";
         script.setAttribute("data-mithril-release", RELEASE_VERSION);
-        script.src = "./mithril-menu-m397.js?v=40.9.3.3-frame";
+        script.src = "./mithril-menu-m397.js?v=40.9.3.4-frame";
         (childDocument.head || childDocument.documentElement).appendChild(script);
         return true;
       } catch (error) {
@@ -1119,6 +1119,7 @@
       '<div class="m395MenuStack">',
       '  <button type="button" data-m395-action="info">Shot Info</button>',
       '  <button type="button" class="primary" data-m395-action="editHoles">Edit Holes</button>',
+      '  <button type="button" id="m40932LoadCalculatorButton" data-m405-mutation="true">Load Calculator / Auto ANFO</button>',
       '  <button type="button" data-m395-section="m395ShotPages" data-label="Page Tools" aria-expanded="false">Page Tools  ›</button>',
       '  <div id="m395ShotPages" class="m395Section">',
       '    <div class="m395SectionTitle">Page Tools</div>',

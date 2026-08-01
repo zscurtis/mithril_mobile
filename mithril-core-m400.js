@@ -1,9 +1,9 @@
 (function () {
   "use strict";
 
-  var RELEASE_VERSION = "m40.9.3.3";
+  var RELEASE_VERSION = "m40.9.3.4";
   var CHILD_SCRIPT_ID = "mithrilCoreM400ChildLoader";
-  var CHILD_SCRIPT_SRC = "./mithril-core-m400.js?rev=40933-frame";
+  var CHILD_SCRIPT_SRC = "./mithril-core-m400.js?rev=40934-frame";
   var TRANSFER_KEY = "mithrilDrillToShotTransferM400";
   var UNDO_KEY = "mithrilDrillToShotUndoM400";
   var LOAD_CALCULATOR_UNDO_KEY = "mithrilShotLoadCalculatorUndoM40932";
@@ -1275,7 +1275,7 @@
     modal.className = "m400Modal";
     modal.innerHTML = [
       '<div class="m400Box">',
-      '<div class="m400Head"><strong>Create Shot Diagram from Drill Log — m40.9.3.3</strong><button type="button" id="m400TransferClose">Close</button></div>',
+      '<div class="m400Head"><strong>Create Shot Diagram from Drill Log — m40.9.3.4</strong><button type="button" id="m400TransferClose">Close</button></div>',
       '<div id="m400TransferStats" class="m400Stats"></div>',
       '<div class="m400Grid">',
       '<label class="m400Wide">Shot orientation<select id="m400Orientation"></select></label>',
@@ -1814,7 +1814,15 @@
   function installShotLoadCalculatorButton() {
     if (!isShot()) return false;
     var menu = byId("menuModal");
-    if (!menu || byId("m40932LoadCalculatorButton")) return !!byId("m40932LoadCalculatorButton");
+    if (!menu) return false;
+    var existing = byId("m40932LoadCalculatorButton");
+    if (existing) {
+      if (existing.getAttribute("data-m40934-bound") !== "true") {
+        existing.setAttribute("data-m40934-bound", "true");
+        existing.addEventListener("click", openShotLoadCalculator);
+      }
+      return true;
+    }
     var stack = menu.querySelector(".m395MenuStack");
     if (!stack) return false;
     var button = document.createElement("button");
@@ -1822,6 +1830,7 @@
     button.type = "button";
     button.textContent = "Load Calculator / Auto ANFO";
     button.setAttribute("data-m405-mutation", "true");
+    button.setAttribute("data-m40934-bound", "true");
     button.addEventListener("click", openShotLoadCalculator);
     var timing = byId("m397TimingMenuButton");
     var edit = stack.querySelector('[data-m395-action="editHoles"]');
@@ -3591,7 +3600,7 @@
         script.id = CHILD_SCRIPT_ID;
         script.src = CHILD_SCRIPT_SRC;
         doc.head.appendChild(script);
-      } catch (error) { console.warn("MITHRIL m40.9.3.3 could not attach the standardized document layer to the Shot Diagram.", error); }
+      } catch (error) { console.warn("MITHRIL m40.9.3.4 could not attach the standardized document layer to the Shot Diagram.", error); }
     }
     frame.addEventListener("load", function () { setTimeout(inject, 80); });
     setTimeout(inject, 120);
