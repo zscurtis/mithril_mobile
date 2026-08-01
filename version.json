@@ -1,17 +1,17 @@
 {
-  "version": "m40.9.3.1",
-  "title": "Stemming and Dink Correction",
+  "version": "m40.9.3.2",
+  "title": "Configurable Automatic Load Calculator",
   "released": "2026-08-01",
   "minimumOfflineVersion": "m39.6.3",
   "notes": [
-    "Corrects the import calculator default to 7 ft minimum stemming and a 1 ft hold into rock.",
-    "Calculates stemming as the greater of the minimum or overburden plus the rock hold.",
-    "Calculates Primary Load as drilled depth minus stemming and stores the result as ANFO footage with an A designator.",
-    "Treats each manually entered dink as 3 ft and recalculates ANFO as depth minus stemming minus dink footage.",
-    "Supports dink-only Secondary Load entries such as 1D or 2D without repeatedly subtracting from an earlier ANFO value.",
-    "Previews loaded holes, total ANFO footage, Dirt/Bad skips, and holes requiring review before import.",
-    "Leaves timing blank and never calculates Dirt or Bad holes.",
-    "Uses the existing Drill Log import undo snapshot to restore the prior Shot Diagram.",
+    "Extends automatic stemming and ANFO calculation to manually created and edited Shot Diagram holes.",
+    "Adds document-level parameters for minimum stemming, hold into rock, and feet occupied per dink.",
+    "Defaults to 7 ft minimum stemming, a 1 ft hold into rock, and 3 ft per dink.",
+    "Calculates stemming as max(minimum stemming, overburden plus rock hold).",
+    "Calculates ANFO as depth minus stemming minus dink footage.",
+    "Adds a Load Calculator / Parameters tool with preview, settings-only save, existing-hole recalculation, and undo.",
+    "Skips Dirt and Bad holes, non-ANFO Primary Loads, and unsupported mixed Secondary Loads.",
+    "Keeps Drill Log conversion connected to the same configurable Shot Diagram rules.",
     "Preserves inferred two-tap timing, Page Order / Renumber, iPad entry layout, right-click shortcuts, and cloud sync behavior."
   ]
 }

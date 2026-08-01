@@ -1,11 +1,12 @@
 (function () {
   "use strict";
 
-  var RELEASE_VERSION = "m40.9.3.1";
+  var RELEASE_VERSION = "m40.9.3.2";
   var CHILD_SCRIPT_ID = "mithrilCoreM400ChildLoader";
-  var CHILD_SCRIPT_SRC = "./mithril-core-m400.js?rev=4093-frame";
+  var CHILD_SCRIPT_SRC = "./mithril-core-m400.js?rev=40932-frame";
   var TRANSFER_KEY = "mithrilDrillToShotTransferM400";
   var UNDO_KEY = "mithrilDrillToShotUndoM400";
+  var LOAD_CALCULATOR_UNDO_KEY = "mithrilShotLoadCalculatorUndoM40932";
   var DEVICE_KEY = "mithrilCloudDeviceNameM399";
   var SYNC_META_PREFIX = "mithrilCloudSyncMetaM401:";
   var RECOVERY_PREFIX = "mithrilCloudRecoveryM401:";
@@ -255,7 +256,7 @@
       ".m400Docs{display:grid;gap:8px}.m400Doc{border:1px solid #bdc6d1;border-radius:11px;padding:10px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;background:#fff}.m400DocTitle{font-size:15px;font-weight:900}.m400Meta{font-size:12px;color:#596777;font-weight:750;line-height:1.4;margin-top:3px}.m400DocActions{display:flex;gap:6px;align-items:center}.m407DocMenu{position:relative}.m407DocMenu summary{list-style:none;display:flex;align-items:center;justify-content:center;width:42px;min-height:44px;border:1px solid #8996a5;border-radius:8px;background:#f4f4f4;font-size:22px;font-weight:900;cursor:pointer}.m407DocMenu summary::-webkit-details-marker{display:none}.m407DocMenuPanel{position:absolute;right:0;top:48px;z-index:3;width:190px;padding:7px;border:1px solid #aab3bf;border-radius:9px;background:#fff;box-shadow:0 8px 22px rgba(0,0,0,.2)}.m407DocMenuPanel button{width:100%}.m407Technical{margin-top:5px;font-size:10px;color:#8792a0;font-weight:750}",
       ".m408ToastRegion{position:fixed;left:50%;bottom:max(16px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:22000;width:min(720px,calc(100vw - 24px));display:grid;gap:8px;pointer-events:none}.m400Toast{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;padding:12px 12px 12px 16px;border:2px solid #4f9a61;border-radius:11px;background:#e9f8ec;color:#173d20;font-size:14px;font-weight:850;line-height:1.35;box-shadow:0 8px 28px rgba(0,0,0,.35);text-align:left;pointer-events:auto;animation:m408ToastIn .18s ease-out}.m400Toast.bad{background:#ffeaea;border-color:#c66;color:#720000}.m400Toast.wait{background:#fff7d8;border-color:#c7aa45;color:#5f4800}.m400Toast.leaving{opacity:0;transform:translateY(8px);transition:opacity .18s,transform .18s}.m408ToastClose{width:34px;min-height:34px!important;padding:0!important;border:0!important;background:transparent!important;color:inherit!important;font-size:24px!important;line-height:1!important}@keyframes m408ToastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}",
       ".m408FeedbackModal{z-index:26000}.m408FeedbackBox{width:min(560px,100%);padding:0;overflow:hidden;border-color:#64748b}.m408FeedbackHead{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid #d6dbe2;background:#f8fafc}.m408FeedbackIcon{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:#eaf3ff;color:#1f5fae;font-size:19px;font-weight:950}.m408FeedbackBox.bad .m408FeedbackIcon,.m408FeedbackBox.danger .m408FeedbackIcon{background:#ffe5e5;color:#8b1e1e}.m408FeedbackBox.warning .m408FeedbackIcon{background:#fff0c2;color:#725000}.m408FeedbackTitle{font-size:20px;font-weight:950;color:#161b22}.m408FeedbackMessage{padding:18px 16px;white-space:pre-wrap;font-size:15px;font-weight:800;line-height:1.55;color:#161b22;background:#fff}.m408FeedbackBox.warning .m408FeedbackMessage{border-left:5px solid #d59a16;background:#fffaf0}.m408FeedbackActions{position:sticky;bottom:0;display:grid;grid-template-columns:1fr 1fr;gap:9px;padding:12px 16px;border-top:1px solid #c8d0da;background:#f8fafc}.m408FeedbackActions.one{grid-template-columns:1fr}.m408FeedbackActions button{min-height:50px;font-size:15px}.m400Box .m408FeedbackActions button.danger{background:#b42318;color:#fff;border-color:#8f1b13}",
-      ".m4093LoadPanel{margin:11px 0;padding:11px;border:2px solid #7198c5;border-radius:11px;background:#f4f8fd}.m4093LoadToggle{display:flex!important;grid-column:1/-1;align-items:center;gap:10px;min-height:46px;padding:8px 10px;border:1px solid #93abc6;border-radius:8px;background:#e9f2fc;color:#173f70!important;font-size:14px!important}.m4093LoadToggle input{width:24px!important;height:24px!important;min-height:24px!important;margin:0;flex:0 0 auto}.m4093LoadFields{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:9px}.m4093LoadPanel.disabled .m4093LoadFields,.m4093LoadPanel.disabled .m4093Formula{opacity:.48}.m4093Formula{margin:9px 0 0;font-size:12px;font-weight:850;line-height:1.45;color:#314b68}.m4093Preview{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin-top:9px}.m4093Preview .m400Stat{min-height:64px}.m4093PreviewNote{margin:8px 0 0}.m4093ReviewList{margin:5px 0 0;padding-left:19px}.m4093ReviewList li{margin:2px 0}",
+      ".m4093LoadPanel{margin:11px 0;padding:11px;border:2px solid #7198c5;border-radius:11px;background:#f4f8fd}.m4093LoadToggle{display:flex!important;grid-column:1/-1;align-items:center;gap:10px;min-height:46px;padding:8px 10px;border:1px solid #93abc6;border-radius:8px;background:#e9f2fc;color:#173f70!important;font-size:14px!important}.m4093LoadToggle input{width:24px!important;height:24px!important;min-height:24px!important;margin:0;flex:0 0 auto}.m4093LoadFields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-top:9px}.m4093LoadPanel.disabled .m4093LoadFields,.m4093LoadPanel.disabled .m4093Formula{opacity:.48}.m4093Formula{margin:9px 0 0;font-size:12px;font-weight:850;line-height:1.45;color:#314b68}.m4093Preview{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin-top:9px}.m4093Preview .m400Stat{min-height:64px}.m4093PreviewNote{margin:8px 0 0}.m4093ReviewList{margin:5px 0 0;padding-left:19px}.m4093ReviewList li{margin:2px 0}.m40932CalculatorBox{width:min(760px,100%)}.m40932SettingsGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-top:10px}.m40932SettingsGrid label{display:grid;gap:4px;color:#3e4b59;font-size:12px;font-weight:900}.m40932SettingsGrid input{width:100%;min-height:44px;border:1px solid #8794a3;border-radius:8px;padding:8px;font-size:16px;box-sizing:border-box}.m40932Preview{grid-template-columns:repeat(4,minmax(0,1fr))}.m40932Actions{grid-template-columns:1fr 1fr}.m40932Actions .wide{grid-column:1/-1}.m40932Undo{margin-top:8px;width:100%}",
       "header>.topRow{grid-template-columns:minmax(0,1fr) auto auto auto auto!important}.m4091HeaderSync{min-width:58px;border-color:#7e9fc7;background:#edf5ff;color:#174f91}.m4091HeaderSync:active{background:#d8eaff}@media(max-width:520px){.m4091HeaderSync{min-width:48px;padding-left:6px;padding-right:6px}}",
       "#status.m408StatusHost{display:grid!important;grid-template-columns:minmax(0,1fr) auto;gap:5px 10px;align-items:center;padding:6px 9px!important;border:1px solid #c7cfd9;border-radius:9px;background:#f8fafc;min-height:38px;box-sizing:border-box;color:#26313f!important;white-space:normal!important;overflow:visible!important}.m408DocTitle{font-size:13px;font-weight:950;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.m408DocMeta{grid-column:1/-1;font-size:10px;font-weight:750;color:#657284;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.m408StatusChip{display:inline-flex;align-items:center;gap:6px;min-height:24px;padding:3px 8px;border-radius:999px;border:1px solid #9aa7b5;background:#edf1f5;color:#435160;font-size:10px;font-weight:950;white-space:nowrap}.m408StatusChip::before{content:'';width:7px;height:7px;border-radius:50%;background:#7a8795}.m408StatusChip.synced{border-color:#6aa978;background:#e9f8ec;color:#225a2f}.m408StatusChip.synced::before{background:#2f8a45}.m408StatusChip.unsynced{border-color:#caa444;background:#fff7d8;color:#6b5100}.m408StatusChip.unsynced::before{background:#d39412}.m408StatusChip.offline{border-color:#c79c43;background:#fff2cf;color:#6b4d00}.m408StatusChip.offline::before{background:#d39412}.m408StatusChip.readonly{border-color:#9b71df;background:#f2eaff;color:#4b287b}.m408StatusChip.readonly::before{background:#7b4ac5}.m408StatusChip.syncing::before{background:#1f6feb;animation:m408Pulse 1s infinite alternate}@keyframes m408Pulse{to{opacity:.28}}",
       "button.finishBtn,#finishSendBtn{display:none!important}",
@@ -264,7 +265,7 @@
       ".m404LandingAuth{color:#fff}.m404LandingHead{display:flex;justify-content:space-between;gap:10px;align-items:center}.m404LandingHead strong{font-size:18px}.m404AuthState{font-size:11px;font-weight:900;color:#b9c7da;letter-spacing:.04em}.m404AuthForm{display:grid;grid-template-columns:1fr 1fr auto;gap:9px;margin-top:11px}.m404AuthForm input{min-width:0;min-height:46px;border:1px solid #697585;border-radius:9px;padding:9px 11px;background:#f8fafc;font-size:16px}.m404AuthForm button{min-width:105px;background:#1f6feb;border-color:#1f6feb;color:#fff}.m404SignedIn{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-top:10px;padding:11px;border:1px solid #3f7650;border-radius:11px;background:rgba(37,110,57,.2)}.m404UserName{font-size:16px;font-weight:950}.m404UserMeta{font-size:12px;color:#c9d7cc;font-weight:800;margin-top:3px}.m404AuthMessage{display:none;margin-top:9px;font-size:12px;line-height:1.35;font-weight:800;color:#ffd37a}.m404AuthMessage.show{display:block}.m404TemplateLocked{opacity:.42;pointer-events:none;filter:grayscale(.55)}",
       ".m405UserActions{display:flex;gap:8px;flex-wrap:wrap}.m405AdminBox{width:min(900px,100%)}.m405AdminRows{display:grid;gap:8px;margin-top:10px}.m405AdminRow{display:grid;grid-template-columns:minmax(0,1fr) 150px 125px auto;gap:8px;align-items:center;border:1px solid #aaa;border-radius:9px;padding:9px}.m405AdminName{font-weight:900}.m405AdminMeta{font-size:11px;color:#555;font-weight:750;overflow-wrap:anywhere}.m405AccessBanner{position:fixed;left:50%;top:8px;transform:translateX(-50%);z-index:19000;padding:8px 13px;border:2px solid #9b71df;border-radius:10px;background:#f2eaff;color:#3d226d;font:900 13px Arial,sans-serif;box-shadow:0 5px 18px rgba(0,0,0,.28)}body.m405ReadOnly canvas{pointer-events:none!important}body.m405ReadOnly [data-m405-mutation=true]{display:none!important}",
       "@media(max-width:700px){.m405AdminRow{grid-template-columns:1fr 1fr}.m405AdminIdentity{grid-column:1/-1}.m405AdminRow button{grid-column:1/-1}}",
-      "@media(max-width:600px){.m400Grid,.m400Actions,.m401Compare,.m404AuthForm,.m407CloudPrimary,.m4093LoadFields{grid-template-columns:1fr}.m400Wide{grid-column:auto}.m400Stats{grid-template-columns:1fr 1fr}.m4093Preview{grid-template-columns:1fr 1fr}.m400Doc{grid-template-columns:1fr}.m400DocActions{justify-content:stretch}.m400DocActions>.primary{flex:1}.m404SignedIn{align-items:flex-start;flex-direction:column}.m404SignedIn button{width:100%}.m405UserActions{width:100%;display:grid}.m407LastRefresh{text-align:left}.m407CloudCurrentHead{display:grid}.m407DocMenuPanel{right:auto;left:0}.m408FeedbackActions{grid-template-columns:1fr}.m408DocTitle{font-size:12px}.m408StatusChip{padding:3px 7px}}"
+      "@media(max-width:600px){.m400Grid,.m400Actions,.m401Compare,.m404AuthForm,.m407CloudPrimary,.m4093LoadFields,.m40932SettingsGrid{grid-template-columns:1fr}.m400Wide{grid-column:auto}.m400Stats{grid-template-columns:1fr 1fr}.m4093Preview,.m40932Preview{grid-template-columns:1fr 1fr}.m400Doc{grid-template-columns:1fr}.m400DocActions{justify-content:stretch}.m400DocActions>.primary{flex:1}.m404SignedIn{align-items:flex-start;flex-direction:column}.m404SignedIn button{width:100%}.m405UserActions{width:100%;display:grid}.m407LastRefresh{text-align:left}.m407CloudCurrentHead{display:grid}.m407DocMenuPanel{right:auto;left:0}.m408FeedbackActions{grid-template-columns:1fr}.m408DocTitle{font-size:12px}.m408StatusChip{padding:3px 7px}}"
     ].join("");
     document.head.appendChild(style);
   }
@@ -953,16 +954,75 @@
     return String(rounded).replace(/\.0+$/, "").replace(/(\.\d*?)0+$/, "$1");
   }
 
-  function normalizedImportLoadRules(value) {
+  function normalizedLoadRules(value, defaultEnabled) {
     value = value || {};
-    var minimum = parseImportFootage(value.minimumStemming, true);
-    var hold = parseImportFootage(value.holdIntoRock, true);
+    var minimum = parseImportFootage(value.minimumStemming == null ? 7 : value.minimumStemming, true);
+    var hold = parseImportFootage(value.holdIntoRock == null ? 1 : value.holdIntoRock, true);
+    var dinkLength = parseImportFootage(value.dinkLengthFeet == null ? 3 : value.dinkLengthFeet, false);
     return {
-      enabled: value.enabled === true,
-      valid: minimum !== null && hold !== null,
+      enabled: value.enabled == null ? defaultEnabled === true : value.enabled === true,
+      valid: minimum !== null && hold !== null && dinkLength !== null,
       minimumStemming: minimum === null ? 7 : minimum,
       holdIntoRock: hold === null ? 1 : hold,
+      dinkLengthFeet: dinkLength === null ? 3 : dinkLength,
       loadType: "ANFO"
+    };
+  }
+
+  function normalizedImportLoadRules(value) {
+    return normalizedLoadRules(value, false);
+  }
+
+  function normalizedShotLoadRules(value) {
+    return normalizedLoadRules(value, true);
+  }
+
+  function parseDinkOnlyLoad(value) {
+    var raw = text(value).toUpperCase();
+    if (!raw) return { valid: true, count: 0 };
+    var pattern = /(\d+)D/g;
+    var count = 0, match, lastEnd = 0;
+    while ((match = pattern.exec(raw)) !== null) {
+      if (!/^[\s,+]*$/.test(raw.slice(lastEnd, match.index))) return { valid: false, count: 0 };
+      var amount = Number(match[1]);
+      if (!isFinite(amount) || amount <= 0 || Math.floor(amount) !== amount) return { valid: false, count: 0 };
+      count += amount;
+      lastEnd = match.index + match[0].length;
+    }
+    if (!count || !/^[\s,+]*$/.test(raw.slice(lastEnd))) return { valid: false, count: 0 };
+    return { valid: true, count: count };
+  }
+
+  function anfoOnly(value) {
+    var raw = text(value);
+    return !raw || /^(?:\d+(?:\.\d*)?|\.\d+)A$/i.test(raw);
+  }
+
+  function calculateShotHoleLoad(record, rules) {
+    rules = normalizedShotLoadRules(rules);
+    if (!rules.enabled) return { status: "disabled" };
+    if (!rules.valid) return { status: "invalid-rules" };
+    if (flagYes(record && record.DirtHole) || flagYes(record && record.BadHole)) return { status: "condition" };
+    if (!anfoOnly(record && record.PrimaryLoad)) return { status: "non-anfo" };
+    var dinks = parseDinkOnlyLoad(record && record.SecondaryLoad);
+    if (!dinks.valid) return { status: "unsupported-secondary" };
+    var depth = parseImportFootage(record && record.Depth, false);
+    var overburden = parseImportFootage(record && record.Overburden, true);
+    if (depth === null || overburden === null) return { status: "missing" };
+    var stemming = Math.max(rules.minimumStemming, overburden + rules.holdIntoRock);
+    var dinkFeet = dinks.count * rules.dinkLengthFeet;
+    var anfoFeet = depth - stemming - dinkFeet;
+    if (!(anfoFeet > 0)) {
+      return { status: "no-room", depth: depth, overburden: overburden, stemming: stemming, dinkCount: dinks.count, dinkFeet: dinkFeet };
+    }
+    return {
+      status: "calculated",
+      stemming: stemming,
+      anfoFeet: anfoFeet,
+      dinkCount: dinks.count,
+      dinkFeet: dinkFeet,
+      stemmingText: formatImportFootage(stemming),
+      primaryLoadText: formatImportFootage(anfoFeet) + "A"
     };
   }
 
@@ -972,9 +1032,12 @@
       valid: rules.valid,
       minimumStemming: rules.minimumStemming,
       holdIntoRock: rules.holdIntoRock,
+      dinkLengthFeet: rules.dinkLengthFeet,
       calculated: 0,
       totalAnfoFeet: 0,
       skippedCondition: 0,
+      skippedNonAnfo: 0,
+      unsupportedSecondary: 0,
       needsReview: 0,
       missingData: 0,
       noLoadRoom: 0,
@@ -983,21 +1046,7 @@
   }
 
   function calculateImportedHoleLoad(record, rules) {
-    if (!rules.enabled) return { status: "disabled" };
-    if (flagYes(record && record.DirtHole) || flagYes(record && record.BadHole)) return { status: "condition" };
-    var depth = parseImportFootage(record && record.Depth, false);
-    var overburden = parseImportFootage(record && record.Overburden, true);
-    if (depth === null || overburden === null) return { status: "missing" };
-    var stemming = Math.max(rules.minimumStemming, overburden + rules.holdIntoRock);
-    var anfoFeet = depth - stemming;
-    if (!(anfoFeet > 0)) return { status: "no-room", depth: depth, overburden: overburden, stemming: stemming };
-    return {
-      status: "calculated",
-      stemming: stemming,
-      anfoFeet: anfoFeet,
-      stemmingText: formatImportFootage(stemming),
-      primaryLoadText: formatImportFootage(anfoFeet) + "A"
-    };
+    return calculateShotHoleLoad(record, rules);
   }
 
   function addImportLoadResult(stats, calculation, label) {
@@ -1008,6 +1057,16 @@
     }
     if (calculation.status === "condition") {
       stats.skippedCondition += 1;
+      return;
+    }
+    if (calculation.status === "non-anfo") {
+      stats.skippedNonAnfo += 1;
+      return;
+    }
+    if (calculation.status === "unsupported-secondary") {
+      stats.unsupportedSecondary += 1;
+      stats.needsReview += 1;
+      if (stats.reviewHoles.length < 8) stats.reviewHoles.push(label);
       return;
     }
     if (calculation.status === "missing" || calculation.status === "no-room") {
@@ -1023,14 +1082,15 @@
     return normalizedImportLoadRules({
       enabled: !!(enabled && enabled.checked),
       minimumStemming: byId("m4093MinimumStemming") ? byId("m4093MinimumStemming").value : "7",
-      holdIntoRock: byId("m4093HoldIntoRock") ? byId("m4093HoldIntoRock").value : "1"
+      holdIntoRock: byId("m4093HoldIntoRock") ? byId("m4093HoldIntoRock").value : "1",
+      dinkLengthFeet: byId("m4093DinkLength") ? byId("m4093DinkLength").value : "3"
     });
   }
 
   function importLoadSummaryText(stats) {
     if (!stats || !stats.enabled) return "Stemming and load fields will remain blank.";
     return "Calculated " + stats.calculated + " loaded hole" + (stats.calculated === 1 ? "" : "s") +
-      " using Stemming = max(" + formatImportFootage(stats.minimumStemming) + ", overburden + " + formatImportFootage(stats.holdIntoRock) + "). " +
+      " using Stemming = max(" + formatImportFootage(stats.minimumStemming) + ", overburden + " + formatImportFootage(stats.holdIntoRock) + ") and " + formatImportFootage(stats.dinkLengthFeet) + " ft per dink. " +
       "Total ANFO footage: " + formatImportFootage(stats.totalAnfoFeet) + " ft.";
   }
 
@@ -1177,10 +1237,18 @@
       type: "ANFO",
       minimumStemming: loadRules.minimumStemming,
       holdIntoRock: loadRules.holdIntoRock,
+      dinkLengthFeet: loadRules.dinkLengthFeet,
       calculatedHoles: loadStats.calculated,
       totalAnfoFeet: Math.round(loadStats.totalAnfoFeet * 100) / 100,
       needsReview: loadStats.needsReview
     } : null;
+    header.LoadCalculationSettings = {
+      enabled: loadRules.enabled,
+      minimumStemming: loadRules.minimumStemming,
+      holdIntoRock: loadRules.holdIntoRock,
+      dinkLengthFeet: loadRules.dinkLengthFeet,
+      loadType: "ANFO"
+    };
     writeIdentity(header, {
       documentId: randomUuid(),
       createdAt: new Date().toISOString(),
@@ -1207,7 +1275,7 @@
     modal.className = "m400Modal";
     modal.innerHTML = [
       '<div class="m400Box">',
-      '<div class="m400Head"><strong>Create Shot Diagram from Drill Log — m40.9.3.1</strong><button type="button" id="m400TransferClose">Close</button></div>',
+      '<div class="m400Head"><strong>Create Shot Diagram from Drill Log — m40.9.3.2</strong><button type="button" id="m400TransferClose">Close</button></div>',
       '<div id="m400TransferStats" class="m400Stats"></div>',
       '<div class="m400Grid">',
       '<label class="m400Wide">Shot orientation<select id="m400Orientation"></select></label>',
@@ -1217,12 +1285,13 @@
       '<label>Blaster<input id="m400Blaster" type="text"></label>',
       '</div>',
       '<div id="m4093LoadPanel" class="m4093LoadPanel">',
-      '<label class="m4093LoadToggle"><input id="m4093CalculateLoads" type="checkbox" checked><span>Calculate stemming and ANFO footage during import</span></label>',
+      '<label class="m4093LoadToggle"><input id="m4093CalculateLoads" type="checkbox" checked><span>Auto-calculate stemming and ANFO in the new Shot Diagram</span></label>',
       '<div class="m4093LoadFields">',
       '<label>Minimum stemming (ft)<input id="m4093MinimumStemming" type="number" min="0" step="0.1" inputmode="decimal" value="7"></label>',
       '<label>Hold into rock (ft)<input id="m4093HoldIntoRock" type="number" min="0" step="0.1" inputmode="decimal" value="1"></label>',
+      '<label>Feet per dink<input id="m4093DinkLength" type="number" min="0.1" step="0.1" inputmode="decimal" value="3"></label>',
       '</div>',
-      '<p class="m4093Formula">Rule: Stemming = greater of the minimum stemming or overburden + hold into rock. Primary Load = depth − stemming, stored as ANFO footage (A).</p>',
+      '<p class="m4093Formula">Rule: Stemming = greater of the minimum stemming or overburden + hold into rock. ANFO = depth − stemming − dink footage.</p>',
       '<div id="m4093LoadPreview" class="m4093Preview"></div>',
       '<div id="m4093LoadPreviewNote" class="m400Note m4093PreviewNote"></div>',
       '</div>',
@@ -1240,6 +1309,7 @@
     byId("m4093CalculateLoads").addEventListener("change", updateTransferPreview);
     byId("m4093MinimumStemming").addEventListener("input", updateTransferPreview);
     byId("m4093HoldIntoRock").addEventListener("input", updateTransferPreview);
+    byId("m4093DinkLength").addEventListener("input", updateTransferPreview);
     return modal;
   }
 
@@ -1276,7 +1346,7 @@
     }
     if (!loadRules.valid) {
       if (preview) preview.innerHTML = [stat("—", "Calculated holes"), stat("—", "ANFO footage")].join("");
-      if (note) { note.className = "m400Note m400Danger m4093PreviewNote"; note.textContent = "Enter valid zero-or-greater values for minimum stemming and hold into rock."; }
+      if (note) { note.className = "m400Note m400Danger m4093PreviewNote"; note.textContent = "Enter valid zero-or-greater values for minimum stemming and hold into rock, plus a dink length greater than zero."; }
       return;
     }
     var stats = result.loadStats;
@@ -1332,6 +1402,7 @@
     byId("m4093CalculateLoads").checked = true;
     byId("m4093MinimumStemming").value = "7";
     byId("m4093HoldIntoRock").value = "1";
+    byId("m4093DinkLength").value = "3";
     updateTransferPreview();
     modal.classList.add("show");
   }
@@ -1340,7 +1411,7 @@
     var modal = byId("m400TransferModal"), payload = modal && modal.__payload;
     if (!payload) { alert("The Drill Log transfer is no longer available."); return; }
     var loadRules = importLoadRulesFromControls();
-    if (loadRules.enabled && !loadRules.valid) { alert("Enter valid zero-or-greater values for minimum stemming and hold into rock."); return; }
+    if (loadRules.enabled && !loadRules.valid) { alert("Enter valid calculation parameters. Minimum stemming and rock hold must be zero or greater; feet per dink must be greater than zero."); return; }
     payload.orientation = selectedOrientation(modal);
     payload.loadCalculation = loadRules;
     payload.shotInfo = {
@@ -1515,6 +1586,248 @@
     return true;
   }
   function updateUndoButton() { var b = byId("m400UndoImportButton"); if (b) b.disabled = !readUndo(); }
+
+  // ---------------------------------------------------------------------------
+  // Configurable Shot Diagram stemming / ANFO calculator
+  // ---------------------------------------------------------------------------
+
+  function saveLoadCalculatorUndo(snapshot) {
+    var raw = JSON.stringify(snapshot);
+    try { sessionStorage.setItem(LOAD_CALCULATOR_UNDO_KEY, raw); return true; }
+    catch (error1) {
+      try { localStorage.setItem(LOAD_CALCULATOR_UNDO_KEY, raw); return true; }
+      catch (error2) { return false; }
+    }
+  }
+
+  function readLoadCalculatorUndo() {
+    var raw = null;
+    try { raw = sessionStorage.getItem(LOAD_CALCULATOR_UNDO_KEY); } catch (error1) {}
+    if (!raw) try { raw = localStorage.getItem(LOAD_CALCULATOR_UNDO_KEY); } catch (error2) {}
+    try { return raw ? JSON.parse(raw) : null; } catch (error3) { return null; }
+  }
+
+  function clearLoadCalculatorUndo() {
+    try { sessionStorage.removeItem(LOAD_CALCULATOR_UNDO_KEY); } catch (error1) {}
+    try { localStorage.removeItem(LOAD_CALCULATOR_UNDO_KEY); } catch (error2) {}
+  }
+
+  function shotLoadRulesFromHeader(header) {
+    return normalizedShotLoadRules(header && header.LoadCalculationSettings);
+  }
+
+  function previewShotLoadCalculation(snapshot, rules) {
+    snapshot = snapshot || { pagesData: {} };
+    rules = normalizedShotLoadRules(rules);
+    var calculationRules = clone(rules);
+    calculationRules.enabled = true;
+    var result = {
+      rules: rules,
+      eligible: 0,
+      willChange: 0,
+      totalAnfoFeet: 0,
+      skippedCondition: 0,
+      skippedNonAnfo: 0,
+      needsReview: 0,
+      missingData: 0,
+      noLoadRoom: 0,
+      unsupportedSecondary: 0,
+      reviewHoles: [],
+      changes: []
+    };
+    numericKeys(snapshot.pagesData || {}).forEach(function (pageKey) {
+      var page = snapshot.pagesData[pageKey] || {};
+      Object.keys(page).sort().forEach(function (holeId) {
+        var record = page[holeId];
+        if (!meaningfulRecord(record)) return;
+        var calculation = calculateShotHoleLoad(record, calculationRules);
+        if (calculation.status === "calculated") {
+          result.eligible += 1;
+          result.totalAnfoFeet += calculation.anfoFeet;
+          if (text(record.Stemming) !== calculation.stemmingText || text(record.PrimaryLoad).toUpperCase() !== calculation.primaryLoadText.toUpperCase()) {
+            result.willChange += 1;
+            result.changes.push({ pageKey: String(pageKey), holeId: holeId, stemming: calculation.stemmingText, primaryLoad: calculation.primaryLoadText });
+          }
+          return;
+        }
+        if (calculation.status === "condition") { result.skippedCondition += 1; return; }
+        if (calculation.status === "non-anfo") { result.skippedNonAnfo += 1; return; }
+        result.needsReview += 1;
+        if (calculation.status === "missing") result.missingData += 1;
+        else if (calculation.status === "no-room") result.noLoadRoom += 1;
+        else if (calculation.status === "unsupported-secondary") result.unsupportedSecondary += 1;
+        if (result.reviewHoles.length < 10) result.reviewHoles.push("P" + pageKey + " " + holeId);
+      });
+    });
+    result.totalAnfoFeet = Math.round(result.totalAnfoFeet * 100) / 100;
+    return result;
+  }
+
+  function ensureShotLoadCalculatorModal() {
+    var modal = byId("m40932LoadCalculatorModal");
+    if (modal) return modal;
+    ensureStyles();
+    modal = document.createElement("div");
+    modal.id = "m40932LoadCalculatorModal";
+    modal.className = "m400Modal";
+    modal.innerHTML = [
+      '<div class="m400Box m40932CalculatorBox">',
+      '<div class="m400Head"><strong>Shot Diagram Load Calculator</strong><button type="button" id="m40932CalculatorClose">Close</button></div>',
+      '<label class="m4093LoadToggle"><input id="m40932AutoEnabled" type="checkbox" checked><span>Auto-calculate when a Shot Diagram hole is entered or edited</span></label>',
+      '<div class="m40932SettingsGrid">',
+      '<label>Minimum stemming (ft)<input id="m40932MinimumStemming" type="number" min="0" step="0.1" inputmode="decimal"></label>',
+      '<label>Hold into rock (ft)<input id="m40932HoldIntoRock" type="number" min="0" step="0.1" inputmode="decimal"></label>',
+      '<label>Feet per dink<input id="m40932DinkLength" type="number" min="0.1" step="0.1" inputmode="decimal"></label>',
+      '</div>',
+      '<p class="m4093Formula">Stemming = max(minimum stemming, overburden + hold into rock)<br>ANFO = depth − stemming − (dinks × feet per dink)</p>',
+      '<div id="m40932Preview" class="m400Stats m40932Preview"></div>',
+      '<div id="m40932PreviewNote" class="m400Note"></div>',
+      '<div class="m400Note">Dirt and Bad holes are skipped. Wet holes remain eligible. Non-ANFO Primary Loads and mixed Secondary Loads are never overwritten.</div>',
+      '<div class="m400Actions m40932Actions"><button type="button" id="m40932SaveSettings">Save Settings Only</button><button type="button" class="primary" id="m40932ApplyExisting">Recalculate Existing Holes</button></div>',
+      '<button type="button" id="m40932Undo" class="m40932Undo">Undo Last Recalculation</button>',
+      '</div>'
+    ].join("");
+    document.body.appendChild(modal);
+    byId("m40932CalculatorClose").addEventListener("click", function () { modal.classList.remove("show"); });
+    byId("m40932SaveSettings").addEventListener("click", function () { saveShotLoadCalculator(false); });
+    byId("m40932ApplyExisting").addEventListener("click", function () { saveShotLoadCalculator(true); });
+    byId("m40932Undo").addEventListener("click", undoShotLoadCalculation);
+    ["m40932AutoEnabled", "m40932MinimumStemming", "m40932HoldIntoRock", "m40932DinkLength"].forEach(function (id) {
+      var input = byId(id);
+      if (input) input.addEventListener(id === "m40932AutoEnabled" ? "change" : "input", updateShotLoadCalculatorPreview);
+    });
+    return modal;
+  }
+
+  function shotLoadRulesFromControls() {
+    return normalizedShotLoadRules({
+      enabled: !!(byId("m40932AutoEnabled") && byId("m40932AutoEnabled").checked),
+      minimumStemming: byId("m40932MinimumStemming") ? byId("m40932MinimumStemming").value : "7",
+      holdIntoRock: byId("m40932HoldIntoRock") ? byId("m40932HoldIntoRock").value : "1",
+      dinkLengthFeet: byId("m40932DinkLength") ? byId("m40932DinkLength").value : "3"
+    });
+  }
+
+  function updateShotLoadCalculatorPreview() {
+    var modal = byId("m40932LoadCalculatorModal");
+    var adapter = window.MithrilDocument;
+    if (!modal || !adapter || adapter.type !== "shotDiagram") return;
+    var rules = shotLoadRulesFromControls();
+    var preview = byId("m40932Preview"), note = byId("m40932PreviewNote");
+    byId("m40932Undo").disabled = !readLoadCalculatorUndo();
+    if (!rules.valid) {
+      preview.innerHTML = [stat("—", "Eligible"), stat("—", "Will change"), stat("—", "ANFO footage"), stat("—", "Needs review")].join("");
+      note.className = "m400Note m400Danger";
+      note.textContent = "Enter zero or greater for minimum stemming and rock hold, and greater than zero for feet per dink.";
+      modal.__preview = null;
+      return;
+    }
+    var result = previewShotLoadCalculation(adapter.getSnapshot(), rules);
+    modal.__preview = result;
+    preview.innerHTML = [
+      stat(result.eligible, "Eligible holes"),
+      stat(result.willChange, "Will change"),
+      stat(formatImportFootage(result.totalAnfoFeet) + " ft", "ANFO footage"),
+      stat(result.needsReview, "Needs review")
+    ].join("");
+    note.className = "m400Note " + (result.needsReview ? "m400Warning" : "");
+    note.innerHTML = (rules.enabled ? "Automatic Hole Entry calculation is ON. " : "Automatic Hole Entry calculation is OFF; batch recalculation remains available. ") +
+      "Dirt/Bad skipped: " + result.skippedCondition + ". Non-ANFO skipped: " + result.skippedNonAnfo + ".";
+    if (result.needsReview) {
+      note.innerHTML += " Missing/invalid depth or overburden: " + result.missingData + "; no load room: " + result.noLoadRoom + "; unsupported Secondary Load: " + result.unsupportedSecondary + ".";
+      if (result.reviewHoles.length) note.innerHTML += '<ul class="m4093ReviewList"><li>' + result.reviewHoles.map(escapeHtml).join("</li><li>") + "</li></ul>";
+    }
+  }
+
+  function openShotLoadCalculator() {
+    if (!hasPermission("edit")) return restrictedMessage("Shot Diagram load calculation");
+    closeMenu();
+    var adapter = window.MithrilDocument;
+    if (!adapter || adapter.type !== "shotDiagram") { alert("Open the Shot Diagram before using the load calculator."); return; }
+    var snapshot = adapter.getSnapshot();
+    var rules = shotLoadRulesFromHeader(snapshot.headerData || {});
+    var modal = ensureShotLoadCalculatorModal();
+    byId("m40932AutoEnabled").checked = rules.enabled;
+    byId("m40932MinimumStemming").value = formatImportFootage(rules.minimumStemming);
+    byId("m40932HoldIntoRock").value = formatImportFootage(rules.holdIntoRock);
+    byId("m40932DinkLength").value = formatImportFootage(rules.dinkLengthFeet);
+    updateShotLoadCalculatorPreview();
+    modal.classList.add("show");
+  }
+
+  function saveShotLoadCalculator(recalculateExisting) {
+    var adapter = window.MithrilDocument;
+    var modal = byId("m40932LoadCalculatorModal");
+    if (!adapter || adapter.type !== "shotDiagram" || !modal) return;
+    var rules = shotLoadRulesFromControls();
+    if (!rules.valid) { alert("Enter valid calculation parameters before saving."); return; }
+    var before = adapter.getSnapshot();
+    var next = clone(before);
+    next.headerData = next.headerData || {};
+    next.headerData.LoadCalculationSettings = {
+      enabled: rules.enabled,
+      minimumStemming: rules.minimumStemming,
+      holdIntoRock: rules.holdIntoRock,
+      dinkLengthFeet: rules.dinkLengthFeet,
+      loadType: "ANFO"
+    };
+    var preview = previewShotLoadCalculation(before, rules);
+    if (recalculateExisting) {
+      if (!saveLoadCalculatorUndo(before)) { alert("MITHRIL could not create the required undo snapshot, so no holes were changed."); return; }
+      preview.changes.forEach(function (change) {
+        var record = next.pagesData[change.pageKey] && next.pagesData[change.pageKey][change.holeId];
+        if (!record) return;
+        record.Stemming = change.stemming;
+        record.PrimaryLoad = change.primaryLoad;
+        record.Timestamp = new Date().toLocaleString();
+      });
+      next.headerData.LoadCalculationLastRun = {
+        release: RELEASE_VERSION,
+        calculatedAt: new Date().toISOString(),
+        eligibleHoles: preview.eligible,
+        changedHoles: preview.willChange,
+        totalAnfoFeet: preview.totalAnfoFeet
+      };
+    }
+    adapter.applySnapshot(next, { markDirty: true, fitCurrent: false });
+    modal.classList.remove("show");
+    window.dispatchEvent(new CustomEvent("mithril-load-settings-changed", { detail: clone(next.headerData.LoadCalculationSettings) }));
+    showToast(recalculateExisting ?
+      "Recalculated " + preview.willChange + " existing hole" + (preview.willChange === 1 ? "" : "s") + "." :
+      "Load calculation settings saved.");
+  }
+
+  function undoShotLoadCalculation() {
+    var adapter = window.MithrilDocument;
+    var snapshot = readLoadCalculatorUndo();
+    if (!adapter || adapter.type !== "shotDiagram" || !snapshot) { alert("No load-calculator undo snapshot is available on this device."); return; }
+    if (!confirm("Undo the last load recalculation? This restores the Shot Diagram values from immediately before that calculation.")) return;
+    adapter.applySnapshot(snapshot, { markDirty: true, fitCurrent: false });
+    clearLoadCalculatorUndo();
+    updateShotLoadCalculatorPreview();
+    window.dispatchEvent(new CustomEvent("mithril-load-settings-changed", { detail: clone((snapshot.headerData || {}).LoadCalculationSettings || {}) }));
+    showToast("The previous stemming and load values were restored.");
+  }
+
+  function installShotLoadCalculatorButton() {
+    if (!isShot()) return false;
+    var menu = byId("menuModal");
+    if (!menu || byId("m40932LoadCalculatorButton")) return !!byId("m40932LoadCalculatorButton");
+    var stack = menu.querySelector(".m395MenuStack");
+    if (!stack) return false;
+    var button = document.createElement("button");
+    button.id = "m40932LoadCalculatorButton";
+    button.type = "button";
+    button.textContent = "Load Calculator / Parameters";
+    button.setAttribute("data-m405-mutation", "true");
+    button.addEventListener("click", openShotLoadCalculator);
+    var timing = byId("m397TimingMenuButton");
+    var edit = stack.querySelector('[data-m395-action="editHoles"]');
+    var anchor = timing && timing.parentNode === stack ? timing : edit;
+    if (anchor && anchor.nextSibling) stack.insertBefore(button, anchor.nextSibling);
+    else stack.appendChild(button);
+    return true;
+  }
 
   // ---------------------------------------------------------------------------
   // Standardized cloud sync - uses MithrilDocument only
@@ -3276,7 +3589,7 @@
         script.id = CHILD_SCRIPT_ID;
         script.src = CHILD_SCRIPT_SRC;
         doc.head.appendChild(script);
-      } catch (error) { console.warn("MITHRIL m40.9.3.1 could not attach the standardized document layer to the Shot Diagram.", error); }
+      } catch (error) { console.warn("MITHRIL m40.9.3.2 could not attach the standardized document layer to the Shot Diagram.", error); }
     }
     frame.addEventListener("load", function () { setTimeout(inject, 80); });
     setTimeout(inject, 120);
@@ -3308,6 +3621,7 @@
     installDrillPdfPatch();
     cleanupLegacyUI();
     installTransferButtons();
+    installShotLoadCalculatorButton();
     installCloudButton();
     installHeaderCloudButton();
     installTimingSeparationCheck();
@@ -3321,6 +3635,7 @@
       attempts += 1;
       cleanupLegacyUI();
       installTransferButtons();
+      installShotLoadCalculatorButton();
       installCloudButton();
       installHeaderCloudButton();
       installTimingSeparationCheck();
@@ -3348,6 +3663,10 @@
     normalizedSnapshot: normalizedSnapshot,
     detectBackupType: detectBackupType,
     inspectManualBackup: inspectManualBackup,
+    normalizedShotLoadRules: normalizedShotLoadRules,
+    parseDinkOnlyLoad: parseDinkOnlyLoad,
+    calculateShotHoleLoad: calculateShotHoleLoad,
+    previewShotLoadCalculation: previewShotLoadCalculation,
     buildManualBackup: buildManualBackup,
     legacyLogicalId: legacyLogicalId,
     uuidFromSeed: uuidFromSeed,
