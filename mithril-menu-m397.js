@@ -1,8 +1,8 @@
 (function () {
   "use strict";
 
-  var RELEASE_VERSION = "m40.9.6";
-  var RELEASE_LABEL = "Steel-First Industrial Interface";
+  var RELEASE_VERSION = "m40.9.6.1";
+  var RELEASE_LABEL = "Original Theme Rendering Repair";
   var THEME_STORAGE_KEY = "mithrilCanvasThemeV1";
   var THEME_CLASS_PREFIX = "m395-theme-";
   var THEME_OPTIONS = [
@@ -201,7 +201,7 @@
         var script = childDocument.createElement("script");
         script.id = "mithrilMenuM395ChildLoader";
         script.setAttribute("data-mithril-release", RELEASE_VERSION);
-        script.src = "./mithril-menu-m397.js?v=40.9.6-frame";
+        script.src = "./mithril-menu-m397.js?v=40.9.6.1-frame";
         (childDocument.head || childDocument.documentElement).appendChild(script);
         return true;
       } catch (error) {
@@ -262,19 +262,19 @@
       ".m395ThemeGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}",
       ".m395ThemeButton{min-height:44px;font-size:13px;line-height:1.25;text-align:left}",
       ".m395ThemeButton.active{background:#1f6feb;color:#fff;border-color:#1f6feb}",
-      "html.m395-theme-gray,body.m395-theme-gray{background:#2e2e2e !important}",
-      "html.m395-theme-dark-slate,body.m395-theme-dark-slate{background-color:#232a31 !important;background-image:radial-gradient(circle at 18% 18%, rgba(255,255,255,.06) 0 3px, transparent 4px),radial-gradient(circle at 76% 70%, rgba(0,0,0,.2) 0 18px, transparent 20px),linear-gradient(135deg,#20262d 0%,#313b46 100%) !important;background-size:140px 140px,220px 220px,cover !important;background-attachment:fixed !important}",
-      "html.m395-theme-blue-steel,body.m395-theme-blue-steel{background-color:#566575 !important;background-image:radial-gradient(circle at 20% 20%, rgba(255,255,255,.08) 0 2px, transparent 3px),linear-gradient(135deg,rgba(255,255,255,.08),rgba(255,255,255,0) 38%),linear-gradient(135deg,#4b5a68 0%,#6b7d8f 100%) !important;background-size:150px 150px,cover,cover !important;background-attachment:fixed !important}",
-      "html.m395-theme-subtle-grid,body.m395-theme-subtle-grid{background-color:#252e38 !important;background-image:radial-gradient(circle at center, rgba(255,255,255,.03) 1px, transparent 1px),repeating-linear-gradient(0deg, rgba(255,255,255,.06) 0 1px, transparent 1px 26px),repeating-linear-gradient(90deg, rgba(255,255,255,.06) 0 1px, transparent 1px 26px),linear-gradient(135deg,#232b34,#2e3945) !important;background-size:26px 26px,26px 26px,26px 26px,cover !important;background-attachment:fixed !important}",
-      "html.m395-theme-gradient-slate,body.m395-theme-gradient-slate{background:#54606f !important;background-image:linear-gradient(135deg,#6b7786 0%,#3c4653 100%) !important;background-attachment:fixed !important}",
-      "html.m395-theme-dark-paper,body.m395-theme-dark-paper{background-color:#35383d !important;background-image:radial-gradient(circle at 25% 25%, rgba(255,255,255,.05) 0 2px, transparent 3px),radial-gradient(circle at 75% 60%, rgba(255,255,255,.03) 0 1px, transparent 2px),linear-gradient(135deg,#2c3035 0%,#44484f 100%) !important;background-size:120px 120px,90px 90px,cover !important;background-attachment:fixed !important}",
-      "html.m395-theme-soft-quarry-tan,body.m395-theme-soft-quarry-tan{background-color:#b9aea0 !important;background-image:radial-gradient(circle at 20% 20%, rgba(255,255,255,.12) 0 2px, transparent 3px),radial-gradient(circle at 80% 70%, rgba(0,0,0,.08) 0 2px, transparent 3px),linear-gradient(135deg,#c8bdae 0%,#a89b8b 100%) !important;background-size:70px 70px,90px 90px,cover !important;background-attachment:fixed !important}",
-      "html.m395-theme-blast-ember,body.m395-theme-blast-ember{background-color:#111 !important;background-image:radial-gradient(circle at 15% 78%, rgba(255,110,0,.72) 0 2%, transparent 8%),radial-gradient(circle at 82% 22%, rgba(255,90,0,.48) 0 1.4%, transparent 7%),repeating-linear-gradient(135deg, rgba(255,120,0,.0) 0 18px, rgba(255,110,0,.18) 18px 19px, transparent 19px 34px),linear-gradient(135deg,#090909,#262626) !important;background-attachment:fixed !important}",
-      "html.m395-theme-electric-steel,body.m395-theme-electric-steel{background-color:#0e2032 !important;background-image:radial-gradient(circle at 50% 60%, rgba(0,150,255,.34) 0 18%, transparent 42%),repeating-linear-gradient(135deg, rgba(255,255,255,.05) 0 2px, transparent 2px 18px),linear-gradient(135deg,#091521,#27425f) !important;background-attachment:fixed !important}",
-      "html.m395-theme-blast-placard,body.m395-theme-blast-placard{background-color:#111 !important;background-image:linear-gradient(45deg, transparent 38%, rgba(255,150,30,.78) 38% 62%, transparent 62%),linear-gradient(-45deg, transparent 38%, rgba(255,150,30,.78) 38% 62%, transparent 62%),radial-gradient(circle at 80% 25%, rgba(255,165,0,.22) 0 12%, transparent 26%),repeating-linear-gradient(135deg, rgba(255,150,30,.22) 0 12px, transparent 12px 36px),linear-gradient(135deg,#090909,#1b1b1b) !important;background-size:280px 280px,280px 280px,cover,cover,cover !important;background-attachment:fixed !important}",
-      "html.m395-theme-copper-quarry,body.m395-theme-copper-quarry{background-color:#5a2b11 !important;background-image:radial-gradient(circle at 25% 30%, rgba(255,170,100,.28) 0 14%, transparent 26%),radial-gradient(circle at 72% 68%, rgba(255,210,130,.16) 0 10%, transparent 24%),repeating-linear-gradient(45deg, rgba(255,255,255,.02) 0 12px, rgba(0,0,0,.08) 12px 22px),linear-gradient(135deg,#4c200c,#8a481f) !important;background-attachment:fixed !important}",
-      "html.m395-theme-cobalt-topo,body.m395-theme-cobalt-topo{background-color:#041c3a !important;background-image:radial-gradient(circle at 18% 72%, transparent 0 40px, rgba(0,180,255,.24) 41px 42px, transparent 43px 54px, rgba(0,180,255,.18) 55px 56px, transparent 57px),radial-gradient(circle at 78% 62%, transparent 0 50px, rgba(0,180,255,.22) 51px 52px, transparent 53px 66px, rgba(0,180,255,.18) 67px 68px, transparent 69px),radial-gradient(circle at 56% 22%, transparent 0 32px, rgba(0,180,255,.18) 33px 34px, transparent 35px 48px, rgba(0,180,255,.15) 49px 50px, transparent 51px),linear-gradient(135deg,#031325,#09447a) !important;background-attachment:fixed !important}",
-      "html.m395-theme-signal-red-slate,body.m395-theme-signal-red-slate{background-color:#120b0b !important;background-image:radial-gradient(circle at 18% 78%, rgba(255,70,40,.34) 0 18%, transparent 30%),radial-gradient(circle at 84% 20%, rgba(255,60,30,.28) 0 12%, transparent 24%),repeating-linear-gradient(90deg, rgba(255,60,30,.16) 0 2px, transparent 2px 48px),linear-gradient(135deg,#0b0b0b,#272222) !important;background-attachment:fixed !important}",
+      "html.m395-theme-gray,body.m395-theme-gray{background:#2e2e2e !important;background-image:none !important}",
+      "html.m395-theme-dark-slate,body.m395-theme-dark-slate{background-color:#232a31 !important;background-image:url('./theme_assets/dark-slate.webp') !important;background-size:cover !important;background-position:center center !important;background-repeat:no-repeat !important;background-attachment:fixed !important}",
+      "html.m395-theme-blue-steel,body.m395-theme-blue-steel{background-color:#566575 !important;background-image:url('./theme_assets/blue-steel.webp') !important;background-size:cover !important;background-position:center center !important;background-repeat:no-repeat !important;background-attachment:fixed !important}",
+      "html.m395-theme-subtle-grid,body.m395-theme-subtle-grid{background-color:#252e38 !important;background-image:url('./theme_assets/subtle-grid.webp') !important;background-size:cover !important;background-position:center center !important;background-repeat:no-repeat !important;background-attachment:fixed !important}",
+      "html.m395-theme-gradient-slate,body.m395-theme-gradient-slate{background-color:#54606f !important;background-image:url('./theme_assets/gradient-slate.webp') !important;background-size:cover !important;background-position:center center !important;background-repeat:no-repeat !important;background-attachment:fixed !important}",
+      "html.m395-theme-dark-paper,body.m395-theme-dark-paper{background-color:#35383d !important;background-image:url('./theme_assets/dark-paper.webp') !important;background-size:cover !important;background-position:center center !important;background-repeat:no-repeat !important;background-attachment:fixed !important}",
+      "html.m395-theme-soft-quarry-tan,body.m395-theme-soft-quarry-tan{background-color:#b9aea0 !important;background-image:url('./theme_assets/soft-quarry-tan.webp') !important;background-size:cover !important;background-position:center center !important;background-repeat:no-repeat !important;background-attachment:fixed !important}",
+      "html.m395-theme-blast-ember,body.m395-theme-blast-ember{background-color:#111 !important;background-image:url('./theme_assets/blast-ember.webp') !important;background-size:cover !important;background-position:center center !important;background-repeat:no-repeat !important;background-attachment:fixed !important}",
+      "html.m395-theme-electric-steel,body.m395-theme-electric-steel{background-color:#0e2032 !important;background-image:url('./theme_assets/electric-steel.webp') !important;background-size:cover !important;background-position:center center !important;background-repeat:no-repeat !important;background-attachment:fixed !important}",
+      "html.m395-theme-blast-placard,body.m395-theme-blast-placard{background-color:#111 !important;background-image:url('./theme_assets/blast-placard.webp') !important;background-size:cover !important;background-position:center center !important;background-repeat:no-repeat !important;background-attachment:fixed !important}",
+      "html.m395-theme-copper-quarry,body.m395-theme-copper-quarry{background-color:#5a2b11 !important;background-image:url('./theme_assets/copper-quarry.webp') !important;background-size:cover !important;background-position:center center !important;background-repeat:no-repeat !important;background-attachment:fixed !important}",
+      "html.m395-theme-cobalt-topo,body.m395-theme-cobalt-topo{background-color:#041c3a !important;background-image:url('./theme_assets/cobalt-topo.webp') !important;background-size:cover !important;background-position:center center !important;background-repeat:no-repeat !important;background-attachment:fixed !important}",
+      "html.m395-theme-signal-red-slate,body.m395-theme-signal-red-slate{background-color:#120b0b !important;background-image:url('./theme_assets/signal-red-slate.webp') !important;background-size:cover !important;background-position:center center !important;background-repeat:no-repeat !important;background-attachment:fixed !important}",
       "@media(max-width:520px){.m395QuickButton{font-size:0}.m395QuickButton:after{content:'Quick';font-size:14px}.m395FitButton{font-size:0}.m395FitButton:after{content:'Fit';font-size:14px}.m395ActionGrid{grid-template-columns:1fr}.m395ActionGrid .wide{grid-column:auto}.m395DirectionGrid{grid-template-columns:1fr 1fr 1fr}.m395ThemeGrid{grid-template-columns:1fr}.m4092PageOrderRow{grid-template-columns:48px minmax(0,1fr) 44px 44px;padding:7px 5px}}"
     ].join("");
     document.head.appendChild(style);
@@ -1416,15 +1416,21 @@
     var body = document.body;
     if (!body || !window.getComputedStyle) return;
     var computed = window.getComputedStyle(body);
-    var surfaces = [byId("canvasWrap"), byId("drillCanvas"), byId("shotCanvas")];
-    for (var i = 0; i < surfaces.length; i += 1) {
-      var surface = surfaces[i];
-      if (!surface) continue;
-      surface.style.backgroundColor = computed.backgroundColor;
-      surface.style.backgroundImage = computed.backgroundImage;
-      surface.style.backgroundSize = computed.backgroundSize;
-      surface.style.backgroundPosition = computed.backgroundPosition;
-      surface.style.backgroundRepeat = computed.backgroundRepeat;
+    var wrap = byId("canvasWrap");
+    if (wrap) {
+      wrap.style.setProperty("background-color", computed.backgroundColor || "#2e2e2e", "important");
+      wrap.style.setProperty("background-image", computed.backgroundImage || "none", "important");
+      wrap.style.setProperty("background-size", computed.backgroundSize || "cover", "important");
+      wrap.style.setProperty("background-position", computed.backgroundPosition || "center center", "important");
+      wrap.style.setProperty("background-repeat", computed.backgroundRepeat || "no-repeat", "important");
+      wrap.style.setProperty("background-attachment", "fixed", "important");
+    }
+    var canvases = [byId("drillCanvas"), byId("shotCanvas")];
+    for (var i = 0; i < canvases.length; i += 1) {
+      var canvas = canvases[i];
+      if (!canvas) continue;
+      canvas.style.setProperty("background-color", "transparent", "important");
+      canvas.style.setProperty("background-image", "none", "important");
     }
   }
 

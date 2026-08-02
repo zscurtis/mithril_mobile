@@ -1,4 +1,4 @@
-const CACHE_NAME = "mithril-mobile-m40-9-6-steel-first-interface-v1";
+const CACHE_NAME = "mithril-mobile-m40-9-6-1-original-theme-rendering-v1";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -9,7 +9,19 @@ const APP_SHELL = [
   "./mithril-update.js",
   "./manifest.webmanifest",
   "./icons/mithril-192.png",
-  "./icons/mithril-512.png"
+  "./icons/mithril-512.png",
+  "./theme_assets/dark-slate.webp",
+  "./theme_assets/blue-steel.webp",
+  "./theme_assets/subtle-grid.webp",
+  "./theme_assets/gradient-slate.webp",
+  "./theme_assets/dark-paper.webp",
+  "./theme_assets/soft-quarry-tan.webp",
+  "./theme_assets/blast-ember.webp",
+  "./theme_assets/electric-steel.webp",
+  "./theme_assets/blast-placard.webp",
+  "./theme_assets/copper-quarry.webp",
+  "./theme_assets/cobalt-topo.webp",
+  "./theme_assets/signal-red-slate.webp"
 ];
 self.addEventListener("install", event => { event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener("activate", event => { event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key)))).then(() => self.clients.claim())); });
@@ -27,8 +39,8 @@ function patchHTMLResponse(response, requestUrl) {
       .replace(/<script[^>]+mithril-menu-m399\.js[^>]*><\/script>/gi, "")
       .replace(/<script[^>]+mithril-core-m400\.js[^>]*><\/script>/gi, "");
     const scriptTags = [
-      '<script src="./mithril-menu-m397.js?v=40.9.6"></script>',
-      '<script src="./mithril-core-m400.js?v=40.9.6"></script>'
+      '<script src="./mithril-menu-m397.js?v=40.9.6.1"></script>',
+      '<script src="./mithril-core-m400.js?v=40.9.6.1"></script>'
     ].join("");
     if (/<\/body>/i.test(patched)) patched = patched.replace(/<\/body>/i, scriptTags + "</body>"); else patched += scriptTags;
     const headers = new Headers(response.headers); headers.set("Content-Type", "text/html; charset=utf-8"); headers.delete("Content-Length");

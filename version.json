@@ -1,13 +1,13 @@
 {
-  "version": "m40.9.6",
-  "title": "Steel-First Industrial Interface",
+  "version": "m40.9.6.1",
+  "title": "Original Theme Rendering Repair",
   "released": "2026-08-02",
   "minimumOfflineVersion": "m39.6.3",
   "notes": [
-    "Introduces a steel-first industrial visual system across the landing page, Drill Log workspace, Shot Diagram workspace, menus, dialogs, and field tool drawers.",
-    "Uses gunmetal and dark-steel surfaces with restrained orange blasting accents for active controls and key actions.",
-    "Preserves neutral white document pages and high-contrast data-entry surfaces for field readability.",
-    "Keeps the existing Canvas Background selector and all saved theme choices available; alternate artwork refinement remains a future visual update.",
+    "Restores the original 1600 x 1600 WebP artwork for all 12 selectable Canvas Background themes.",
+    "Renders theme artwork on the visible workspace frame instead of stretching it across the full multi-page canvas.",
+    "Caches all 12 theme assets for reliable offline use and preserves saved theme choices.",
+    "Keeps the m40.9.6 steel-first industrial interface, neutral document pages, and restrained orange accents unchanged.",
     "Does not change Drill Log or Shot Diagram templates, saved document data, calculations, exports, cloud sync, or field workflows.",
     "Preserves Report Readiness, standardized PDF summaries, loading configurations, configurable Auto ANFO, inferred timing, Page Order / Renumber, iPad entry layout, and desktop interaction behavior."
   ]
