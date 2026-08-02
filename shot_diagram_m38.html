@@ -46,7 +46,7 @@
 </head>
 <body>
 <button id="fallbackHome" type="button">MITHRIL Home</button>
-<iframe id="shotFrame" src="./shot_diagram_m34.html" title="MITHRIL Shot Diagram"></iframe>
+<iframe id="shotFrame" src="./shot_diagram_m34.html?v=40.9.6.4" title="MITHRIL Shot Diagram"></iframe>
 <script>
 (() => {
   "use strict";
@@ -226,9 +226,9 @@
           var lastUiUpdate = 0;
           function drawVisiblePagesOnly() {
             var rect = wrap.getBoundingClientRect();
+            // Preserve the selected workspace theme during legacy iPad
+            // pinch/pan redraws instead of repainting the old gray base.
             ctx.clearRect(0, 0, rect.width, rect.height);
-            ctx.fillStyle = "#2e2e2e";
-            ctx.fillRect(0, 0, rect.width, rect.height);
 
             var safeScale = Math.max(view.scale, 0.0001);
             var viewport = {

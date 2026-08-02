@@ -1,8 +1,8 @@
 (function () {
   "use strict";
 
-  var RELEASE_VERSION = "m40.9.6.3";
-  var RELEASE_LABEL = "iPad Theme Rendering Fix";
+  var RELEASE_VERSION = "m40.9.6.4";
+  var RELEASE_LABEL = "iPad Portrait Zoom Theme Fix";
   var THEME_STORAGE_KEY = "mithrilCanvasThemeV1";
   var THEME_CLASS_PREFIX = "m395-theme-";
   var THEME_OPTIONS = [
@@ -201,7 +201,7 @@
         var script = childDocument.createElement("script");
         script.id = "mithrilMenuM395ChildLoader";
         script.setAttribute("data-mithril-release", RELEASE_VERSION);
-        script.src = "./mithril-menu-m397.js?v=40.9.6.3-frame";
+        script.src = "./mithril-menu-m397.js?v=40.9.6.4-frame";
         (childDocument.head || childDocument.documentElement).appendChild(script);
         return true;
       } catch (error) {

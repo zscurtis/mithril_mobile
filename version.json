@@ -1,17 +1,17 @@
 {
-  "version": "m40.9.6.3",
-  "title": "iPad Canvas Theme Rendering Fix",
+  "version": "m40.9.6.4",
+  "title": "iPad Portrait Zoom Theme Fix",
   "released": "2026-08-02",
   "minimumOfflineVersion": "m39.6.3",
   "notes": [
-    "Fixes canvas background changes not appearing inside the workspace on iPad Safari.",
-    "Keeps the drawing canvas transparent so the selected image-backed theme remains visible.",
-    "Uses an iPad-safe scrolling background on the already fixed workspace layer instead of WebKit's unreliable fixed-background mode.",
-    "Adds a Safari-compatible canvas prototype fallback while retaining the existing desktop rendering path.",
+    "Fixes the selected theme returning to gray after zooming in iPad portrait mode.",
+    "Removes the old gray base paint from both normal and legacy Shot Diagram redraw functions.",
+    "Makes the Drill Log and Shot Diagram canvas elements transparent at the source instead of relying only on a runtime override.",
+    "Preserves theme rendering through orientation changes, pinch zoom, pan, slider zoom, and button zoom.",
     "Preserves the approved 2560 x 1440 Cobalt Topo widescreen artwork and leaves all theme assets unchanged.",
     "Caches all 12 theme assets for reliable offline use and preserves saved theme choices.",
     "Keeps the m40.9.6 steel-first industrial interface, neutral document pages, and restrained orange accents unchanged.",
-    "Does not change Drill Log or Shot Diagram templates, saved document data, calculations, exports, cloud sync, or field workflows.",
+    "Does not change document page artwork, saved document data, calculations, exports, cloud sync, or field workflows.",
     "Preserves Report Readiness, standardized PDF summaries, loading configurations, configurable Auto ANFO, inferred timing, Page Order / Renumber, iPad entry layout, and desktop interaction behavior."
   ]
 }
