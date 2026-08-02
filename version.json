@@ -1,19 +1,14 @@
 {
-  "version": "m40.9.5",
-  "title": "Report Readiness / QA Center",
-  "released": "2026-08-01",
+  "version": "m40.9.6",
+  "title": "Steel-First Industrial Interface",
+  "released": "2026-08-02",
   "minimumOfflineVersion": "m39.6.3",
   "notes": [
-    "Adds Report Readiness to both the Drill Log and Shot Diagram menus.",
-    "Shows READY FOR REPORT or REVIEW REQUIRED with blocking issue and advisory counts.",
-    "Identifies the actual page and hole IDs affected by every field-data issue.",
-    "Checks Drill Logs for missing or impossible depth and overburden values.",
-    "Checks Shot Diagrams for missing dimensions, explosive loads, and loaded-hole timing.",
-    "Validates explosive entry syntax and ANFO/dink footage against the available loaded column.",
-    "Treats pumped emulsion entries in pounds as valid manual loads without forcing a footage-balance calculation.",
-    "Treats missing job, date, shot/drill-log number, and personnel fields as advisories rather than blocking field-data failures.",
-    "Provides a direct PDF action only after blocking issues are cleared.",
-    "Does not change hole data and does not claim that the physical shot is safe or ready to fire.",
-    "Preserves standardized PDF summaries, loading configurations, configurable Auto ANFO, inferred timing, Page Order / Renumber, iPad entry layout, and cloud sync behavior."
+    "Introduces a steel-first industrial visual system across the landing page, Drill Log workspace, Shot Diagram workspace, menus, dialogs, and field tool drawers.",
+    "Uses gunmetal and dark-steel surfaces with restrained orange blasting accents for active controls and key actions.",
+    "Preserves neutral white document pages and high-contrast data-entry surfaces for field readability.",
+    "Keeps the existing Canvas Background selector and all saved theme choices available; alternate artwork refinement remains a future visual update.",
+    "Does not change Drill Log or Shot Diagram templates, saved document data, calculations, exports, cloud sync, or field workflows.",
+    "Preserves Report Readiness, standardized PDF summaries, loading configurations, configurable Auto ANFO, inferred timing, Page Order / Renumber, iPad entry layout, and desktop interaction behavior."
   ]
 }
