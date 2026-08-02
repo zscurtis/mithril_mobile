@@ -1,17 +1,15 @@
 {
-  "version": "m40.9.6.4",
-  "title": "iPad Portrait Zoom Theme Fix",
+  "version": "m40.9.6.5",
+  "title": "Full Widescreen Theme Set",
   "released": "2026-08-02",
   "minimumOfflineVersion": "m39.6.3",
   "notes": [
-    "Fixes the selected theme returning to gray after zooming in iPad portrait mode.",
-    "Removes the old gray base paint from both normal and legacy Shot Diagram redraw functions.",
-    "Makes the Drill Log and Shot Diagram canvas elements transparent at the source instead of relying only on a runtime override.",
-    "Preserves theme rendering through orientation changes, pinch zoom, pan, slider zoom, and button zoom.",
-    "Preserves the approved 2560 x 1440 Cobalt Topo widescreen artwork and leaves all theme assets unchanged.",
-    "Caches all 12 theme assets for reliable offline use and preserves saved theme choices.",
-    "Keeps the m40.9.6 steel-first industrial interface, neutral document pages, and restrained orange accents unchanged.",
-    "Does not change document page artwork, saved document data, calculations, exports, cloud sync, or field workflows.",
+    "Rebuilds all 11 remaining canvas backgrounds as sharp 2560 x 1440 landscape artwork.",
+    "Preserves the approved 2560 x 1440 Cobalt Topo background, completing a consistent 12-theme widescreen set.",
+    "Uses subdued centers behind white document pages with stronger visual detail around the exposed workspace edges.",
+    "Preserves the m40.9.6.4 iPad orientation and zoom rendering fix.",
+    "Refreshes the offline cache so updated theme assets replace earlier square versions on every device.",
+    "Does not change templates, document data, calculations, exports, cloud sync, or field workflows.",
     "Preserves Report Readiness, standardized PDF summaries, loading configurations, configurable Auto ANFO, inferred timing, Page Order / Renumber, iPad entry layout, and desktop interaction behavior."
   ]
 }

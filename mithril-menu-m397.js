@@ -1,8 +1,8 @@
 (function () {
   "use strict";
 
-  var RELEASE_VERSION = "m40.9.6.4";
-  var RELEASE_LABEL = "iPad Portrait Zoom Theme Fix";
+  var RELEASE_VERSION = "m40.9.6.5";
+  var RELEASE_LABEL = "Full Widescreen Theme Set";
   var THEME_STORAGE_KEY = "mithrilCanvasThemeV1";
   var THEME_CLASS_PREFIX = "m395-theme-";
   var THEME_OPTIONS = [
