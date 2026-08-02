@@ -23,8 +23,12 @@
   }
   #shotFrame {
     display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
     width: 100%;
-    height: 100%;
+    height: calc(100% + env(safe-area-inset-bottom, 0px));
+    max-height: none;
     border: 0;
     background: #242424;
   }
@@ -46,7 +50,7 @@
 </head>
 <body>
 <button id="fallbackHome" type="button">MITHRIL Home</button>
-<iframe id="shotFrame" src="./shot_diagram_m34.html?v=40.9.6.4" title="MITHRIL Shot Diagram"></iframe>
+<iframe id="shotFrame" src="./shot_diagram_m34.html?v=40.9.6.6" title="MITHRIL Shot Diagram"></iframe>
 <script>
 (() => {
   "use strict";

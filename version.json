@@ -1,14 +1,14 @@
 {
-  "version": "m40.9.6.5",
-  "title": "Full Widescreen Theme Set",
+  "version": "m40.9.6.6",
+  "title": "Shot Diagram Bottom Edge Repair",
   "released": "2026-08-02",
   "minimumOfflineVersion": "m39.6.3",
   "notes": [
-    "Rebuilds all 11 remaining canvas backgrounds as sharp 2560 x 1440 landscape artwork.",
-    "Preserves the approved 2560 x 1440 Cobalt Topo background, completing a consistent 12-theme widescreen set.",
-    "Uses subdued centers behind white document pages with stronger visual detail around the exposed workspace edges.",
+    "Extends the Shot Diagram wrapper through the device bottom safe area so the canvas no longer clips above the screen edge.",
+    "Targets the Shot Diagram wrapper only; the working Drill Log layout is unchanged.",
+    "Preserves all 12 approved 2560 x 1440 widescreen canvas backgrounds.",
     "Preserves the m40.9.6.4 iPad orientation and zoom rendering fix.",
-    "Refreshes the offline cache so updated theme assets replace earlier square versions on every device.",
+    "Refreshes the offline cache so the corrected Shot Diagram wrapper reaches every device.",
     "Does not change templates, document data, calculations, exports, cloud sync, or field workflows.",
     "Preserves Report Readiness, standardized PDF summaries, loading configurations, configurable Auto ANFO, inferred timing, Page Order / Renumber, iPad entry layout, and desktop interaction behavior."
   ]

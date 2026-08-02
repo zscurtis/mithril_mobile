@@ -1,9 +1,9 @@
-const CACHE_NAME = "mithril-mobile-m40-9-6-5-full-widescreen-themes-v1";
+const CACHE_NAME = "mithril-mobile-m40-9-6-6-shot-bottom-edge-v1";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./shot_diagram_m38.html",
-  "./shot_diagram_m34.html?v=40.9.6.5",
+  "./shot_diagram_m34.html?v=40.9.6.6",
   "./mithril-menu-m397.js",
   "./mithril-core-m400.js",
   "./mithril-update.js",
@@ -39,8 +39,8 @@ function patchHTMLResponse(response, requestUrl) {
       .replace(/<script[^>]+mithril-menu-m399\.js[^>]*><\/script>/gi, "")
       .replace(/<script[^>]+mithril-core-m400\.js[^>]*><\/script>/gi, "");
     const scriptTags = [
-      '<script src="./mithril-menu-m397.js?v=40.9.6.5"></script>',
-      '<script src="./mithril-core-m400.js?v=40.9.6.5"></script>'
+      '<script src="./mithril-menu-m397.js?v=40.9.6.6"></script>',
+      '<script src="./mithril-core-m400.js?v=40.9.6.6"></script>'
     ].join("");
     if (/<\/body>/i.test(patched)) patched = patched.replace(/<\/body>/i, scriptTags + "</body>"); else patched += scriptTags;
     const headers = new Headers(response.headers); headers.set("Content-Type", "text/html; charset=utf-8"); headers.delete("Content-Length");
