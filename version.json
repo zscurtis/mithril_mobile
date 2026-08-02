@@ -1,11 +1,12 @@
 {
-  "version": "m40.9.3.4",
-  "title": "Load Calculator Menu Access Repair",
+  "version": "m40.9.3.5",
+  "title": "Load Calculator Open Repair",
   "released": "2026-08-01",
   "minimumOfflineVersion": "m39.6.3",
   "notes": [
+    "Repairs the Load Calculator / Auto ANFO menu action so the parameter window opens reliably.",
+    "Uses a menu-level click handler that survives Shot Diagram menu rebuilding during startup.",
     "Restores Load Calculator / Auto ANFO as a permanent Shot Diagram menu item directly below Timing Sequence.",
-    "Binds the calculator action reliably even when the Shot Diagram menu is rebuilt during startup.",
     "Adds a clear document-level Auto ANFO ON/OFF toggle directly inside Hole Entry.",
     "Auto ANFO OFF is manual/emulsion mode and never overwrites stemming or Primary Load while a hole is entered or edited.",
     "Manual Primary Load entries can contain the pumped pounds reported by the emulsion truck.",
