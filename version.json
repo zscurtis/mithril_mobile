@@ -1,11 +1,12 @@
 {
-  "version": "m40.9.6.1",
-  "title": "Original Theme Rendering Repair",
+  "version": "m40.9.6.2",
+  "title": "Cobalt Topo Widescreen Theme Test",
   "released": "2026-08-02",
   "minimumOfflineVersion": "m39.6.3",
   "notes": [
-    "Restores the original 1600 x 1600 WebP artwork for all 12 selectable Canvas Background themes.",
-    "Renders theme artwork on the visible workspace frame instead of stretching it across the full multi-page canvas.",
+    "Rebuilds Cobalt Topo as a sharp 2560 x 1440 landscape workspace background.",
+    "Uses finer contour mapping, dark cobalt steel texture, restrained survey marks, and a quieter center behind document pages.",
+    "Keeps the other 11 theme assets unchanged while the widescreen design is tested on desktop and iPad.",
     "Caches all 12 theme assets for reliable offline use and preserves saved theme choices.",
     "Keeps the m40.9.6 steel-first industrial interface, neutral document pages, and restrained orange accents unchanged.",
     "Does not change Drill Log or Shot Diagram templates, saved document data, calculations, exports, cloud sync, or field workflows.",
