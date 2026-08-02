@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <meta name="theme-color" content="#171717" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -14,6 +14,9 @@
 <link rel="icon" type="image/png" sizes="512x512" href="./icons/mithril-512.png?v=38.8" />
 <title>MITHRIL Shot Diagram m38.8</title>
 <style>
+  :root {
+    --mithril-safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
   html, body {
     margin: 0;
     width: 100%;
@@ -27,7 +30,8 @@
     top: 0;
     left: 0;
     width: 100%;
-    height: calc(100% + env(safe-area-inset-bottom, 0px));
+    height: calc(100% + var(--mithril-safe-bottom) + 4px);
+    height: calc(100dvh + var(--mithril-safe-bottom) + 4px);
     max-height: none;
     border: 0;
     background: #242424;
@@ -50,13 +54,62 @@
 </head>
 <body>
 <button id="fallbackHome" type="button">MITHRIL Home</button>
-<iframe id="shotFrame" src="./shot_diagram_m34.html?v=40.9.6.6" title="MITHRIL Shot Diagram"></iframe>
+<iframe id="shotFrame" src="./shot_diagram_m34.html?v=40.9.6.8" title="MITHRIL Shot Diagram"></iframe>
 <script>
 (() => {
   "use strict";
 
   const frame = document.getElementById("shotFrame");
   const fallbackHome = document.getElementById("fallbackHome");
+
+  function numberOrZero(value) {
+    const number = Number(value);
+    return Number.isFinite(number) && number > 0 ? number : 0;
+  }
+
+  function safeBottomInset() {
+    try {
+      return numberOrZero(getComputedStyle(document.documentElement)
+        .getPropertyValue("--mithril-safe-bottom").replace("px", "").trim());
+    } catch (error) {
+      return 0;
+    }
+  }
+
+  function currentViewportHeight() {
+    const visual = window.visualViewport;
+    return Math.max(
+      numberOrZero(document.documentElement.clientHeight),
+      numberOrZero(document.body && document.body.clientHeight),
+      numberOrZero(window.innerHeight),
+      visual ? numberOrZero(visual.height) + numberOrZero(visual.offsetTop) : 0
+    );
+  }
+
+  function syncShotFrameBounds() {
+    // iPad Safari reports a different layout/visual viewport relationship in
+    // landscape. Size the wrapper from the largest live viewport measurement,
+    // then extend through the home-indicator inset and a subpixel guard.
+    const viewportHeight = currentViewportHeight();
+    if (!viewportHeight) return;
+    frame.style.height = Math.ceil(viewportHeight + safeBottomInset() + 4) + "px";
+    try {
+      const childWindow = frame.contentWindow;
+      if (childWindow && typeof childWindow.dispatchEvent === "function") {
+        childWindow.dispatchEvent(new childWindow.Event("resize"));
+      }
+    } catch (error) {}
+  }
+
+  let frameSyncTimer = 0;
+  function scheduleShotFrameSync() {
+    window.cancelAnimationFrame(frameSyncTimer);
+    frameSyncTimer = window.requestAnimationFrame(syncShotFrameBounds);
+  }
+
+  function settleShotFrameAfterRotation() {
+    [0, 80, 250, 700].forEach(delay => window.setTimeout(syncShotFrameBounds, delay));
+  }
 
   function homeURL() {
     return "./index.html?refresh=" + Date.now();
@@ -88,7 +141,17 @@
 
   fallbackHome.addEventListener("click", goHome);
 
+  window.addEventListener("resize", scheduleShotFrameSync);
+  window.addEventListener("orientationchange", settleShotFrameAfterRotation);
+  window.addEventListener("pageshow", settleShotFrameAfterRotation);
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", scheduleShotFrameSync);
+    window.visualViewport.addEventListener("scroll", scheduleShotFrameSync);
+  }
+  syncShotFrameBounds();
+
   frame.addEventListener("load", () => {
+    settleShotFrameAfterRotation();
     try {
       const doc = frame.contentDocument;
       if (!doc) throw new Error("Shot Diagram document was unavailable.");
@@ -455,7 +518,7 @@
               var hit = hitTestHole(worldPt.x, worldPt.y);
               if (hit) {
                 switchToPage(hit.pageNum);
-                if (!applyQuickEntry(hit.pageNum, hit.holeId)) openHole(hit.holeId);
+                if (!applyQuickEntry(hit.pageNum, hit.holeId)) openHole(hit.holeId, event.changedTouches[0]);
               }
             }
 

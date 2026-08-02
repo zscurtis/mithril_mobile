@@ -318,9 +318,11 @@
   .loadKeypad {
     display: none;
     position: fixed;
-    left: 8px;
-    right: 8px;
-    bottom: 8px;
+    left: 50%;
+    right: auto;
+    bottom: max(8px, env(safe-area-inset-bottom));
+    width: min(760px, calc(100vw - 16px));
+    transform: translateX(-50%);
     z-index: 220;
     background: #fff;
     border: 2px solid #222;
@@ -377,20 +379,44 @@
   }
 
   .box.keypadOpen {
-    padding-bottom: 360px;
+    padding-bottom: 475px;
   }
 
   .loadKeypadGrid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 7px;
   }
 
+  .loadKeypadLetterRow,
+  .loadKeypadActionRow {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 7px;
+    margin-top: 7px;
+  }
+
+  .loadKeypadLetterRow[hidden] {
+    display: none !important;
+  }
+
   .loadKeypad button {
-    min-height: 43px;
-    font-size: 19px;
+    min-height: 54px;
+    font-size: 21px;
     font-weight: 950;
     padding: 7px 4px;
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform .06s ease, filter .06s ease, box-shadow .06s ease;
+  }
+
+  .loadKeypad button:active,
+  .loadKeypad button.keyPressed {
+    transform: translateY(1px) scale(.97);
+    filter: brightness(.88);
+    box-shadow: inset 0 2px 5px rgba(0,0,0,.24);
   }
 
   .loadKeypad .letterKey {
@@ -408,13 +434,21 @@
   }
 
   .loadKeypad .doneKey {
-    background: #1f6feb;
+    background: #343a40;
     color: #fff;
-    border-color: #1f6feb;
+    border-color: #222;
   }
 
-  .loadKeypad .wideKey {
-    grid-column: span 2;
+  .loadKeypad .nextKey {
+    background: #d86b14;
+    color: #fff;
+    border-color: #a94b08;
+  }
+
+  .loadKeypad .nextKey.saveNextKey {
+    background: #b94b12;
+    border-color: #853407;
+    font-size: 16px;
   }
 
   .loadInputActive {
@@ -555,21 +589,25 @@
     <button type="button" data-load-key="7">7</button>
     <button type="button" data-load-key="8">8</button>
     <button type="button" data-load-key="9">9</button>
-    <button type="button" class="letterKey" data-load-key="A">A</button>
     <button type="button" data-load-key="4">4</button>
     <button type="button" data-load-key="5">5</button>
     <button type="button" data-load-key="6">6</button>
-    <button type="button" class="letterKey" data-load-key="D">D</button>
     <button type="button" data-load-key="1">1</button>
     <button type="button" data-load-key="2">2</button>
     <button type="button" data-load-key="3">3</button>
-    <button type="button" class="actionKey" data-load-action="back">⌫</button>
     <button type="button" data-load-key=".">.</button>
     <button type="button" data-load-key="0">0</button>
-    <button type="button" class="actionKey" data-load-key=" ">Space</button>
+    <button type="button" class="actionKey" data-load-action="back" aria-label="Backspace">⌫</button>
+  </div>
+  <div id="loadKeypadLetterRow" class="loadKeypadLetterRow" hidden>
+    <button type="button" class="letterKey" data-load-key="A">A</button>
+    <button type="button" class="letterKey" data-load-key="D">D</button>
+    <button type="button" class="letterKey" data-load-key=" ">Space</button>
+  </div>
+  <div class="loadKeypadActionRow">
+    <button type="button" class="actionKey" data-load-action="clear">Clear</button>
     <button type="button" class="doneKey" data-load-action="done">Done</button>
-    <button type="button" class="actionKey wideKey" data-load-action="clear">Clear</button>
-    <button type="button" class="actionKey wideKey" data-load-action="next">Next field</button>
+    <button id="loadKeypadNext" type="button" class="nextKey" data-load-action="next">Next Field</button>
   </div>
 </div>
 
@@ -924,27 +962,54 @@ let pointerState = {
 };
 
 let activePointers = new Map();
-let holeModalTouchGuardUntil = 0;
+let holeModalOpeningGesture = null;
 
 function $(id) {
   return document.getElementById(id);
 }
 
-function setHoleModalTouchGuard(ms = 450) {
-  holeModalTouchGuardUntil = Date.now() + ms;
-  const more = $("holeMoreOptions");
-  if (more) more.classList.add("touchGuard");
+function eventClientPoint(event) {
+  if (!event) return null;
+  const source = event.changedTouches && event.changedTouches.length
+    ? event.changedTouches[0]
+    : event;
+  const x = Number(source.clientX);
+  const y = Number(source.clientY);
+  return Number.isFinite(x) && Number.isFinite(y) ? { x, y } : null;
+}
 
-  setTimeout(() => {
-    if (Date.now() >= holeModalTouchGuardUntil) {
-      const moreNow = $("holeMoreOptions");
-      if (moreNow) moreNow.classList.remove("touchGuard");
-    }
-  }, ms + 25);
+function setHoleModalTouchGuard(openingEvent) {
+  const point = eventClientPoint(openingEvent);
+  if (!point) {
+    holeModalOpeningGesture = null;
+    return;
+  }
+  holeModalOpeningGesture = {
+    x: point.x,
+    y: point.y,
+    pointerId: openingEvent && openingEvent.pointerId != null ? openingEvent.pointerId : null,
+    expiresAt: performance.now() + 900
+  };
+}
+
+function isOpeningGestureEvent(event) {
+  const guard = holeModalOpeningGesture;
+  if (!guard) return false;
+  if (performance.now() > guard.expiresAt) {
+    holeModalOpeningGesture = null;
+    return false;
+  }
+  const point = eventClientPoint(event);
+  if (!point) return false;
+  const pointerMatches = guard.pointerId == null || event.pointerId == null || event.pointerId === guard.pointerId;
+  const samePoint = Math.hypot(point.x - guard.x, point.y - guard.y) <= 24;
+  if (!pointerMatches || !samePoint) return false;
+  holeModalOpeningGesture = null;
+  return true;
 }
 
 function suppressHoleModalTouchGuardEvent(e) {
-  if (Date.now() < holeModalTouchGuardUntil) {
+  if (isOpeningGestureEvent(e)) {
     e.preventDefault();
     e.stopPropagation();
     const more = $("holeMoreOptions");
@@ -955,11 +1020,13 @@ function suppressHoleModalTouchGuardEvent(e) {
 }
 
 function holeModalActionGuardActive() {
-  return Date.now() < holeModalTouchGuardUntil;
+  // Opening-gesture protection is now event-specific. Programmatic save calls
+  // should never be blocked by elapsed time.
+  return false;
 }
 
 function suppressHoleModalActionGuardEvent(e) {
-  if (holeModalActionGuardActive()) {
+  if (isOpeningGestureEvent(e)) {
     e.preventDefault();
     e.stopPropagation();
     if (typeof e.stopImmediatePropagation === "function") e.stopImmediatePropagation();
@@ -971,11 +1038,8 @@ function suppressHoleModalActionGuardEvent(e) {
 function installHoleModalActionGuard() {
   const box = $("holeEditorBox");
   if (!box) return;
-  const buttonGrid = box.querySelector(".buttonGrid");
-  if (!buttonGrid) return;
-
-  ["pointerdown", "pointerup", "touchstart", "touchend", "click"].forEach(evtName => {
-    buttonGrid.addEventListener(evtName, suppressHoleModalActionGuardEvent, true);
+  ["click"].forEach(evtName => {
+    box.addEventListener(evtName, suppressHoleModalActionGuardEvent, true);
   });
 }
 
@@ -985,7 +1049,7 @@ function installMoreOptionsTouchGuard() {
   const summary = more.querySelector("summary");
   if (!summary) return;
 
-  ["pointerdown", "pointerup", "touchstart", "touchend", "click"].forEach(evtName => {
+  ["click"].forEach(evtName => {
     summary.addEventListener(evtName, suppressHoleModalTouchGuardEvent, true);
   });
 }
@@ -1485,7 +1549,7 @@ function endPointer(e) {
           return;
         }
 
-        openHole(hit.holeId);
+        openHole(hit.holeId, e);
       }
     }
     pointerState.active = false;
@@ -1541,26 +1605,8 @@ function normalizeLoadInput(id) {
 
 
 let activeLoadInputId = null;
-let loadKeypadTouchGuardUntil = 0;
-const LOAD_KEYPAD_TOUCH_GUARD_MS = 800;
-
-function setLoadKeypadTouchGuard(ms = LOAD_KEYPAD_TOUCH_GUARD_MS) {
-  loadKeypadTouchGuardUntil = Date.now() + ms;
-}
-
-function loadKeypadTouchGuardActive() {
-  return Date.now() < loadKeypadTouchGuardUntil;
-}
-
-function suppressLoadKeypadGuardEvent(e) {
-  if (loadKeypadTouchGuardActive()) {
-    e.preventDefault();
-    e.stopPropagation();
-    if (typeof e.stopImmediatePropagation === "function") e.stopImmediatePropagation();
-    return true;
-  }
-  return false;
-}
+let lastLoadKeypadPointerButton = null;
+let lastLoadKeypadPointerAt = 0;
 
 function isEntryKeypadField(id) {
   return id === "overburden" || id === "depth" || id === "stemming" || id === "primaryLoad" || id === "secondaryLoad" || id === "timing" || id === "singleFillValue" || id === "quickValue";
@@ -1617,10 +1663,8 @@ function scrollActiveLoadInputIntoView(id) {
   if (!el) return;
   const box = $("holeEditorBox");
   if (box) box.classList.add("keypadOpen");
-  setTimeout(() => {
-    const target = el.closest("label") || el;
-    try { target.scrollIntoView({ block: "center", behavior: "smooth" }); } catch (e) { target.scrollIntoView(false); }
-  }, 60);
+  const target = el.closest("label") || el;
+  try { target.scrollIntoView({ block: "nearest", behavior: "auto" }); } catch (e) { target.scrollIntoView(false); }
 }
 
 function showLoadKeypad(id) {
@@ -1644,27 +1688,34 @@ function updateEntryKeypadMode() {
   const pad = $("loadKeypad");
   if (!pad) return;
   const allowLetters = activeEntryAllowsLoadLetters();
-  pad.querySelectorAll("[data-load-key='A'], [data-load-key='D'], [data-load-key=' ']").forEach(btn => {
-    btn.disabled = !allowLetters;
-    btn.setAttribute("aria-disabled", allowLetters ? "false" : "true");
-  });
+  const letterRow = $("loadKeypadLetterRow");
+  if (letterRow) letterRow.hidden = !allowLetters;
+  pad.classList.toggle("loadMode", allowLetters);
   const title = $("loadKeypadTitle");
   if (title) {
     title.textContent = allowLetters
       ? "Entry keypad — numbers plus A for ANFO and D for dinks"
       : "Entry keypad — numbers only";
   }
+  updateEntryKeypadNextAction();
 }
 
-function showEntryKeypad(id, options = {}) {
+function updateEntryKeypadNextAction() {
+  const button = $("loadKeypadNext");
+  if (!button) return;
+  const sequence = ["overburden", "depth", "stemming", "primaryLoad", "secondaryLoad", "timing"];
+  const index = sequence.indexOf(activeLoadInputId);
+  const isFinalHoleField = index === sequence.length - 1;
+  button.textContent = isFinalHoleField ? "Save + Next Hole" : index >= 0 ? "Next Field" : "Done";
+  button.classList.toggle("saveNextKey", isFinalHoleField);
+}
+
+function showEntryKeypad(id) {
   if (id === "singleFillValue" && !isSingleFillEntryKeypadField()) return;
   if (id === "quickValue" && !isQuickEntryKeypadField()) return;
   if (!isEntryKeypadField(id)) return;
 
   const pad = $("loadKeypad");
-  const alreadyActive = activeLoadInputId === id && pad && pad.classList.contains("show");
-  const useGuard = !(options && options.noGuard);
-  if (useGuard && !alreadyActive) setLoadKeypadTouchGuard();
   activeLoadInputId = id;
   setActiveLoadInput(id);
 
@@ -1727,18 +1778,37 @@ function backspaceLoadInput() {
 }
 
 function nextLoadInput() {
-  const seq = ["overburden", "depth", "stemming", "primaryLoad", "secondaryLoad"];
+  const seq = ["overburden", "depth", "stemming", "primaryLoad", "secondaryLoad", "timing"];
   const idx = seq.indexOf(activeLoadInputId);
   if (idx >= 0 && idx < seq.length - 1) {
     const nextId = seq[idx + 1];
-    // Do not restart the tap guard when moving fields with the keypad Next button.
-    // The guard is only needed for the original tap that opens the editor/keypad.
-    showEntryKeypad(nextId, { noGuard: true });
+    showEntryKeypad(nextId);
     const el = $(nextId);
     if (el) el.focus({ preventScroll: true });
+  } else if (idx === seq.length - 1 && $("holeModal").classList.contains("show")) {
+    saveHoleAndNext();
   } else {
     hideLoadKeypad();
   }
+}
+
+function activateLoadKeypadButton(btn) {
+  if (!btn || btn.disabled) return;
+  const key = btn.getAttribute("data-load-key");
+  const action = btn.getAttribute("data-load-action");
+  if ((key === "A" || key === "D" || key === " ") && !activeEntryAllowsLoadLetters()) return;
+  if (key !== null) insertIntoLoadInput(key);
+  if (action === "back") backspaceLoadInput();
+  if (action === "clear") {
+    const el = $(activeLoadInputId);
+    if (el) {
+      el.value = "";
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+      updateLoadKeypadPreview();
+    }
+  }
+  if (action === "done") hideLoadKeypad();
+  if (action === "next") nextLoadInput();
 }
 
 function setupLoadKeypad() {
@@ -1772,35 +1842,30 @@ function setupLoadKeypad() {
   const pad = $("loadKeypad");
   if (!pad) return;
   pad.addEventListener("pointerdown", e => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
     e.preventDefault();
-    if (loadKeypadTouchGuardActive()) {
-      e.stopPropagation();
-      if (typeof e.stopImmediatePropagation === "function") e.stopImmediatePropagation();
-    }
+    btn.classList.add("keyPressed");
   });
-  pad.addEventListener("touchend", e => {
-    if (loadKeypadTouchGuardActive() && e.target.closest("button")) suppressLoadKeypadGuardEvent(e);
-  }, { passive: false });
+  pad.addEventListener("pointerup", e => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+    e.preventDefault();
+    btn.classList.remove("keyPressed");
+    lastLoadKeypadPointerButton = btn;
+    lastLoadKeypadPointerAt = performance.now();
+    activateLoadKeypadButton(btn);
+  });
+  pad.addEventListener("pointercancel", e => {
+    const btn = e.target.closest("button");
+    if (btn) btn.classList.remove("keyPressed");
+  });
   pad.addEventListener("click", e => {
     const btn = e.target.closest("button");
     if (!btn) return;
-    if (suppressLoadKeypadGuardEvent(e)) return;
     e.preventDefault();
-    const key = btn.getAttribute("data-load-key");
-    const action = btn.getAttribute("data-load-action");
-    if ((key === "A" || key === "D" || key === " ") && !activeEntryAllowsLoadLetters()) return;
-    if (key !== null) insertIntoLoadInput(key);
-    if (action === "back") backspaceLoadInput();
-    if (action === "clear") {
-      const el = $(activeLoadInputId);
-      if (el) {
-        el.value = "";
-        el.dispatchEvent(new Event("input", { bubbles: true }));
-        updateLoadKeypadPreview();
-      }
-    }
-    if (action === "done") hideLoadKeypad();
-    if (action === "next") nextLoadInput();
+    if (lastLoadKeypadPointerButton === btn && performance.now() - lastLoadKeypadPointerAt < 500) return;
+    activateLoadKeypadButton(btn);
   });
 }
 
@@ -1850,10 +1915,9 @@ function forceHoleEditorTop() {
   blurActiveInput();
 }
 
-function openHole(id) {
+function openHole(id, openingEvent = null) {
   hideLoadKeypad();
   blurActiveInput();
-  setHoleEditorInputsReadonly(true);
 
   currentHole = id;
   const d = holeData[id] || {};
@@ -1874,26 +1938,15 @@ function openHole(id) {
   if (more) more.open = false;
 
   $("holeModal").classList.add("show");
-  // Prevent the original tap/click that opened the editor from also activating
-  // buttons inside the editor, especially the Clear button on Android Chrome.
-  setHoleModalTouchGuard(800);
+  // Block only the synthetic event generated by the exact touch that opened
+  // the editor. A deliberate first keypad tap must remain immediately valid.
+  setHoleModalTouchGuard(openingEvent);
 
   forceHoleEditorTop();
-  requestAnimationFrame(forceHoleEditorTop);
-  setTimeout(forceHoleEditorTop, 60);
-  setTimeout(() => {
-    setHoleEditorInputsReadonly(false);
+  requestAnimationFrame(() => {
     forceHoleEditorTop();
-    // Default new hole editing to Overburden, using the custom MITHRIL keypad.
-    // This keeps the field workflow in the actual order used in the field.
-    setTimeout(() => {
-      showEntryKeypad("overburden");
-      const overburdenEl = $("overburden");
-      if (overburdenEl) {
-        try { overburdenEl.focus({ preventScroll: true }); } catch (e) {}
-      }
-    }, 80);
-  }, 120);
+    showEntryKeypad("overburden");
+  });
 }
 
 function closeHoleEditor() {

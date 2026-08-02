@@ -1,15 +1,20 @@
 {
-  "version": "m40.9.6.6",
-  "title": "Shot Diagram Bottom Edge Repair",
+  "version": "m40.9.6.8",
+  "title": "iPad Keypad Reliability and Field Entry",
   "released": "2026-08-02",
   "minimumOfflineVersion": "m39.6.3",
   "notes": [
-    "Extends the Shot Diagram wrapper through the device bottom safe area so the canvas no longer clips above the screen edge.",
-    "Targets the Shot Diagram wrapper only; the working Drill Log layout is unchanged.",
+    "Replaces the Shot Diagram's 800 ms keypad lockout with protection against only the exact opening touch, so an immediate first number tap is accepted.",
+    "Runs keypad actions on pointerup and suppresses duplicate synthetic clicks for reliable iPad entry.",
+    "Uses larger 54 px touch targets, immediate pressed feedback, and a centered three-column calculator layout in both templates.",
+    "Shows A, D, and Space only for explosive-load fields and keeps numeric fields uncluttered.",
+    "Changes the final normal entry action to Save + Next Hole while preserving the established field order.",
+    "Removes delayed smooth scrolling and nested focus timers from Shot Diagram hole entry.",
+    "Preserves the m40.9.6.7 live-viewport landscape bottom-edge repair for device verification.",
     "Preserves all 12 approved 2560 x 1440 widescreen canvas backgrounds.",
     "Preserves the m40.9.6.4 iPad orientation and zoom rendering fix.",
     "Refreshes the offline cache so the corrected Shot Diagram wrapper reaches every device.",
-    "Does not change templates, document data, calculations, exports, cloud sync, or field workflows.",
+    "Does not change templates, document data, calculations, exports, cloud sync, storage keys, or document formats.",
     "Preserves Report Readiness, standardized PDF summaries, loading configurations, configurable Auto ANFO, inferred timing, Page Order / Renumber, iPad entry layout, and desktop interaction behavior."
   ]
 }

@@ -117,18 +117,21 @@ textarea { min-height:90px; }
 #headerCalibrationHint { min-width:0; font-size:13px; line-height:1.2; font-weight:900; color:#333; }
 #headerCalibrationBar button { min-height:42px; }
 
-#numberPad { display:none; position:fixed; left:8px; right:8px; bottom:8px; z-index:220; background:white; border:2px solid #222; border-radius:14px; padding:10px; box-shadow:0 8px 28px rgba(0,0,0,.4); }
+#numberPad { display:none; position:fixed; left:50%; right:auto; bottom:max(8px,env(safe-area-inset-bottom)); width:min(680px,calc(100vw - 16px)); transform:translateX(-50%); z-index:220; background:white; border:2px solid #222; border-radius:14px; padding:10px; box-sizing:border-box; box-shadow:0 8px 28px rgba(0,0,0,.4); }
 #numberPad.show { display:block; }
 .padTitle { font-size:13px; font-weight:950; color:#333; margin-bottom:6px; }
 .padPreview { display:grid; grid-template-columns:110px 1fr; gap:8px; align-items:center; border:2px solid #1f6feb; border-radius:10px; padding:8px 10px; background:#f7fbff; margin-bottom:8px; }
 .padPreviewLabel { font-size:12px; font-weight:950; }
 .padPreviewValue { min-height:28px; font-size:22px; font-weight:950; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; overflow-wrap:anywhere; }
-.padGrid { display:grid; grid-template-columns:repeat(4,1fr); gap:7px; }
-.padGrid button { min-height:44px; font-size:19px; font-weight:950; }
-.padGrid .done { background:#1f6feb; color:white; border-color:#1f6feb; }
-.padGrid .wide { grid-column:span 2; }
+.padGrid,.padActionRow { display:grid; grid-template-columns:repeat(3,1fr); gap:7px; }
+.padActionRow { margin-top:7px; }
+.padGrid button,.padActionRow button { min-height:54px; font-size:21px; font-weight:950; touch-action:manipulation; user-select:none; -webkit-user-select:none; -webkit-tap-highlight-color:transparent; transition:transform .06s ease,filter .06s ease,box-shadow .06s ease; }
+.padGrid button:active,.padActionRow button:active,.padGrid button.keyPressed,.padActionRow button.keyPressed { transform:translateY(1px) scale(.97); filter:brightness(.88); box-shadow:inset 0 2px 5px rgba(0,0,0,.24); }
+.padActionRow .done { background:#343a40; color:white; border-color:#222; }
+.padActionRow .next { background:#d86b14; color:white; border-color:#a94b08; }
+.padActionRow .next.saveNext { background:#b94b12; border-color:#853407; font-size:16px; }
 .activeInput { outline:3px solid #1f6feb; outline-offset:1px; }
-.box.padOpen { padding-bottom:340px; }
+.box.padOpen { padding-bottom:410px; }
 
 @media (max-width:520px) {
   .templateCards { grid-template-columns:1fr; }
@@ -337,10 +340,15 @@ textarea { min-height:90px; }
   <div class="padTitle">Numeric entry keypad</div>
   <div class="padPreview"><div id="padLabel" class="padPreviewLabel">Current value</div><div id="padValue" class="padPreviewValue">blank</div></div>
   <div class="padGrid">
-    <button data-key="7">7</button><button data-key="8">8</button><button data-key="9">9</button><button data-action="back">⌫</button>
-    <button data-key="4">4</button><button data-key="5">5</button><button data-key="6">6</button><button data-action="clear">Clear</button>
-    <button data-key="1">1</button><button data-key="2">2</button><button data-key="3">3</button><button data-action="next">Next</button>
-    <button data-key=".">.</button><button data-key="0">0</button><button class="done wide" data-action="done">Done</button>
+    <button data-key="7">7</button><button data-key="8">8</button><button data-key="9">9</button>
+    <button data-key="4">4</button><button data-key="5">5</button><button data-key="6">6</button>
+    <button data-key="1">1</button><button data-key="2">2</button><button data-key="3">3</button>
+    <button data-key=".">.</button><button data-key="0">0</button><button data-action="back" aria-label="Backspace">⌫</button>
+  </div>
+  <div class="padActionRow">
+    <button data-action="clear">Clear</button>
+    <button class="done" data-action="done">Done</button>
+    <button id="padNext" class="next" data-action="next">Next Field</button>
   </div>
 </div>
 </div>
@@ -526,11 +534,11 @@ function canvasPoint(e){ const r=canvas.getBoundingClientRect(); return {x:e.cli
 function pointerDist(){ const a=[...pointers.values()]; return Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y); }
 function pointerCenter(){ const a=[...pointers.values()]; return {x:(a[0].x+a[1].x)/2,y:(a[0].y+a[1].y)/2}; }
 function hitTestWorld(wx,wy){ const pageNum=pageAtWorldPoint(wx,wy); if(!pageNum)return null; const o=pageOrigin(pageNum),ix=wx-o.x,iy=wy-o.y; const col=Math.round((ix-X0)/DX),row=Math.round((iy-Y0)/DY); if(col<0||col>=COLS||row<0||row>=ROWS)return null; const c=holeCenter(row,col); if(Math.abs(ix-c.x)<=HIT_HALF_X&&Math.abs(iy-c.y)<=HIT_HALF_Y)return {pageNum,holeId:holeID(row,col)}; return null; }
-function activateHitAtPoint(p){
+function activateHitAtPoint(p,openingEvent=null){
   const wp=screenToWorld(p.x,p.y),hit=hitTestWorld(wp.x,wp.y);
   if(!hit)return;
   switchPage(hit.pageNum,false);
-  if(quick.enabled)applyQuick(hit.holeId);else openHole(hit.holeId);
+  if(quick.enabled)applyQuick(hit.holeId);else openHole(hit.holeId,openingEvent);
 }
 
 function installCanvasInput(){
@@ -583,7 +591,7 @@ function installCanvasInput(){
       saveJSON(KEYS.view,view);
       lastInteractionUIUpdate=0;
       const t=e.changedTouches&&e.changedTouches[0];
-      if(t&&!gesture.moved)activateHitAtPoint(tp(t));
+      if(t&&!gesture.moved)activateHitAtPoint(tp(t),t);
       gesture.mode=null;
     }else if(e.touches.length===1){
       const p=tp(e.touches[0]);
@@ -599,7 +607,7 @@ function installCanvasInput(){
   });
 }
 
-function endPointer(e){ const p=canvasPoint(e);if(calibrationMode){endCalibrationDrag();return;}pointers.delete(e.pointerId); if(pointers.size===0){saveJSON(KEYS.view,view);lastInteractionUIUpdate=0;if(!gesture.moved)activateHitAtPoint(p);gesture.mode=null;} else if(pointers.size===1){const r=[...pointers.values()][0];gesture={mode:"pan",moved:true,startX:r.x,startY:r.y,startVX:view.x,startVY:view.y,startScale:view.scale,startDist:0,startCenter:null};} }
+function endPointer(e){ const p=canvasPoint(e);if(calibrationMode){endCalibrationDrag();return;}pointers.delete(e.pointerId); if(pointers.size===0){saveJSON(KEYS.view,view);lastInteractionUIUpdate=0;if(!gesture.moved)activateHitAtPoint(p,e);gesture.mode=null;} else if(pointers.size===1){const r=[...pointers.values()][0];gesture={mode:"pan",moved:true,startX:r.x,startY:r.y,startVX:view.x,startVY:view.y,startScale:view.scale,startDist:0,startCenter:null};} }
 installCanvasInput();
 console.log("MITHRIL m38.6 canvas mode:",LEGACY_PERFORMANCE_MODE?"legacy performance":"standard","DPR",dpr);
 function draw(){
@@ -736,7 +744,11 @@ function drawSavedHoles(pageNum,targetCtx=ctx){
 }
 function drawOutlined(value,x,y,align,targetCtx=ctx){ if(!String(value||"").trim())return;targetCtx.textAlign=align||"center";targetCtx.strokeText(String(value),x,y);targetCtx.fillText(String(value),x,y); }
 
-function openHole(id){ hidePad();currentHole=id;const d=currentData()[id]||{};$("holeTitle").textContent="Hole "+id;$("overburden").value=d.Overburden||"";$("depth").value=d.Depth||"";$("breakthrough").checked=flagYes(d.Breakthrough);$("dirtHole").checked=flagYes(d.DirtHole);$("badHole").checked=flagYes(d.BadHole);$("wetHole").checked=flagYes(d.Wet);$("notes").value=d.Notes||"";$("holeModal").classList.add("show");setTimeout(()=>{showPad("overburden");},120); }
+let drillOpeningGesture=null;
+function drillEventPoint(event){if(!event)return null;const x=Number(event.clientX),y=Number(event.clientY);return Number.isFinite(x)&&Number.isFinite(y)?{x,y}:null;}
+function setDrillOpeningGesture(event){const p=drillEventPoint(event);drillOpeningGesture=p?{x:p.x,y:p.y,pointerId:event&&event.pointerId!=null?event.pointerId:null,expiresAt:performance.now()+900}:null;}
+function suppressDrillOpeningGesture(event){const g=drillOpeningGesture;if(!g)return false;if(performance.now()>g.expiresAt){drillOpeningGesture=null;return false;}const p=drillEventPoint(event);if(!p)return false;const pointerMatches=g.pointerId==null||event.pointerId==null||event.pointerId===g.pointerId;const samePoint=Math.hypot(p.x-g.x,p.y-g.y)<=24;if(!pointerMatches||!samePoint)return false;drillOpeningGesture=null;event.preventDefault();event.stopPropagation();if(typeof event.stopImmediatePropagation==="function")event.stopImmediatePropagation();return true;}
+function openHole(id,openingEvent=null){ hidePad();currentHole=id;const d=currentData()[id]||{};$("holeTitle").textContent="Hole "+id;$("overburden").value=d.Overburden||"";$("depth").value=d.Depth||"";$("breakthrough").checked=flagYes(d.Breakthrough);$("dirtHole").checked=flagYes(d.DirtHole);$("badHole").checked=flagYes(d.BadHole);$("wetHole").checked=flagYes(d.Wet);$("notes").value=d.Notes||"";$("holeModal").classList.add("show");setDrillOpeningGesture(openingEvent);requestAnimationFrame(()=>showPad("overburden")); }
 function closeHole(){ hidePad();$("holeModal").classList.remove("show"); }
 function readHoleForm(){ return {HoleID:currentHole,Overburden:$("overburden").value,Depth:$("depth").value,Breakthrough:$("breakthrough").checked?"Yes":"No",DirtHole:$("dirtHole").checked?"Yes":"No",BadHole:$("badHole").checked?"Yes":"No",Wet:$("wetHole").checked?"Yes":"No",Notes:$("notes").value,Timestamp:new Date().toLocaleString()}; }
 function saveHole(goNext){ currentData()[currentHole]=readHoleForm();invalidatePageCache(currentPage);saveState();markDirty();draw();if(goNext){const p=parseHoleID(currentHole);let col=p.col+1,row=p.row;if(col>=COLS){col=0;row++;}if(row>=ROWS){closeHole();alert("Reached the last hole on this page.");return;}openHole(holeID(row,col));}else closeHole(); }
@@ -926,14 +938,20 @@ function loadJSON(event){const f=event.target.files&&event.target.files[0];if(!f
 function clearAll(){if(!confirm("Clear all 16x34 drill-log data from this browser?"))return;pagesData={"1":{}};pageMeta={"1":{gx:0,gy:0,name:"Page 1"}};headerData={};currentPage=1;quick={enabled:false,field:"Overburden",value:""};invalidatePageCache();Object.keys(KEYS).forEach(name=>{if(name!=="headerCalibration")localStorage.removeItem(KEYS[name]);});saveState();refreshPageSelect();updateQuickBar();closeMenu();fitView();}
 
 function inputLabel(id){return id==="overburden"?"Overburden":id==="depth"?"Depth":id==="quickValue"||id==="quickValueModal"?"Quick-fill value":"Value";}
-function showPad(id){activeInput=id;["overburden","depth","quickValue","quickValueModal"].forEach(x=>{const el=$(x);if(el)el.classList.toggle("activeInput",x===id);});$("numberPad").classList.add("show");$("numberPad").setAttribute("aria-hidden","false");$("padLabel").textContent=inputLabel(id);const box=$("holeBox");if(box&&$("holeModal").classList.contains("show"))box.classList.add("padOpen");updatePadPreview();}
+function updatePadNextAction(){const b=$("padNext");if(!b)return;const finalHoleField=activeInput==="depth"&&$("holeModal").classList.contains("show");b.textContent=finalHoleField?"Save + Next Hole":activeInput==="overburden"?"Next Field":"Done";b.classList.toggle("saveNext",finalHoleField);}
+function showPad(id){activeInput=id;["overburden","depth","quickValue","quickValueModal"].forEach(x=>{const el=$(x);if(el)el.classList.toggle("activeInput",x===id);});$("numberPad").classList.add("show");$("numberPad").setAttribute("aria-hidden","false");$("padLabel").textContent=inputLabel(id);const box=$("holeBox");if(box&&$("holeModal").classList.contains("show"))box.classList.add("padOpen");updatePadNextAction();updatePadPreview();}
 function hidePad(){$("numberPad").classList.remove("show");$("numberPad").setAttribute("aria-hidden","true");["overburden","depth","quickValue","quickValueModal"].forEach(x=>{const el=$(x);if(el)el.classList.remove("activeInput");});const box=$("holeBox");if(box)box.classList.remove("padOpen");activeInput="";try{document.activeElement.blur();}catch(e){} }
 function updatePadPreview(){const el=$(activeInput);$("padLabel").textContent=inputLabel(activeInput);$("padValue").textContent=el&&el.value?el.value:"blank";}
 function insertKey(k){const el=$(activeInput);if(!el)return;if(k==="."&&el.value.includes("."))return;el.value+=k;el.dispatchEvent(new Event("input",{bubbles:true}));updatePadPreview();}
 function backspace(){const el=$(activeInput);if(!el)return;el.value=el.value.slice(0,-1);el.dispatchEvent(new Event("input",{bubbles:true}));updatePadPreview();}
-function nextInput(){if(activeInput==="overburden")showPad("depth");else hidePad();}
-$("numberPad").addEventListener("pointerdown",e=>e.preventDefault());
-$("numberPad").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;e.preventDefault();const k=b.dataset.key,a=b.dataset.action;if(k!==undefined)insertKey(k);if(a==="back")backspace();if(a==="clear"){const el=$(activeInput);if(el){el.value="";el.dispatchEvent(new Event("input",{bubbles:true}));updatePadPreview();}}if(a==="next")nextInput();if(a==="done")hidePad();});
+function nextInput(){if(activeInput==="overburden")showPad("depth");else if(activeInput==="depth"&&$("holeModal").classList.contains("show"))saveHole(true);else hidePad();}
+function activatePadButton(b){if(!b)return;const k=b.dataset.key,a=b.dataset.action;if(k!==undefined)insertKey(k);if(a==="back")backspace();if(a==="clear"){const el=$(activeInput);if(el){el.value="";el.dispatchEvent(new Event("input",{bubbles:true}));updatePadPreview();}}if(a==="next")nextInput();if(a==="done")hidePad();}
+let lastPadPointerButton=null,lastPadPointerAt=0;
+$("numberPad").addEventListener("pointerdown",e=>{const b=e.target.closest("button");if(!b)return;e.preventDefault();b.classList.add("keyPressed");});
+$("numberPad").addEventListener("pointerup",e=>{const b=e.target.closest("button");if(!b)return;e.preventDefault();b.classList.remove("keyPressed");lastPadPointerButton=b;lastPadPointerAt=performance.now();activatePadButton(b);});
+$("numberPad").addEventListener("pointercancel",e=>{const b=e.target.closest("button");if(b)b.classList.remove("keyPressed");});
+$("numberPad").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;e.preventDefault();if(lastPadPointerButton===b&&performance.now()-lastPadPointerAt<500)return;activatePadButton(b);});
+["click"].forEach(name=>$("holeBox").addEventListener(name,suppressDrillOpeningGesture,true));
 
 templateImg.onload=()=>{invalidatePageCache();if($("appShell").style.display!=="none")draw();};
 window.addEventListener("resize",resizeCanvas);
@@ -964,7 +982,7 @@ window.MITHRIL_UPDATE_CONFIG = {
 };
 </script>
 <script src="./mithril-update.js?v=38.8"></script>
-<script src="./mithril-menu-m397.js?v=40.9.6.6"></script>
-<script src="./mithril-core-m400.js?v=40.9.6.6"></script>
+<script src="./mithril-menu-m397.js?v=40.9.6.8"></script>
+<script src="./mithril-core-m400.js?v=40.9.6.8"></script>
 </body>
 </html>
