@@ -1,8 +1,8 @@
 (function () {
   "use strict";
 
-  var RELEASE_VERSION = "m40.9.4";
-  var RELEASE_LABEL = "Standardized export summaries";
+  var RELEASE_VERSION = "m40.9.5";
+  var RELEASE_LABEL = "Report Readiness / QA Center";
   var THEME_STORAGE_KEY = "mithrilCanvasThemeV1";
   var THEME_CLASS_PREFIX = "m395-theme-";
   var THEME_OPTIONS = [
@@ -201,7 +201,7 @@
         var script = childDocument.createElement("script");
         script.id = "mithrilMenuM395ChildLoader";
         script.setAttribute("data-mithril-release", RELEASE_VERSION);
-        script.src = "./mithril-menu-m397.js?v=40.9.4-frame";
+        script.src = "./mithril-menu-m397.js?v=40.9.5-frame";
         (childDocument.head || childDocument.documentElement).appendChild(script);
         return true;
       } catch (error) {
@@ -875,6 +875,7 @@
       '<div class="m395MenuStack">',
       '  <button type="button" data-m395-action="info">Drill Log Info</button>',
       '  <button type="button" class="primary" data-m395-action="editHoles">Edit Holes</button>',
+      '  <button type="button" class="m4095ReadinessButton" data-m395-action="reportReadiness">Report Readiness</button>',
       '  <button type="button" data-m395-section="m395DrillPages" data-label="Page Tools" aria-expanded="false">Page Tools  ›</button>',
       '  <div id="m395DrillPages" class="m395Section">',
       '    <div class="m395SectionTitle">Page Tools</div>',
@@ -932,6 +933,7 @@
     wireAction(box, '[data-m395-action="close"]', closeMenu);
     wireAction(box, '[data-m395-action="info"]', function () { runAndClose("openInfo"); });
     wireAction(box, '[data-m395-action="editHoles"]', function () { closeMenu(); startDrillEditMode(); });
+    wireAction(box, '[data-m395-action="reportReadiness"]', function () { closeMenu(); m4095OpenReportReadiness("drill"); });
     wireAction(box, '[data-m395-action="fitAll"]', function () { runAndClose("fitAllPages"); });
     wireAction(box, '[data-m395-action="deletePage"]', function () { runAndClose("deletePage"); });
     wireAction(box, '[data-m395-action="pdf"]', function () { runAndClose("downloadPDF"); });
@@ -1119,6 +1121,7 @@
       '<div class="m395MenuStack">',
       '  <button type="button" data-m395-action="info">Shot Info</button>',
       '  <button type="button" class="primary" data-m395-action="editHoles">Edit Holes</button>',
+      '  <button type="button" class="m4095ReadinessButton" data-m395-action="reportReadiness">Report Readiness</button>',
       '  <button type="button" id="m40932LoadCalculatorButton" data-m405-mutation="true">Load Calculator / Auto ANFO</button>',
       '  <button type="button" data-m395-section="m395ShotPages" data-label="Page Tools" aria-expanded="false">Page Tools  ›</button>',
       '  <div id="m395ShotPages" class="m395Section">',
@@ -1179,6 +1182,7 @@
     wireAction(box, '[data-m395-action="close"]', closeMenu);
     wireAction(box, '[data-m395-action="info"]', function () { runAndClose("openShotInfo"); });
     wireAction(box, '[data-m395-action="editHoles"]', function () { closeMenu(); startShotEditMode(); });
+    wireAction(box, '[data-m395-action="reportReadiness"]', function () { closeMenu(); m4095OpenReportReadiness("shot"); });
     wireAction(box, '[data-m395-action="fitAll"]', function () { runAndClose("fitAllPages"); });
     wireAction(box, '[data-m395-action="pageOrder"]', m4092OpenPageOrder);
     wireAction(box, '[data-m395-action="deletePage"]', function () { runAndClose("deleteCurrentPage"); });
@@ -5734,6 +5738,417 @@
     rangeText: m4094RangeText
   };
 
+  // ---------------------------------------------------------------------------
+  // m40.9.5 Report Readiness / QA Center
+  // ---------------------------------------------------------------------------
+  function m4095Text(value) {
+    return String(value == null ? "" : value).trim();
+  }
+
+  function m4095Yes(value) {
+    return value === true || m4095Text(value).toLowerCase() === "yes";
+  }
+
+  function m4095Number(value) {
+    var raw = m4095Text(value);
+    if (!/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(raw)) return null;
+    var parsed = Number(raw);
+    return isFinite(parsed) && parsed >= 0 ? parsed : null;
+  }
+
+  function m4095MeaningfulRow(row, type) {
+    row = row || {};
+    var fields = type === "shot" ?
+      ["Depth", "Stemming", "PrimaryLoad", "SecondaryLoad", "Overburden", "Timing", "Notes"] :
+      ["Depth", "Overburden", "Notes"];
+    for (var i = 0; i < fields.length; i += 1) {
+      if (m4095Text(row[fields[i]])) return true;
+    }
+    return m4095Yes(row.Wet) || m4095Yes(row.BadHole) || m4095Yes(row.DirtHole) || m4095Yes(row.Breakthrough);
+  }
+
+  function m4095SortHoleIds(a, b) {
+    var parse = function (value) {
+      var match = m4095Text(value).match(/^([A-Za-z]+)(\d+)$/);
+      return match ? { col: match[1].toUpperCase(), row: Number(match[2]) } : { col: m4095Text(value), row: 0 };
+    };
+    var left = parse(a), right = parse(b);
+    return left.row - right.row || left.col.localeCompare(right.col);
+  }
+
+  function m4095RowsFromPages(sourcePages, type) {
+    var rows = [];
+    Object.keys(sourcePages || {}).map(Number).filter(function (value) { return isFinite(value); }).sort(function (a, b) { return a - b; }).forEach(function (pageNumber) {
+      var page = sourcePages[String(pageNumber)] || {};
+      Object.keys(page).sort(m4095SortHoleIds).forEach(function (holeId) {
+        var record = page[holeId] || {};
+        var row = {};
+        Object.keys(record).forEach(function (key) { row[key] = record[key]; });
+        row.PageNumber = pageNumber;
+        row.HoleID = m4095Text(record.HoleID) || holeId;
+        if (m4095MeaningfulRow(row, type)) rows.push(row);
+      });
+    });
+    return rows;
+  }
+
+  function m4095PageLabels(rows) {
+    var pages = {};
+    (rows || []).forEach(function (row) { pages[String(Number(row.PageNumber || 1))] = true; });
+    var multiPage = Object.keys(pages).length > 1;
+    return (rows || []).map(function (row) {
+      return {
+        row: row,
+        label: multiPage ? "P" + Number(row.PageNumber || 1) + " " + (m4095Text(row.HoleID) || "Unknown") : (m4095Text(row.HoleID) || "Unknown")
+      };
+    });
+  }
+
+  function m4095NewReview(type, rows) {
+    return {
+      type: type,
+      rows: rows || [],
+      blockers: [],
+      advisories: [],
+      checks: [],
+      metrics: {},
+      blockerCount: 0,
+      advisoryCount: 0,
+      ready: false
+    };
+  }
+
+  function m4095AddIssue(review, severity, key, title, label, detail) {
+    var target = severity === "advisory" ? review.advisories : review.blockers;
+    var issue = null;
+    for (var i = 0; i < target.length; i += 1) {
+      if (target[i].key === key) { issue = target[i]; break; }
+    }
+    if (!issue) {
+      issue = { key: key, title: title, detail: detail || "", items: [] };
+      target.push(issue);
+    }
+    if (label && issue.items.indexOf(label) === -1) issue.items.push(label);
+  }
+
+  function m4095FinalizeReview(review) {
+    review.blockerCount = review.blockers.reduce(function (total, issue) { return total + Math.max(issue.items.length, 1); }, 0);
+    review.advisoryCount = review.advisories.reduce(function (total, issue) { return total + Math.max(issue.items.length, 1); }, 0);
+    review.ready = review.blockerCount === 0;
+    return review;
+  }
+
+  function m4095AddCheck(review, label, issueKey, note) {
+    var failed = review.blockers.concat(review.advisories).some(function (issue) { return issue.key === issueKey; });
+    review.checks.push({ label: label, passed: !failed, note: note || "" });
+  }
+
+  function m4095MissingHeaderFields(header, fields) {
+    var missing = [];
+    fields.forEach(function (field) {
+      if (!m4095Text(header && header[field.key])) missing.push(field.label);
+    });
+    return missing;
+  }
+
+  function m4095AnalyzeDrillRows(rows, header) {
+    rows = (rows || []).filter(function (row) { return m4095MeaningfulRow(row, "drill"); });
+    var review = m4095NewReview("drill", rows);
+    var labeled = m4095PageLabels(rows);
+    var totalDepth = 0, complete = 0, condition = 0;
+
+    if (!rows.length) m4095AddIssue(review, "blocker", "no-data", "No Drill Log holes entered", "Drill Log", "Enter field data before producing the report.");
+
+    labeled.forEach(function (entry) {
+      var row = entry.row, label = entry.label;
+      var exempt = m4095Yes(row.DirtHole) || m4095Yes(row.BadHole);
+      var depthText = m4095Text(row.Depth), overburdenText = m4095Text(row.Overburden);
+      var depth = m4095Number(row.Depth), overburden = m4095Number(row.Overburden);
+      if (exempt) { condition += 1; return; }
+      if (!depthText) m4095AddIssue(review, "blocker", "missing-depth", "Missing drilled depth", label, "Each usable Drill Log hole needs a drilled depth.");
+      else if (depth === null || depth <= 0) m4095AddIssue(review, "blocker", "invalid-depth", "Invalid drilled depth", label, "Depth must be a positive number.");
+      if (!overburdenText) m4095AddIssue(review, "blocker", "missing-overburden", "Missing overburden", label, "Each usable Drill Log hole needs overburden, including zero where appropriate.");
+      else if (overburden === null) m4095AddIssue(review, "blocker", "invalid-overburden", "Invalid overburden", label, "Overburden must be zero or greater.");
+      if (depth !== null && depth > 0) totalDepth += depth;
+      if (depth !== null && depth > 0 && overburden !== null && overburden > depth) {
+        m4095AddIssue(review, "blocker", "overburden-depth", "Overburden exceeds drilled depth", label, "This produces an impossible negative rock interval.");
+      }
+      if (depth !== null && depth > 0 && overburden !== null && overburden <= depth) complete += 1;
+    });
+
+    var missingHeader = m4095MissingHeaderFields(header || {}, [
+      { key: "Date", label: "Date" },
+      { key: "DrillLogNumber", label: "Drill Log number" },
+      { key: "Job", label: "Job" },
+      { key: "Employee", label: "Employee" }
+    ]);
+    missingHeader.forEach(function (label) {
+      m4095AddIssue(review, "advisory", "document-details", "Document details not entered", label, "These details do not change the hole calculations, but they belong on the finished report.");
+    });
+
+    review.metrics = {
+      reviewed: rows.length,
+      complete: complete,
+      loaded: complete,
+      totalDepth: totalDepth,
+      conditions: condition
+    };
+    m4095AddCheck(review, "Field data is present", "no-data");
+    review.checks.push({
+      label: "Required hole dimensions are entered",
+      passed: !review.blockers.some(function (issue) { return issue.key === "missing-depth" || issue.key === "missing-overburden"; })
+    });
+    review.checks.push({
+      label: "Hole dimensions are physically valid",
+      passed: !review.blockers.some(function (issue) { return ["invalid-depth", "invalid-overburden", "overburden-depth"].indexOf(issue.key) !== -1; }),
+      note: "Overburden cannot exceed drilled depth."
+    });
+    m4095AddCheck(review, "Document details are complete", "document-details", "Missing details are advisory only.");
+    return m4095FinalizeReview(review);
+  }
+
+  function m4095LoadTokens(row, anfoRate) {
+    var primary = m395ParseLoad(m4095Text(row.PrimaryLoad), anfoRate);
+    var secondary = m395ParseLoad(m4095Text(row.SecondaryLoad), anfoRate);
+    return {
+      valid: primary.valid && secondary.valid,
+      tokens: (primary.tokens || []).concat(secondary.tokens || []),
+      primary: primary,
+      secondary: secondary
+    };
+  }
+
+  function m4095AnalyzeShotRows(rows, header, options) {
+    rows = (rows || []).filter(function (row) { return m4095MeaningfulRow(row, "shot"); });
+    header = header || {};
+    options = options || {};
+    var review = m4095NewReview("shot", rows);
+    var labeled = m4095PageLabels(rows);
+    var holeDiameter = m395NormalizeHoleDiameter(options.holeDiameter || header.HoleDiameter);
+    var anfoRate = m395AnfoRate(holeDiameter);
+    var dinkLength = m4095Number(options.dinkLengthFeet);
+    if (dinkLength === null || dinkLength <= 0) dinkLength = m4095Number(header.LoadCalculationSettings && header.LoadCalculationSettings.dinkLengthFeet);
+    if (dinkLength === null || dinkLength <= 0) dinkLength = 3;
+    var totalDepth = 0, loaded = 0, conditions = 0, balanceEligible = 0;
+
+    if (!rows.length) m4095AddIssue(review, "blocker", "no-data", "No Shot Diagram holes entered", "Shot Diagram", "Enter or import hole data before producing the report.");
+
+    labeled.forEach(function (entry) {
+      var row = entry.row, label = entry.label;
+      var exempt = m4095Yes(row.DirtHole) || m4095Yes(row.BadHole);
+      var depthText = m4095Text(row.Depth), overburdenText = m4095Text(row.Overburden), stemmingText = m4095Text(row.Stemming);
+      var primaryText = m4095Text(row.PrimaryLoad), secondaryText = m4095Text(row.SecondaryLoad);
+      var hasLoad = !!(primaryText || secondaryText);
+      var depth = m4095Number(row.Depth), overburden = m4095Number(row.Overburden), stemming = m4095Number(row.Stemming);
+      if (exempt) { conditions += 1; return; }
+
+      if (!depthText) m4095AddIssue(review, "blocker", "missing-depth", "Missing drilled depth", label, "Every active Shot Diagram hole needs a drilled depth.");
+      else if (depth === null || depth <= 0) m4095AddIssue(review, "blocker", "invalid-depth", "Invalid drilled depth", label, "Depth must be a positive number.");
+      if (!overburdenText) m4095AddIssue(review, "blocker", "missing-overburden", "Missing overburden", label, "Enter overburden, including zero where appropriate.");
+      else if (overburden === null) m4095AddIssue(review, "blocker", "invalid-overburden", "Invalid overburden", label, "Overburden must be zero or greater.");
+      if (!stemmingText) m4095AddIssue(review, "blocker", "missing-stemming", "Missing stemming", label, "Every active hole needs a stemming value.");
+      else if (stemming === null) m4095AddIssue(review, "blocker", "invalid-stemming", "Invalid stemming", label, "Stemming must be zero or greater.");
+      if (!hasLoad) m4095AddIssue(review, "blocker", "missing-load", "Missing explosive load", label, "Enter a Primary or Secondary / Special Load.");
+      else {
+        loaded += 1;
+        if (!m4095Text(row.Timing)) m4095AddIssue(review, "blocker", "missing-timing", "Loaded hole missing timing", label, "Every loaded hole needs a timing value before the report is ready.");
+      }
+      if (depth !== null && depth > 0) totalDepth += depth;
+      if (depth !== null && depth > 0 && overburden !== null && overburden > depth) {
+        m4095AddIssue(review, "blocker", "overburden-depth", "Overburden exceeds drilled depth", label, "This produces an impossible negative rock interval.");
+      }
+      if (hasLoad && depth !== null && depth > 0 && stemming !== null && stemming >= depth) {
+        m4095AddIssue(review, "blocker", "stemming-depth", "Stemming leaves no loaded column", label, "Stemming must be less than drilled depth for a loaded hole.");
+      }
+
+      if (hasLoad) {
+        var load = m4095LoadTokens(row, anfoRate);
+        if (!load.valid) {
+          m4095AddIssue(review, "blocker", "invalid-load", "Explosive load cannot be interpreted", label, "Use ANFO footage such as 13A, dinks such as 1D, or pumped pounds such as 425.");
+        } else {
+          var hasFootageToken = load.tokens.some(function (token) { return token.designator === "A" || token.designator === "D"; });
+          var allFootageTokens = load.tokens.length && load.tokens.every(function (token) { return token.designator === "A" || token.designator === "D"; });
+          if (hasFootageToken && !allFootageTokens) {
+            m4095AddIssue(review, "advisory", "mixed-load-unchecked", "Mixed footage and pounds not balance-checked", label, "MITHRIL can total the weight but cannot prove the physical column length of a mixed footage/pounds recipe.");
+          } else if (allFootageTokens && depth !== null && depth > 0 && stemming !== null && stemming < depth) {
+            balanceEligible += 1;
+            var usedColumn = load.tokens.reduce(function (total, token) {
+              return total + (token.designator === "A" ? token.amount : token.amount * dinkLength);
+            }, 0);
+            var availableColumn = depth - stemming;
+            if (Math.abs(availableColumn - usedColumn) > 0.051) {
+              m4095AddIssue(review, "blocker", "load-balance", "Explosive column does not balance", label + " (available " + m395FormatNumber(availableColumn, 2) + " ft; entered " + m395FormatNumber(usedColumn, 2) + " ft)", "For ANFO/dink loads, Depth minus Stemming must equal ANFO footage plus dink footage.");
+            }
+          }
+        }
+      }
+    });
+
+    var missingHeader = m4095MissingHeaderFields(header, [
+      { key: "FieldDate", label: "Date" },
+      { key: "ShotID", label: "Shot number" },
+      { key: "JobName", label: "Job name" },
+      { key: "Blaster", label: "Blaster" },
+      { key: "EnteredByDefault", label: "Entered by" }
+    ]);
+    missingHeader.forEach(function (label) {
+      m4095AddIssue(review, "advisory", "document-details", "Document details not entered", label, "These details do not change hole calculations, but they belong on the finished report.");
+    });
+
+    review.metrics = {
+      reviewed: rows.length,
+      loaded: loaded,
+      complete: loaded,
+      totalDepth: totalDepth,
+      conditions: conditions,
+      balanceEligible: balanceEligible,
+      holeDiameter: holeDiameter,
+      dinkLengthFeet: dinkLength
+    };
+    m4095AddCheck(review, "Field data is present", "no-data");
+    review.checks.push({
+      label: "Hole dimensions are complete",
+      passed: !review.blockers.some(function (issue) { return ["missing-depth", "missing-overburden", "missing-stemming"].indexOf(issue.key) !== -1; }),
+      note: "Depth, overburden, and stemming are required on active holes."
+    });
+    review.checks.push({
+      label: "Hole dimensions are physically valid",
+      passed: !review.blockers.some(function (issue) { return ["invalid-depth", "invalid-overburden", "invalid-stemming", "overburden-depth", "stemming-depth"].indexOf(issue.key) !== -1; })
+    });
+    m4095AddCheck(review, "Explosive data is entered", "missing-load");
+    m4095AddCheck(review, "Loaded-hole timing is entered", "missing-timing");
+    m4095AddCheck(review, "Load entries are interpretable", "invalid-load");
+    m4095AddCheck(review, "ANFO / dink columns balance", "load-balance", balanceEligible + " footage-based hole" + (balanceEligible === 1 ? "" : "s") + " checked.");
+    m4095AddCheck(review, "Document details are complete", "document-details", "Missing details are advisory only.");
+    return m4095FinalizeReview(review);
+  }
+
+  function m4095CurrentReview(type) {
+    try { if (typeof window.saveData === "function") window.saveData(); } catch (error) {}
+    try { if (typeof window.saveState === "function") window.saveState(); } catch (error2) {}
+    var header = typeof headerData !== "undefined" && headerData ? headerData : {};
+    if (type === "shot") {
+      var shotRows = typeof window.getAllHoleRows === "function" ? window.getAllHoleRows() : m4095RowsFromPages(typeof pagesData !== "undefined" ? pagesData : {}, "shot");
+      return m4095AnalyzeShotRows(shotRows, header, {
+        holeDiameter: header.HoleDiameter,
+        dinkLengthFeet: header.LoadCalculationSettings && header.LoadCalculationSettings.dinkLengthFeet
+      });
+    }
+    return m4095AnalyzeDrillRows(m4095RowsFromPages(typeof pagesData !== "undefined" ? pagesData : {}, "drill"), header);
+  }
+
+  function m4095InjectReadinessStyles() {
+    if (byId("mithrilM4095ReadinessStyles")) return;
+    var style = document.createElement("style");
+    style.id = "mithrilM4095ReadinessStyles";
+    style.textContent = [
+      ".m4095ReadinessButton{border-color:#2f7a43!important;background:#edf8f0!important;color:#245d34!important;font-weight:950!important}",
+      ".m4095ReadinessBox{width:min(760px,100%);max-height:min(90vh,900px);overflow:auto;padding:0!important;border-color:#61748a!important}",
+      ".m4095Head{position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 16px;border-bottom:1px solid #cad2dc;background:#fff}",
+      ".m4095Head strong{font-size:19px;color:#17283d}.m4095Head button{min-height:40px}",
+      ".m4095Body{display:grid;gap:12px;padding:15px 16px 18px;background:#f5f7fa}",
+      ".m4095Status{display:grid;grid-template-columns:58px minmax(0,1fr);gap:12px;align-items:center;padding:16px;border:2px solid;border-radius:13px}",
+      ".m4095Status.ready{border-color:#2f8a4b;background:#eaf8ee;color:#1f5e32}.m4095Status.blocked{border-color:#b42318;background:#fff0ef;color:#7f1d17}",
+      ".m4095StatusIcon{display:grid;place-items:center;width:54px;height:54px;border-radius:50%;background:currentColor;color:#fff;font-size:31px;font-weight:950}",
+      ".m4095Status h2{margin:0;font-size:24px;line-height:1.05}.m4095Status p{margin:5px 0 0;font-size:13px;font-weight:800;line-height:1.35}",
+      ".m4095Metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.m4095Metric{min-width:0;padding:10px;border:1px solid #b8c3cf;border-radius:9px;background:#fff}.m4095Metric b{display:block;color:#607084;font-size:10px;text-transform:uppercase;letter-spacing:.04em}.m4095Metric span{display:block;margin-top:3px;color:#17283d;font-size:22px;font-weight:950;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}",
+      ".m4095Section{padding:12px;border:1px solid #c2ccd6;border-radius:11px;background:#fff}.m4095Section h3{margin:0 0 9px;color:#17283d;font-size:16px}",
+      ".m4095IssueList,.m4095CheckList{display:grid;gap:7px}.m4095Issue{border:1px solid #c6ced7;border-radius:9px;overflow:hidden}.m4095Issue.blocker{border-color:#d28782;background:#fff7f6}.m4095Issue.advisory{border-color:#d4b15a;background:#fffaf0}",
+      ".m4095Issue summary{cursor:pointer;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;padding:10px 11px;font-size:13px;font-weight:900}.m4095Issue summary span:last-child{font-size:11px;text-transform:uppercase}",
+      ".m4095IssueBody{padding:0 11px 11px;color:#4d5b69;font-size:12px;line-height:1.4}.m4095HoleChips{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}.m4095HoleChips span{padding:4px 7px;border:1px solid #9da9b7;border-radius:999px;background:#fff;color:#25364a;font-size:11px;font-weight:850}",
+      ".m4095Check{display:grid;grid-template-columns:27px minmax(0,1fr);gap:8px;align-items:start;padding:8px 9px;border:1px solid #c6ced7;border-radius:8px;background:#f8fafc;font-size:12px;font-weight:850}.m4095Check i{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#2f8a4b;color:#fff;font-style:normal}.m4095Check.fail i{background:#b42318}.m4095Check.advisory i{background:#b57900}.m4095Check small{display:block;margin-top:2px;color:#697789;font-size:10px;font-weight:700}",
+      ".m4095Notice{margin:0;padding:9px 11px;border-left:4px solid #5f7186;background:#eef2f6;color:#46576b;font-size:11px;font-weight:750;line-height:1.4}",
+      ".m4095Actions{position:sticky;bottom:0;display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px 16px;border-top:1px solid #cad2dc;background:#fff}.m4095Actions button{min-height:50px}",
+      "@media(max-width:600px){.m4095Metrics{grid-template-columns:1fr 1fr}.m4095Status{grid-template-columns:46px minmax(0,1fr);padding:12px}.m4095StatusIcon{width:44px;height:44px;font-size:25px}.m4095Status h2{font-size:20px}.m4095Actions{grid-template-columns:1fr}.m4095ReadinessBox{max-height:94vh}}"
+    ].join("");
+    document.head.appendChild(style);
+  }
+
+  function m4095EnsureModal() {
+    var modal = byId("m4095ReadinessModal");
+    if (modal) return modal;
+    modal = document.createElement("div");
+    modal.id = "m4095ReadinessModal";
+    modal.className = "modal";
+    modal.innerHTML = [
+      '<div class="box m4095ReadinessBox">',
+      '  <div class="m4095Head"><strong>Report Readiness</strong><button type="button" id="m4095ReadinessClose">Close</button></div>',
+      '  <div id="m4095ReadinessBody" class="m4095Body"></div>',
+      '  <div class="m4095Actions"><button type="button" id="m4095ReviewAgain">Run Review Again</button><button type="button" class="primary" id="m4095ReadinessPrimary">Close and Correct</button></div>',
+      '</div>'
+    ].join("");
+    document.body.appendChild(modal);
+    byId("m4095ReadinessClose").addEventListener("click", function () { modal.classList.remove("show"); });
+    byId("m4095ReviewAgain").addEventListener("click", function () { m4095RenderReview(modal.__documentType || "drill"); });
+    byId("m4095ReadinessPrimary").addEventListener("click", function () {
+      var review = modal.__review;
+      if (!review || !review.ready) { modal.classList.remove("show"); return; }
+      modal.classList.remove("show");
+      if (review.type === "shot" && typeof window.exportPDFReport === "function") window.exportPDFReport(true);
+      else if (review.type === "drill" && typeof window.downloadPDF === "function") window.downloadPDF();
+    });
+    return modal;
+  }
+
+  function m4095MetricHTML(label, value) {
+    return '<div class="m4095Metric"><b>' + m395EscapeHTML(label) + '</b><span>' + m395EscapeHTML(value) + '</span></div>';
+  }
+
+  function m4095IssueHTML(issue, severity) {
+    var shown = issue.items.slice(0, 100);
+    var chips = shown.map(function (item) { return '<span>' + m395EscapeHTML(item) + '</span>'; }).join("");
+    if (issue.items.length > shown.length) chips += '<span>+' + (issue.items.length - shown.length) + ' more</span>';
+    return '<details class="m4095Issue ' + severity + '"' + (severity === "blocker" ? ' open' : '') + '>' +
+      '<summary><span>' + m395EscapeHTML(issue.title) + '</span><span>' + issue.items.length + ' item' + (issue.items.length === 1 ? '' : 's') + '</span></summary>' +
+      '<div class="m4095IssueBody">' + m395EscapeHTML(issue.detail || '') + (chips ? '<div class="m4095HoleChips">' + chips + '</div>' : '') + '</div></details>';
+  }
+
+  function m4095CheckHTML(check) {
+    var advisory = !check.passed && /advisory/i.test(check.note || "");
+    var className = check.passed ? "" : advisory ? " advisory" : " fail";
+    return '<div class="m4095Check' + className + '"><i>' + (check.passed ? '&#10003;' : '!') + '</i><div>' + m395EscapeHTML(check.label) + (check.note ? '<small>' + m395EscapeHTML(check.note) + '</small>' : '') + '</div></div>';
+  }
+
+  function m4095RenderReview(type) {
+    var modal = m4095EnsureModal();
+    var review = m4095CurrentReview(type);
+    modal.__review = review;
+    modal.__documentType = type;
+    var body = byId("m4095ReadinessBody");
+    var readyText = review.advisoryCount ? review.advisoryCount + ' advisor' + (review.advisoryCount === 1 ? 'y' : 'ies') + ' remain; they do not block export.' : 'No unresolved data issues found.';
+    var status = review.ready ?
+      '<div class="m4095Status ready"><div class="m4095StatusIcon">&#10003;</div><div><h2>READY FOR REPORT</h2><p>' + m395EscapeHTML(readyText) + '</p></div></div>' :
+      '<div class="m4095Status blocked"><div class="m4095StatusIcon">!</div><div><h2>REVIEW REQUIRED — ' + review.blockerCount + ' ISSUE' + (review.blockerCount === 1 ? '' : 'S') + '</h2><p>Correct the blocking field-data issues below, then run the review again.</p></div></div>';
+    var metrics = '<div class="m4095Metrics">' +
+      m4095MetricHTML('Holes reviewed', String(review.metrics.reviewed || 0)) +
+      m4095MetricHTML(type === 'shot' ? 'Loaded holes' : 'Complete holes', String(review.metrics.loaded || review.metrics.complete || 0)) +
+      m4095MetricHTML('Total drilled feet', m395FormatNumber(review.metrics.totalDepth || 0, 1) + ' ft') +
+      m4095MetricHTML('Dirt / Bad', String(review.metrics.conditions || 0)) +
+      '</div>';
+    var blockers = review.blockers.length ? '<div class="m4095Section"><h3>Blocking Issues</h3><div class="m4095IssueList">' + review.blockers.map(function (issue) { return m4095IssueHTML(issue, 'blocker'); }).join('') + '</div></div>' : '';
+    var advisories = review.advisories.length ? '<div class="m4095Section"><h3>Advisories</h3><div class="m4095IssueList">' + review.advisories.map(function (issue) { return m4095IssueHTML(issue, 'advisory'); }).join('') + '</div></div>' : '';
+    var checks = '<div class="m4095Section"><h3>Review Checklist</h3><div class="m4095CheckList">' + review.checks.map(m4095CheckHTML).join('') + '</div></div>';
+    body.innerHTML = status + metrics + blockers + advisories + checks + '<p class="m4095Notice">Report Readiness reviews recorded data only. It does not certify blast safety, field conditions, regulatory compliance, or readiness to fire.</p>';
+    var primary = byId("m4095ReadinessPrimary");
+    primary.textContent = review.ready ? "Download PDF" : "Close and Correct";
+    return review;
+  }
+
+  function m4095OpenReportReadiness(type) {
+    var resolvedType = type === "shot" || byId("shotCanvas") ? "shot" : "drill";
+    m4095InjectReadinessStyles();
+    var modal = m4095EnsureModal();
+    m4095RenderReview(resolvedType);
+    modal.classList.add("show");
+  }
+
+  window.MithrilM4095ReportReadiness = {
+    analyzeDrillRows: m4095AnalyzeDrillRows,
+    analyzeShotRows: m4095AnalyzeShotRows,
+    currentReview: m4095CurrentReview,
+    open: m4095OpenReportReadiness
+  };
+
   function m395EscapeHTML(value) {
     return String(value == null ? "" : value)
       .replace(/&/g, "&amp;")
@@ -9674,6 +10089,7 @@
     injectStyles();
     injectM406WorkspaceStyles();
     injectM4091InteractionStyles();
+    m4095InjectReadinessStyles();
     injectMultiQuickStyles();
     injectGPSStyles();
     updateRuntimeLabels();

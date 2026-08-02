@@ -1,9 +1,9 @@
 (function () {
   "use strict";
 
-  var RELEASE_VERSION = "m40.9.4";
+  var RELEASE_VERSION = "m40.9.5";
   var CHILD_SCRIPT_ID = "mithrilCoreM400ChildLoader";
-  var CHILD_SCRIPT_SRC = "./mithril-core-m400.js?rev=40935-frame";
+  var CHILD_SCRIPT_SRC = "./mithril-core-m400.js?rev=4095-frame";
   var TRANSFER_KEY = "mithrilDrillToShotTransferM400";
   var UNDO_KEY = "mithrilDrillToShotUndoM400";
   var LOAD_CALCULATOR_UNDO_KEY = "mithrilShotLoadCalculatorUndoM40932";
@@ -1275,7 +1275,7 @@
     modal.className = "m400Modal";
     modal.innerHTML = [
       '<div class="m400Box">',
-      '<div class="m400Head"><strong>Create Shot Diagram from Drill Log - m40.9.4</strong><button type="button" id="m400TransferClose">Close</button></div>',
+      '<div class="m400Head"><strong>Create Shot Diagram from Drill Log - m40.9.5</strong><button type="button" id="m400TransferClose">Close</button></div>',
       '<div id="m400TransferStats" class="m400Stats"></div>',
       '<div class="m400Grid">',
       '<label class="m400Wide">Shot orientation<select id="m400Orientation"></select></label>',
@@ -3603,7 +3603,7 @@
         script.id = CHILD_SCRIPT_ID;
         script.src = CHILD_SCRIPT_SRC;
         doc.head.appendChild(script);
-      } catch (error) { console.warn("MITHRIL m40.9.4 could not attach the standardized document layer to the Shot Diagram.", error); }
+      } catch (error) { console.warn("MITHRIL m40.9.5 could not attach the document layer to the Shot Diagram.", error); }
     }
     frame.addEventListener("load", function () { setTimeout(inject, 80); });
     setTimeout(inject, 120);
