@@ -1,8 +1,8 @@
 (function () {
   "use strict";
 
-  var RELEASE_VERSION = "m40.9.3.5";
-  var RELEASE_LABEL = "Load calculator open repair";
+  var RELEASE_VERSION = "m40.9.4";
+  var RELEASE_LABEL = "Standardized export summaries";
   var THEME_STORAGE_KEY = "mithrilCanvasThemeV1";
   var THEME_CLASS_PREFIX = "m395-theme-";
   var THEME_OPTIONS = [
@@ -201,7 +201,7 @@
         var script = childDocument.createElement("script");
         script.id = "mithrilMenuM395ChildLoader";
         script.setAttribute("data-mithril-release", RELEASE_VERSION);
-        script.src = "./mithril-menu-m397.js?v=40.9.3.5-frame";
+        script.src = "./mithril-menu-m397.js?v=40.9.4-frame";
         (childDocument.head || childDocument.documentElement).appendChild(script);
         return true;
       } catch (error) {
@@ -5186,7 +5186,7 @@
       min: minimum,
       max: maximum,
       label: "Drilled Depth Range",
-      value: m395FormatNumber(minimum, 2) + "–" + m395FormatNumber(maximum, 2) + " ft"
+      value: m395FormatNumber(minimum, 2) + " - " + m395FormatNumber(maximum, 2) + " ft"
     };
   }
 
@@ -5298,6 +5298,441 @@
       candidates: candidates
     };
   }
+
+  // ---------------------------------------------------------------------------
+  // m40.9.4 standardized export summaries and loading configurations
+  // ---------------------------------------------------------------------------
+  function m4094FlagYes(value) {
+    return value === true || String(value == null ? "" : value).trim().toLowerCase() === "yes";
+  }
+
+  function m4094NonNegativeNumber(value) {
+    var textValue = String(value == null ? "" : value).trim();
+    if (!/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(textValue)) return null;
+    var number = Number(textValue);
+    return isFinite(number) && number >= 0 ? number : null;
+  }
+
+  function m4094RangeText(values, suffix) {
+    var usable = (values || []).filter(function (value) { return value !== null && isFinite(Number(value)); }).map(Number);
+    if (!usable.length) return "Not available";
+    var minimum = Math.min.apply(Math, usable);
+    var maximum = Math.max.apply(Math, usable);
+    var unit = suffix ? " " + suffix : "";
+    if (Math.abs(minimum - maximum) < 0.000001) return m395FormatNumber(minimum, 2) + unit;
+    return m395FormatNumber(minimum, 2) + " - " + m395FormatNumber(maximum, 2) + unit;
+  }
+
+  function m4094LoadField(value, rate) {
+    var raw = String(value == null ? "" : value).trim();
+    if (!raw) return { key: "", display: "None", valid: true, weight: 0 };
+    var parsed = m395ParseLoad(raw, rate);
+    if (!parsed.valid) {
+      var invalidText = raw.toUpperCase().replace(/\s+/g, " ");
+      return { key: "INVALID:" + invalidText, display: invalidText, valid: false, weight: null };
+    }
+    var pieces = parsed.tokens.map(function (token) {
+      var amount = m395FormatNumber(token.amount, 2);
+      return token.designator === "LB" ? amount + " lb" : amount + token.designator;
+    });
+    return { key: pieces.join("+"), display: pieces.join(" + "), valid: true, weight: parsed.weight };
+  }
+
+  function m4094BuildLoadConfigurations(rows, holeDiameter) {
+    var rate = m395AnfoRate(holeDiameter);
+    var pageSet = {};
+    (rows || []).forEach(function (row) { pageSet[String(Number(row && row.PageNumber || 1))] = true; });
+    var multiPage = Object.keys(pageSet).length > 1;
+    var map = {};
+    var order = [];
+    var invalid = [];
+
+    (rows || []).forEach(function (row) {
+      row = row || {};
+      if (m4094FlagYes(row.DirtHole) || m4094FlagYes(row.BadHole)) return;
+      var primaryRaw = String(row.PrimaryLoad || "").trim();
+      var secondaryRaw = String(row.SecondaryLoad || "").trim();
+      if (!primaryRaw && !secondaryRaw) return;
+
+      var primary = m4094LoadField(primaryRaw, rate);
+      var secondary = m4094LoadField(secondaryRaw, rate);
+      var key = primary.key + "||" + secondary.key;
+      if (!map[key]) {
+        map[key] = {
+          key: key,
+          primary: primary,
+          secondary: secondary,
+          valid: primary.valid && secondary.valid,
+          weight: primary.valid && secondary.valid ? primary.weight + secondary.weight : null,
+          holes: [],
+          depths: [],
+          stemmings: [],
+          loadedColumns: []
+        };
+        order.push(key);
+      }
+
+      var group = map[key];
+      var label = m395PageHoleLabel(row, multiPage);
+      group.holes.push(label);
+      var depth = m4094NonNegativeNumber(row.Depth);
+      var stemming = m4094NonNegativeNumber(row.Stemming);
+      if (depth !== null) group.depths.push(depth);
+      if (stemming !== null) group.stemmings.push(stemming);
+      if (depth !== null && stemming !== null) group.loadedColumns.push(Math.max(depth - stemming, 0));
+      if (!group.valid) invalid.push(label);
+    });
+
+    var groups = order.map(function (key) { return map[key]; });
+    groups.sort(function (a, b) {
+      if (a.weight === null && b.weight !== null) return 1;
+      if (a.weight !== null && b.weight === null) return -1;
+      if (a.weight !== null && b.weight !== null && Math.abs(a.weight - b.weight) > 0.000001) return a.weight - b.weight;
+      return (a.primary.display + "|" + a.secondary.display).localeCompare(b.primary.display + "|" + b.secondary.display);
+    });
+
+    var validWeights = groups.filter(function (group) { return group.weight !== null && group.weight > 0; }).map(function (group) { return group.weight; });
+    var lightestWeight = validWeights.length ? Math.min.apply(Math, validWeights) : null;
+    var heaviestWeight = validWeights.length ? Math.max.apply(Math, validWeights) : null;
+    groups.forEach(function (group, index) {
+      group.number = index + 1;
+      group.depthRange = m4094RangeText(group.depths, "ft");
+      group.stemmingRange = m4094RangeText(group.stemmings, "ft");
+      group.loadedColumnRange = m4094RangeText(group.loadedColumns, "ft");
+      group.holeText = m395FormatTiedLabels(group.holes);
+      group.isLightest = group.weight !== null && lightestWeight !== null && Math.abs(group.weight - lightestWeight) < 0.000001;
+      group.isHeaviest = group.weight !== null && heaviestWeight !== null && Math.abs(group.weight - heaviestWeight) < 0.000001;
+    });
+    return {
+      rate: rate,
+      groups: groups,
+      invalid: invalid,
+      lightestWeight: lightestWeight,
+      heaviestWeight: heaviestWeight,
+      lightestGroups: groups.filter(function (group) { return group.isLightest; }),
+      heaviestGroups: groups.filter(function (group) { return group.isHeaviest; })
+    };
+  }
+
+  function m4094ShotSummarySnapshot() {
+    var rows = typeof window.getAllHoleRows === "function" ? window.getAllHoleRows() : [];
+    var base = typeof window.getShotSummary === "function" ? window.getShotSummary() : {};
+    var footage = typeof window.getFootageSummary === "function" ? window.getFootageSummary(rows) : {};
+    var qa = typeof window.getQAWarnings === "function" ? window.getQAWarnings() : { red: [], yellow: [] };
+    var diameter = m395EnsureHeaderDiameter();
+    var loaded = 0;
+    var unloaded = 0;
+    var secondary = 0;
+    rows.forEach(function (row) {
+      var exempt = m4094FlagYes(row.DirtHole) || m4094FlagYes(row.BadHole);
+      var hasPrimary = String(row.PrimaryLoad || "").trim() !== "";
+      var hasSecondary = String(row.SecondaryLoad || "").trim() !== "";
+      if (exempt) return;
+      if (hasPrimary || hasSecondary) loaded += 1;
+      else unloaded += 1;
+      if (hasSecondary) secondary += 1;
+    });
+    return {
+      rows: rows,
+      base: base,
+      footage: footage,
+      qa: qa,
+      diameter: diameter,
+      depthRange: m395DepthRangeFromValues(rows.map(function (row) { return row.Depth; })),
+      configurations: m4094BuildLoadConfigurations(rows, diameter),
+      saved: rows.length,
+      loaded: loaded,
+      unloaded: unloaded,
+      secondary: secondary
+    };
+  }
+
+  function m4094StatValue(value, suffix) {
+    var number = Number(value || 0);
+    return m395FormatNumber(number, 1) + (suffix ? " " + suffix : "");
+  }
+
+  function m4094ShotMetric(label, value, note, tone) {
+    return '<div class="m4094Metric ' + (tone || "") + '"><b>' + m395EscapeHTML(label) + '</b><span>' + m395EscapeHTML(value) + '</span>' + (note ? '<small>' + m395EscapeHTML(note) + '</small>' : '') + '</div>';
+  }
+
+  function m4094LoadExtremeHTML(label, groups, weight) {
+    if (!groups || !groups.length || weight === null) {
+      return '<div class="m4094LoadCard"><b>' + m395EscapeHTML(label) + '</b><span class="m4094LoadWeight">Not available</span><small>No interpretable loaded-hole configuration.</small></div>';
+    }
+    var group = groups[0];
+    var tied = groups.length > 1 ? ' +' + (groups.length - 1) + ' tied configuration' + (groups.length === 2 ? '' : 's') : '';
+    return '<div class="m4094LoadCard">' +
+      '<b>' + m395EscapeHTML(label) + '</b>' +
+      '<span class="m4094LoadWeight">' + m395EscapeHTML(m395FormatNumber(weight, 2) + ' lb') + '</span>' +
+      '<div class="m4094Recipe"><strong>Primary:</strong> ' + m395EscapeHTML(group.primary.display) + ' <strong>Secondary:</strong> ' + m395EscapeHTML(group.secondary.display) + '</div>' +
+      '<small>Depth ' + m395EscapeHTML(group.depthRange) + ' | Stemming ' + m395EscapeHTML(group.stemmingRange) + '<br>Holes: ' + m395EscapeHTML(group.holeText + tied) + '</small>' +
+      '</div>';
+  }
+
+  function m4094ConfigurationPagesHTML(configurations) {
+    var groups = configurations && configurations.groups || [];
+    if (!groups.length) return '';
+    var chunks = [];
+    for (var i = 0; i < groups.length; i += 10) chunks.push(groups.slice(i, i + 10));
+    return chunks.map(function (chunk, pageIndex) {
+      var rows = chunk.map(function (group) {
+        var tags = [];
+        if (group.isLightest) tags.push('<em class="m4094Tag light">Lightest</em>');
+        if (group.isHeaviest) tags.push('<em class="m4094Tag heavy">Heaviest</em>');
+        var weight = group.weight === null ? 'Needs review' : m395FormatNumber(group.weight, 2) + ' lb';
+        return '<tr>' +
+          '<td class="m4094ConfigNo">' + group.number + '</td>' +
+          '<td><b>Primary:</b> ' + m395EscapeHTML(group.primary.display) + '<br><b>Secondary:</b> ' + m395EscapeHTML(group.secondary.display) + '</td>' +
+          '<td><b>' + group.holes.length + '</b><br><small>' + m395EscapeHTML(group.holeText) + '</small></td>' +
+          '<td>' + m395EscapeHTML(group.depthRange) + '</td>' +
+          '<td>' + m395EscapeHTML(group.stemmingRange) + '</td>' +
+          '<td>' + m395EscapeHTML(group.loadedColumnRange) + '</td>' +
+          '<td><b>' + m395EscapeHTML(weight) + '</b><br>' + tags.join(' ') + '</td>' +
+          '</tr>';
+      }).join('');
+      return '<section class="m4094ConfigSheet break">' +
+        '<div class="m4094ConfigHead"><div><h1>Loading Configurations</h1><p>Cross-section preparation - grouped by Primary and Secondary/Special load recipe.</p></div><b>Page ' + (pageIndex + 1) + ' of ' + chunks.length + '</b></div>' +
+        '<div class="m4094ConfigNote">Depth, stemming, and loaded-column values are shown as ranges when holes with the same explosive recipe differ. Dirt and Bad holes are excluded.</div>' +
+        '<table class="m4094ConfigTable"><thead><tr><th>#</th><th>Explosive recipe</th><th>Holes</th><th>Depth</th><th>Stemming</th><th>Loaded column</th><th>Calculated load</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+        '<div class="m4094PageFoot">ANFO weight uses ' + m395EscapeHTML(m395FormatNumber(configurations.rate, 2)) + ' lb/ft for the selected hole diameter. Plain numbers remain manually entered pounds.</div>' +
+        '</section>';
+    }).join('');
+  }
+
+  function m4094QAPagesHTML(qa) {
+    qa = qa || { red: [], yellow: [] };
+    var entries = [];
+    (qa.red || []).forEach(function (message) { entries.push({ tone: 'red', label: 'RED', message: message }); });
+    (qa.yellow || []).forEach(function (message) { entries.push({ tone: 'yellow', label: 'YELLOW', message: message }); });
+    if (!entries.length) return '';
+    var chunks = [];
+    for (var i = 0; i < entries.length; i += 20) chunks.push(entries.slice(i, i + 20));
+    return chunks.map(function (chunk, pageIndex) {
+      var items = chunk.map(function (entry) {
+        return '<li class="' + entry.tone + '"><b>' + entry.label + '</b><span>' + m395EscapeHTML(entry.message) + '</span></li>';
+      }).join('');
+      return '<section class="m4094QASheet break">' +
+        '<div class="m4094ConfigHead"><div><h1>QA Warnings</h1><p>Exported with unresolved Shot Diagram review items.</p></div><b>Page ' + (pageIndex + 1) + ' of ' + chunks.length + '</b></div>' +
+        '<div class="m4094QATotals"><span><b>Red Warnings</b>' + (qa.red || []).length + '</span><span><b>Yellow Warnings</b>' + (qa.yellow || []).length + '</span></div>' +
+        '<ol class="m4094QAList">' + items + '</ol>' +
+        '<div class="m4094PageFoot">Correct the listed hole records and export again to clear these warnings.</div>' +
+        '</section>';
+    }).join('');
+  }
+
+  function m4094ShotSummaryHTML(snapshot) {
+    var f = snapshot.footage || {};
+    var base = snapshot.base || {};
+    var qa = snapshot.qa || { red: [], yellow: [] };
+    var config = snapshot.configurations;
+    var qaTotal = qa.red.length + qa.yellow.length;
+    var conditionChips = [
+      ['Wet', base.wet || 0, 'wet'],
+      ['Bad', base.bad || 0, 'bad'],
+      ['Dirt', base.dirt || 0, 'dirt'],
+      ['Secondary / special', snapshot.secondary, 'special']
+    ].map(function (item) { return '<span class="m4094Chip ' + item[2] + '"><b>' + m395EscapeHTML(item[0]) + '</b> ' + item[1] + '</span>'; }).join('');
+
+    return '<section class="m4094SummarySheet">' +
+      '<div class="m4094SummaryHead"><div><div class="m4094Eyebrow">MITHRIL FIELD REPORT</div><h1>Shot Diagram Summary</h1><p>' + m395EscapeHTML(headerData.JobName || 'Job not entered') + (headerData.ShotID ? ' - ' + m395EscapeHTML(headerData.ShotID) : '') + '</p></div><div class="m4094DocType">SHOT DIAGRAM</div></div>' +
+      '<div class="m4094Identity"><span><b>Date</b>' + m395EscapeHTML(typeof formatShotDate === 'function' ? formatShotDate(headerData.FieldDate) || 'Not entered' : headerData.FieldDate || 'Not entered') + '</span><span><b>Blaster</b>' + m395EscapeHTML(headerData.Blaster || 'Not entered') + '</span><span><b>Entered By</b>' + m395EscapeHTML(headerData.EnteredByDefault || 'Not entered') + '</span><span><b>Pages</b>' + m395EscapeHTML(base.pages || 0) + '</span></div>' +
+      '<div class="m4094HeroGrid">' +
+        m4094ShotMetric('Hole Diameter', m395FormatHoleDiameter(snapshot.diameter), 'ANFO factor ' + m395FormatNumber(config.rate, 2) + ' lb/ft', 'hero') +
+        m4094ShotMetric(snapshot.depthRange.label || 'Drilled Depth Range', snapshot.depthRange.value || 'Not available', snapshot.depthRange.count + ' holes with depth', 'hero') +
+      '</div>' +
+      '<h2 class="m4094SectionTitle">Production totals</h2>' +
+      '<div class="m4094MetricGrid core">' +
+        m4094ShotMetric('Saved Holes', String(snapshot.saved), 'All saved hole records') +
+        m4094ShotMetric('Loaded Holes', String(snapshot.loaded), 'Primary or secondary/special load', 'good') +
+        m4094ShotMetric('Total Hole Footage', m4094StatValue(f.totalDepth, f.depthCount ? 'ft' : ''), f.depthCount + ' holes with depth') +
+        m4094ShotMetric('Average Hole Depth', m4094StatValue(f.averageDepth, f.depthCount ? 'ft' : ''), 'Concept production metric') +
+      '</div>' +
+      '<div class="m4094InlineNote"><b>' + snapshot.unloaded + '</b> blank-load holes | Secondary/special-only holes are included in Loaded Holes. Dirt and Bad holes are not counted as unloaded.</div>' +
+      '<h2 class="m4094SectionTitle">Footage and conditions</h2>' +
+      '<div class="m4094MetricGrid footage">' +
+        m4094ShotMetric('Total Rock Blasted', m4094StatValue(f.totalRockBlasted, f.rockBlastedCount ? 'ft' : ''), 'Depth minus overburden') +
+        m4094ShotMetric('Total Stemming', m4094StatValue(f.totalStemming, f.stemmingCount ? 'ft' : ''), 'Average ' + m4094StatValue(f.averageStemming, f.stemmingCount ? 'ft' : '')) +
+        m4094ShotMetric('Total Loaded Column', m4094StatValue(f.totalLoadedFootage, f.loadedColumnCount ? 'ft' : ''), 'Average ' + m4094StatValue(f.averageLoadedColumn, f.loadedColumnCount ? 'ft' : '')) +
+        m4094ShotMetric('QA Review', qaTotal ? qaTotal + ' warning' + (qaTotal === 1 ? '' : 's') : 'PASS', qa.red.length + ' red / ' + qa.yellow.length + ' yellow', qa.red.length ? 'danger' : qa.yellow.length ? 'warn' : 'good') +
+      '</div>' +
+      '<div class="m4094ChipRow">' + conditionChips + '</div>' +
+      '<h2 class="m4094SectionTitle">Explosive load range</h2>' +
+      '<div class="m4094LoadGrid">' +
+        m4094LoadExtremeHTML('Lightest loaded-hole configuration', config.lightestGroups, config.lightestWeight) +
+        m4094LoadExtremeHTML('Heaviest loaded-hole configuration', config.heaviestGroups, config.heaviestWeight) +
+      '</div>' +
+      '<div class="m4094ConfigSummary"><b>' + config.groups.length + ' unique loading configuration' + (config.groups.length === 1 ? '' : 's') + '</b><span>' + (config.groups.length ? 'Every recipe is listed on the following Loading Configurations page' + (config.groups.length === 1 ? '.' : 's.') : 'No loaded-hole recipe is available to list.') + '</span></div>' +
+      '<div class="m4094Legend"><b>Diagram Legend</b><span><i class="loaded"></i>Loaded</span><span><i class="dirt"></i>Dirt</span><span><i class="bad"></i>Bad</span><span><i class="wet"></i>Wet outline</span><span><i class="blank"></i>Blank / unloaded</span></div>' +
+      '<div class="m4094SummaryFoot"><span>Generated by MITHRIL Mobile ' + m395EscapeHTML(RELEASE_VERSION) + '</span><span>Summary values come from the exported Shot Diagram data.</span></div>' +
+      '</section>';
+  }
+
+  function m4094ShotSummaryStyles() {
+    return [
+      '.m4094SummarySheet,.m4094ConfigSheet,.m4094QASheet{width:8.45in;height:10.9in;box-sizing:border-box;padding:.28in .3in;background:#fff;overflow:hidden;page-break-inside:avoid;break-inside:avoid}',
+      '.m4094SummaryHead{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin:-.28in -.3in 9px;padding:.24in .3in .18in;background:#17283d}',
+      '.m4094SummaryHead h1,.m4094ConfigHead h1{margin:1px 0 2px;font-size:27px;line-height:1.05;color:#17283d}',
+      '.m4094SummaryHead h1{color:#fff}.m4094SummaryHead p{margin:3px 0 0;font-size:12px;font-weight:800;color:#dce7f3}.m4094ConfigHead p{margin:3px 0 0;font-size:12px;font-weight:800;color:#4e5d6d}',
+      '.m4094Eyebrow{font-size:9px;letter-spacing:.14em;font-weight:950;color:#1f6feb}',
+      '.m4094DocType{padding:8px 10px;border:1px solid #80b6ff;border-radius:6px;background:#233a55;color:#fff;font-size:10px;font-weight:950;letter-spacing:.08em}',
+      '.m4094Identity{display:grid;grid-template-columns:1.15fr 1fr 1fr .45fr;gap:6px;margin:8px 0}',
+      '.m4094Identity span{padding:6px 8px;border:1px solid #c8d0d9;background:#f6f8fa;font-size:10px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+      '.m4094Identity b{display:block;margin-bottom:2px;color:#667587;font-size:8px;text-transform:uppercase;letter-spacing:.05em}',
+      '.m4094HeroGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0 9px}',
+      '.m4094MetricGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}',
+      '.m4094Metric{min-width:0;padding:8px 9px;border:1px solid #b9c3ce;border-radius:6px;background:#f5f7fa}',
+      '.m4094Metric.hero{padding:10px 12px;border:2px solid #1f6feb;background:#eef4ff}',
+      '.m4094Metric.good{border-color:#6ba778;background:#edf8ef}.m4094Metric.warn{border-color:#c49a32;background:#fff7dc}.m4094Metric.danger{border-color:#c34f4f;background:#ffeaea}',
+      '.m4094Metric b{display:block;color:#506175;font-size:9px;text-transform:uppercase;letter-spacing:.045em}',
+      '.m4094Metric span{display:block;margin-top:3px;color:#111;font-size:21px;line-height:1;font-weight:950;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+      '.m4094Metric.hero span{font-size:25px}.m4094Metric small{display:block;margin-top:5px;color:#66717d;font-size:8.5px;line-height:1.25}',
+      '.m4094SectionTitle{margin:10px 0 5px;padding:0;color:#17283d;font-size:13px;text-transform:uppercase;letter-spacing:.055em}',
+      '.m4094InlineNote{margin:6px 0 0;padding:5px 8px;border-left:3px solid #1f6feb;background:#f1f5f9;color:#455566;font-size:9px}',
+      '.m4094ChipRow{display:flex;gap:6px;flex-wrap:wrap;margin:7px 0 0}.m4094Chip{padding:4px 8px;border:1px solid #adb8c3;border-radius:999px;background:#f7f8fa;font-size:9px}.m4094Chip.wet{border-color:#1f6feb;background:#eaf2ff}.m4094Chip.bad{border-color:#bd5555;background:#ffe9e9}.m4094Chip.dirt{border-color:#8a6846;background:#f0e5da}.m4094Chip.special{border-color:#7357b4;background:#f1edfb}',
+      '.m4094LoadGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.m4094LoadCard{min-height:105px;padding:9px 11px;border:2px solid #304c6b;border-radius:7px;background:#f8fafc}.m4094LoadCard>b{display:block;color:#506175;font-size:9px;text-transform:uppercase}.m4094LoadWeight{display:block;margin:3px 0;color:#17283d;font-size:24px;font-weight:950}.m4094Recipe{margin:3px 0 5px;font-size:10px}.m4094LoadCard small{display:block;color:#5c6875;font-size:8.5px;line-height:1.35}',
+      '.m4094ConfigSummary{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:8px;padding:8px 10px;border:1px solid #1f6feb;background:#eef4ff;font-size:10px}.m4094ConfigSummary span{color:#506175;text-align:right}',
+      '.m4094Legend{display:flex;align-items:center;gap:10px;margin-top:7px;padding:6px 9px;border:1px solid #c1cad4;background:#f7f8fa;font-size:8px}.m4094Legend>b{margin-right:3px;color:#405267;text-transform:uppercase}.m4094Legend span{white-space:nowrap}.m4094Legend i{display:inline-block;width:14px;height:9px;margin-right:4px;border:1px solid #66717d;vertical-align:-1px}.m4094Legend i.loaded{background:#bdf2c3}.m4094Legend i.dirt{background:#b68b6a}.m4094Legend i.bad{background:#ff8c8c}.m4094Legend i.wet{height:7px;border:2px solid #1f6feb;background:#fff}.m4094Legend i.blank{background:#fff}',
+      '.m4094SummaryFoot{display:flex;justify-content:space-between;margin-top:10px;padding-top:6px;border-top:1px solid #bcc5cf;color:#66717d;font-size:8px}',
+      '.m4094ConfigHead{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;padding-bottom:10px;border-bottom:3px solid #1f6feb}.m4094ConfigHead>b{font-size:10px;color:#506175}',
+      '.m4094ConfigNote{margin:10px 0;padding:8px 10px;border-left:4px solid #1f6feb;background:#eef4ff;color:#405267;font-size:10px;line-height:1.35}',
+      '.m4094ConfigTable{width:100%;table-layout:fixed;border-collapse:collapse;font-size:9px}.m4094ConfigTable th,.m4094ConfigTable td{padding:7px 6px;border:1px solid #98a5b3;vertical-align:top}.m4094ConfigTable th{background:#17283d;color:#fff;font-size:8px;text-transform:uppercase;letter-spacing:.03em}.m4094ConfigTable th:nth-child(1){width:4%}.m4094ConfigTable th:nth-child(2){width:24%}.m4094ConfigTable th:nth-child(3){width:20%}.m4094ConfigTable th:nth-child(4),.m4094ConfigTable th:nth-child(5),.m4094ConfigTable th:nth-child(6){width:12%}.m4094ConfigTable th:nth-child(7){width:16%}.m4094ConfigTable tbody tr:nth-child(even){background:#f5f7fa}.m4094ConfigTable small{color:#596777;font-size:7.8px;line-height:1.25}.m4094ConfigNo{text-align:center;font-weight:950;font-size:12px}',
+      '.m4094Tag{display:inline-block;margin-top:4px;padding:2px 4px;border-radius:3px;font-size:7px;font-style:normal;font-weight:950;text-transform:uppercase}.m4094Tag.light{background:#eaf2ff;color:#154f92}.m4094Tag.heavy{background:#ffe8e8;color:#8e2525}',
+      '.m4094PageFoot{margin-top:10px;padding-top:7px;border-top:1px solid #abb5c0;color:#596777;font-size:8.5px}',
+      '.m4094QATotals{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}.m4094QATotals span{padding:10px 12px;border:1px solid #c1cad4;background:#f5f7fa;font-size:22px;font-weight:950}.m4094QATotals b{display:block;margin-bottom:3px;color:#596777;font-size:9px;text-transform:uppercase}.m4094QAList{margin:0;padding:0;list-style:none;display:grid;gap:6px}.m4094QAList li{display:grid;grid-template-columns:62px 1fr;gap:9px;align-items:start;padding:8px 10px;border:1px solid #c1cad4;font-size:10px;line-height:1.3}.m4094QAList li.red{border-color:#c34f4f;background:#ffeaea}.m4094QAList li.yellow{border-color:#c49a32;background:#fff7dc}.m4094QAList li b{font-size:8px;letter-spacing:.05em}',
+      '@media print{.m4094SummarySheet,.m4094ConfigSheet,.m4094QASheet{margin:0}.m4094ConfigSheet,.m4094QASheet{page-break-before:always;break-before:page}}'
+    ].join('');
+  }
+
+  function installM4094ShotExportSummary() {
+    if (window.__mithrilM4094ShotExportSummary || typeof window.getPrintableReportHTML !== 'function') return;
+    window.__mithrilM4094ShotExportSummary = true;
+    var originalReport = window.getPrintableReportHTML;
+    window.getPrintableReportHTML = function () {
+      var html = String(originalReport.apply(this, arguments));
+      var snapshot = m4094ShotSummarySnapshot();
+      html = html.replace('</style>', m4094ShotSummaryStyles() + '</style>');
+      var bodyMarker = '<body>';
+      var bodyStart = html.indexOf(bodyMarker);
+      if (bodyStart < 0) return html;
+      var anchors = ['<section class="m395PatternSheet break">', '<section class="overviewSheet break">'];
+      var anchor = -1;
+      for (var i = 0; i < anchors.length; i += 1) {
+        var candidate = html.indexOf(anchors[i], bodyStart);
+        if (candidate !== -1 && (anchor === -1 || candidate < anchor)) anchor = candidate;
+      }
+      if (anchor < 0) return html;
+      var replacement = '<button class="noPrint" onclick="window.print()" style="font-size:16px;padding:10px 14px;margin-bottom:12px;">Print / Save as PDF</button>' +
+        m4094ShotSummaryHTML(snapshot) + m4094ConfigurationPagesHTML(snapshot.configurations) + m4094QAPagesHTML(snapshot.qa);
+      return html.slice(0, bodyStart + bodyMarker.length) + replacement + html.slice(anchor);
+    };
+  }
+
+  function m4094CanvasText(ctx, textValue, x, y, maxWidth, font, color) {
+    ctx.font = font;
+    ctx.fillStyle = color || '#111';
+    var textString = String(textValue == null ? '' : textValue);
+    var shortened = textString;
+    while (shortened.length > 3 && ctx.measureText(shortened + '...').width > maxWidth) shortened = shortened.slice(0, -1);
+    if (shortened !== textString) shortened += '...';
+    ctx.fillText(shortened, x, y);
+  }
+
+  function m4094CanvasCard(ctx, left, top, width, height, label, value, note, tone) {
+    var fill = '#f5f7fa', stroke = '#b9c3ce';
+    if (tone === 'hero') { fill = '#eef4ff'; stroke = '#1f6feb'; }
+    if (tone === 'good') { fill = '#edf8ef'; stroke = '#6ba778'; }
+    if (tone === 'warn') { fill = '#fff7dc'; stroke = '#c49a32'; }
+    if (tone === 'danger') { fill = '#ffeaea'; stroke = '#c34f4f'; }
+    ctx.fillStyle = fill; ctx.strokeStyle = stroke; ctx.lineWidth = tone === 'hero' ? 3 : 2;
+    ctx.fillRect(left, top, width, height); ctx.strokeRect(left, top, width, height);
+    m4094CanvasText(ctx, String(label).toUpperCase(), left + 15, top + 14, width - 30, '900 18px Arial', '#506175');
+    m4094CanvasText(ctx, value, left + 15, top + 48, width - 30, tone === 'hero' ? '950 36px Arial' : '950 33px Arial', '#111');
+    if (note) m4094CanvasText(ctx, note, left + 15, top + height - 31, width - 30, '700 15px Arial', '#66717d');
+  }
+
+  function m4094RenderDrillSummaryCanvas() {
+    var summary = typeof window.getDrillSummary === 'function' ? window.getDrillSummary() : {};
+    var range = summary.depthRange || m395DepthRangeFromValues([]);
+    var pattern = summary.patternSummary || m395BuildPatternSummary([], m395EnsurePatternState());
+    var c = document.createElement('canvas'); c.width = IMG_W; c.height = IMG_H;
+    var x = c.getContext('2d');
+    x.fillStyle = '#fff'; x.fillRect(0, 0, IMG_W, IMG_H); x.textBaseline = 'top';
+
+    x.fillStyle = '#17283d'; x.fillRect(0, 0, IMG_W, 250);
+    x.fillStyle = '#5aa0ff'; x.font = '950 18px Arial'; x.fillText('MITHRIL FIELD REPORT', 70, 43);
+    x.fillStyle = '#fff'; x.font = '950 54px Arial'; x.fillText('DRILL LOG SUMMARY', 70, 74);
+    x.fillStyle = '#dce7f3'; x.font = '800 24px Arial';
+    m4094CanvasText(x, 'Job: ' + (headerData.Job || 'Not entered'), 70, 150, 610, '800 24px Arial', '#dce7f3');
+    m4094CanvasText(x, 'Drill Log: ' + (headerData.DrillLogNumber || 'Not entered'), 70, 190, 610, '800 24px Arial', '#dce7f3');
+    m4094CanvasText(x, 'Employee: ' + (headerData.Employee || 'Not entered'), 735, 150, 560, '800 24px Arial', '#dce7f3');
+    m4094CanvasText(x, 'Date: ' + (headerData.Date || 'Not entered'), 735, 190, 560, '800 24px Arial', '#dce7f3');
+
+    m4094CanvasCard(x, 70, 280, 600, 125, 'Hole Diameter', m395FormatHoleDiameter(summary.holeDiameter), 'Selected report diameter', 'hero');
+    m4094CanvasCard(x, 695, 280, 600, 125, range.label || 'Drilled Depth Range', range.value || 'Not available', (range.count || 0) + ' holes with depth', 'hero');
+
+    x.fillStyle = '#17283d'; x.font = '950 29px Arial'; x.fillText('PRODUCTION TOTALS', 70, 445);
+    var reviewCount = Number(summary.incomplete || 0) + Number(summary.invalid || 0);
+    m4094CanvasCard(x, 70, 495, 285, 145, 'Usable Holes', String(summary.loaded || 0), 'Excludes Dirt / Bad', 'good');
+    m4094CanvasCard(x, 385, 495, 285, 145, 'Total Hole Footage', m395FormatNumber(summary.totalDepth || 0, 1) + ' ft', (summary.depthCount || 0) + ' holes with depth');
+    m4094CanvasCard(x, 700, 495, 285, 145, 'Average Hole Depth', m395FormatNumber(summary.avgDepth || 0, 1) + ' ft', 'Usable holes');
+    m4094CanvasCard(x, 1015, 495, 280, 145, 'Needs Review', String(reviewCount), (summary.incomplete || 0) + ' incomplete / ' + (summary.invalid || 0) + ' invalid', summary.invalid ? 'danger' : summary.incomplete ? 'warn' : 'good');
+
+    x.fillStyle = '#17283d'; x.font = '950 29px Arial'; x.fillText('FOOTAGE', 70, 685);
+    m4094CanvasCard(x, 70, 735, 285, 145, 'Total Overburden', m395FormatNumber(summary.totalOverburden || 0, 1) + ' ft', 'Average ' + m395FormatNumber(summary.avgOverburden || 0, 1) + ' ft');
+    m4094CanvasCard(x, 385, 735, 285, 145, 'Total Rock', m395FormatNumber(summary.totalRock || 0, 1) + ' ft', 'Average ' + m395FormatNumber(summary.avgRock || 0, 1) + ' ft');
+    m4094CanvasCard(x, 700, 735, 285, 145, 'Holes Entered', String(summary.saved || 0), 'Across ' + (summary.pages || 0) + ' page' + (Number(summary.pages || 0) === 1 ? '' : 's'));
+    m4094CanvasCard(x, 1015, 735, 280, 145, 'Complete Holes', String(summary.complete || 0), 'Valid depth + overburden', 'good');
+
+    x.fillStyle = '#17283d'; x.font = '950 29px Arial'; x.fillText('HOLE CONDITIONS', 70, 925);
+    m4094CanvasCard(x, 70, 975, 285, 112, 'Hole Condition', String(summary.breakthrough || 0), 'Intervals / breakthrough');
+    m4094CanvasCard(x, 385, 975, 285, 112, 'Wet', String(summary.wet || 0), 'Blue outline');
+    m4094CanvasCard(x, 700, 975, 285, 112, 'Dirt', String(summary.dirt || 0), 'Excluded from totals');
+    m4094CanvasCard(x, 1015, 975, 280, 112, 'Bad', String(summary.bad || 0), 'Excluded from totals', summary.bad ? 'danger' : '');
+
+    x.fillStyle = '#17283d'; x.font = '950 29px Arial'; x.fillText('PATTERN AND SHOT VOLUME', 70, 1135);
+    var areaValue = pattern.areaHoleCount ? m395FormatNumber(pattern.totalAreaSqFt, 1) + ' sq ft' : 'Not available';
+    var rockValue = pattern.rockOnlyVolumeHoleCount ? m395FormatNumber(pattern.totalShotVolumeRockOnlyCubicYards, 1) + ' cu yd' : 'Not available';
+    var totalValue = pattern.rockAndOverburdenVolumeHoleCount ? m395FormatNumber(pattern.totalShotVolumeRockAndOverburdenCubicYards, 1) + ' cu yd' : 'Not available';
+    m4094CanvasCard(x, 70, 1185, 385, 155, 'Estimated Pattern Area', areaValue, pattern.areaHoleCount ? m395FormatNumber(pattern.totalAreaSqYd, 1) + ' sq yd' : 'Set burden and spacing', 'hero');
+    m4094CanvasCard(x, 490, 1185, 385, 155, 'Shot Volume - Rock Only', rockValue, 'Depth minus overburden', 'hero');
+    m4094CanvasCard(x, 910, 1185, 385, 155, 'Shot Volume - Rock + OB', totalValue, 'Uses total drilled depth', 'hero');
+
+    x.fillStyle = reviewCount ? '#fff7dc' : '#edf8ef'; x.strokeStyle = reviewCount ? '#c49a32' : '#6ba778'; x.lineWidth = 2;
+    x.fillRect(70, 1390, 1225, 190); x.strokeRect(70, 1390, 1225, 190);
+    x.fillStyle = '#17283d'; x.font = '950 27px Arial'; x.fillText('REPORT REVIEW', 95, 1415);
+    x.font = '800 21px Arial'; x.fillStyle = '#333';
+    x.fillText('Missing depth or overburden: ' + (summary.incomplete || 0), 95, 1465);
+    x.fillText('Overburden greater than depth: ' + (summary.invalid || 0), 520, 1465);
+    x.fillText('Holes with notes: ' + (summary.notes || 0), 980, 1465);
+    x.font = '700 18px Arial'; x.fillStyle = '#596777';
+    m4094CanvasText(x, 'Pattern warnings: ' + m395PatternWarningsText(pattern), 95, 1515, 1160, '700 18px Arial', '#596777');
+
+    x.fillStyle = '#f5f7fa'; x.strokeStyle = '#b9c3ce'; x.fillRect(70, 1630, 1225, 270); x.strokeRect(70, 1630, 1225, 270);
+    x.fillStyle = '#17283d'; x.font = '950 25px Arial'; x.fillText('SUMMARY RULES', 95, 1655);
+    x.fillStyle = '#4f5e6e'; x.font = '700 20px Arial';
+    x.fillText('- Usable holes exclude holes marked Dirt or Bad.', 105, 1705);
+    x.fillText('- Rock footage equals drilled depth minus overburden.', 105, 1750);
+    x.fillText('- Hole-condition intervals are informational and do not reduce Total Rock.', 105, 1795);
+    x.fillText('- Pattern and volume details continue on the breakdown page when configured.', 105, 1840);
+
+    x.fillStyle = '#66717d'; x.font = '700 18px Arial';
+    x.fillText('Generated by MITHRIL Mobile ' + RELEASE_VERSION, 70, IMG_H - 70);
+    x.textAlign = 'right'; x.fillText('Standardized export summary', IMG_W - 70, IMG_H - 70); x.textAlign = 'left';
+    return c;
+  }
+
+  function installM4094DrillExportSummary() {
+    if (window.__mithrilM4094DrillExportSummary || typeof window.renderDrillSummaryCanvas !== 'function') return;
+    window.__mithrilM4094DrillExportSummary = true;
+    window.renderDrillSummaryCanvas = m4094RenderDrillSummaryCanvas;
+  }
+
+  window.MithrilM4094SummaryTools = {
+    buildLoadConfigurations: m4094BuildLoadConfigurations,
+    shotSnapshot: m4094ShotSummarySnapshot,
+    rangeText: m4094RangeText
+  };
 
   function m395EscapeHTML(value) {
     return String(value == null ? "" : value)
@@ -9265,6 +9700,7 @@
       patchDrillConditionCSV();
       installDrillEditFeature(drillCanvas);
       installDrillPatternSystem();
+      installM4094DrillExportSummary();
       enableWheelZoom(drillCanvas);
       installPhysicalKeyboardEntry("drill");
       installAdaptiveFieldEntry("drill");
@@ -9276,6 +9712,7 @@
       addShotInfoBackButton();
       installShotSummaryCalculations();
       installShotPatternSystem();
+      installM4094ShotExportSummary();
       installShotPdfPreview();
       patchShotMultiQuick();
       installGPSFeature("shot", shotCanvas);

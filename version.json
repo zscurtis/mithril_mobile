@@ -1,24 +1,20 @@
 {
-  "version": "m40.9.3.5",
-  "title": "Load Calculator Open Repair",
+  "version": "m40.9.4",
+  "title": "Standardized Export Summaries",
   "released": "2026-08-01",
   "minimumOfflineVersion": "m39.6.3",
   "notes": [
-    "Repairs the Load Calculator / Auto ANFO menu action so the parameter window opens reliably.",
-    "Uses a menu-level click handler that survives Shot Diagram menu rebuilding during startup.",
-    "Restores Load Calculator / Auto ANFO as a permanent Shot Diagram menu item directly below Timing Sequence.",
-    "Adds a clear document-level Auto ANFO ON/OFF toggle directly inside Hole Entry.",
-    "Auto ANFO OFF is manual/emulsion mode and never overwrites stemming or Primary Load while a hole is entered or edited.",
-    "Manual Primary Load entries can contain the pumped pounds reported by the emulsion truck.",
-    "Keeps the same Auto ANFO setting in the Load Calculator / Auto ANFO parameter window.",
-    "Retains automatic stemming and ANFO calculation for manually created, edited, and Drill Log-converted Shot Diagram holes when enabled.",
-    "Adds document-level parameters for minimum stemming, hold into rock, and feet occupied per dink.",
-    "Defaults to 7 ft minimum stemming, a 1 ft hold into rock, and 3 ft per dink.",
-    "Calculates stemming as max(minimum stemming, overburden plus rock hold).",
-    "Calculates ANFO as depth minus stemming minus dink footage.",
-    "Adds a Load Calculator / Auto ANFO tool with preview, settings-only save, existing-hole recalculation, and undo.",
-    "Skips Dirt and Bad holes, non-ANFO Primary Loads, and unsupported mixed Secondary Loads.",
-    "Keeps Drill Log conversion connected to the same configurable Shot Diagram rules.",
-    "Preserves inferred two-tap timing, Page Order / Renumber, iPad entry layout, right-click shortcuts, and cloud sync behavior."
+    "Redesigns the Shot Diagram and Drill Log export summaries with one standardized visual hierarchy.",
+    "Promotes hole diameter, drilled depth range, total hole footage, and average hole depth.",
+    "Moves document metadata and page count into compact secondary positions.",
+    "Counts a hole as loaded when either Primary Load or Secondary/Special Load contains a value.",
+    "Does not classify Dirt or Bad holes as unloaded holes.",
+    "Adds a Loading Configurations page for cross-section preparation.",
+    "Groups holes by matching Primary and Secondary/Special load recipes while showing depth, stemming, and loaded-column ranges.",
+    "Lists exact Primary and Secondary/Special values, calculated pounds, hole count, and example hole IDs for every configuration.",
+    "Marks the lightest and heaviest configurations and shows their exact recipe on the main Shot Diagram summary.",
+    "Preserves pumped-emulsion pounds as manual pound entries and uses the selected hole diameter for ANFO weight.",
+    "Leaves all Drill Log templates, Shot Diagram templates, field-entry screens, and saved document formats unchanged.",
+    "Preserves configurable Auto ANFO, inferred timing, Page Order / Renumber, iPad entry layout, right-click shortcuts, and cloud sync behavior."
   ]
 }
