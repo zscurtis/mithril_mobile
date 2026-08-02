@@ -1,8 +1,8 @@
 (function () {
   "use strict";
 
-  var RELEASE_VERSION = "m40.9.6.2";
-  var RELEASE_LABEL = "Original Theme Rendering Repair";
+  var RELEASE_VERSION = "m40.9.6.3";
+  var RELEASE_LABEL = "iPad Theme Rendering Fix";
   var THEME_STORAGE_KEY = "mithrilCanvasThemeV1";
   var THEME_CLASS_PREFIX = "m395-theme-";
   var THEME_OPTIONS = [
@@ -201,7 +201,7 @@
         var script = childDocument.createElement("script");
         script.id = "mithrilMenuM395ChildLoader";
         script.setAttribute("data-mithril-release", RELEASE_VERSION);
-        script.src = "./mithril-menu-m397.js?v=40.9.6.2-frame";
+        script.src = "./mithril-menu-m397.js?v=40.9.6.3-frame";
         (childDocument.head || childDocument.documentElement).appendChild(script);
         return true;
       } catch (error) {
@@ -1423,7 +1423,9 @@
       wrap.style.setProperty("background-size", computed.backgroundSize || "cover", "important");
       wrap.style.setProperty("background-position", computed.backgroundPosition || "center center", "important");
       wrap.style.setProperty("background-repeat", computed.backgroundRepeat || "no-repeat", "important");
-      wrap.style.setProperty("background-attachment", "fixed", "important");
+      // canvasWrap is already fixed to the viewport. A fixed CSS background
+      // inside it can fail to repaint in iPad Safari/WebKit.
+      wrap.style.setProperty("background-attachment", "scroll", "important");
     }
     var canvases = [byId("drillCanvas"), byId("shotCanvas")];
     for (var i = 0; i < canvases.length; i += 1) {
@@ -1434,21 +1436,51 @@
     }
   }
 
+  function isCanvasBaseFill(context, x, y, width, height) {
+    var canvas = context && context.canvas;
+    if (!canvas || canvas.getAttribute("data-m395-theme-canvas") !== "true") return false;
+    var color = String(context.fillStyle || "").replace(/\s+/g, "").toLowerCase();
+    var gray = color === "#2e2e2e" || color === "rgb(46,46,46)" || color === "rgba(46,46,46,1)";
+    if (!gray) return false;
+    var rect = canvas.getBoundingClientRect();
+    return Math.abs(Number(x || 0)) < 1 &&
+      Math.abs(Number(y || 0)) < 1 &&
+      Number(width || 0) >= rect.width - 2 &&
+      Number(height || 0) >= rect.height - 2;
+  }
+
+  function installCanvasPrototypeBackgroundBridge() {
+    var CanvasContext = window.CanvasRenderingContext2D;
+    if (!CanvasContext || !CanvasContext.prototype) return;
+    var prototype = CanvasContext.prototype;
+    if (prototype.__mithrilM40963FillRect) return;
+    var nativeFillRect = prototype.fillRect;
+    if (typeof nativeFillRect !== "function") return;
+    try {
+      prototype.__mithrilM40963FillRect = nativeFillRect;
+      prototype.fillRect = function (x, y, width, height) {
+        if (isCanvasBaseFill(this, x, y, width, height)) return;
+        return nativeFillRect.call(this, x, y, width, height);
+      };
+    } catch (error) {}
+  }
+
   function installCanvasBackgroundBridge(canvas) {
     if (!canvas || canvas.getAttribute("data-m395-theme-canvas") === "true") return;
+    // Safari may expose native methods as non-writable properties on an
+    // individual context. Patch the shared prototype as the iPad fallback.
+    canvas.setAttribute("data-m395-theme-canvas", "true");
+    installCanvasPrototypeBackgroundBridge();
     var context = canvas.getContext && canvas.getContext("2d");
     if (!context || context.__mithrilM395FillRect) return;
-    var originalFillRect = context.fillRect.bind(context);
-    context.__mithrilM395FillRect = originalFillRect;
-    context.fillRect = function (x, y, width, height) {
-      var color = String(context.fillStyle || "").replace(/\s+/g, "").toLowerCase();
-      var rect = canvas.getBoundingClientRect();
-      var gray = color === "#2e2e2e" || color === "rgb(46,46,46)" || color === "rgba(46,46,46,1)";
-      var fullSurface = Math.abs(Number(x || 0)) < 1 && Math.abs(Number(y || 0)) < 1 && Number(width || 0) >= rect.width - 2 && Number(height || 0) >= rect.height - 2;
-      if (gray && fullSurface) return;
-      return originalFillRect(x, y, width, height);
-    };
-    canvas.setAttribute("data-m395-theme-canvas", "true");
+    try {
+      var originalFillRect = context.fillRect.bind(context);
+      context.__mithrilM395FillRect = originalFillRect;
+      context.fillRect = function (x, y, width, height) {
+        if (isCanvasBaseFill(context, x, y, width, height)) return;
+        return originalFillRect(x, y, width, height);
+      };
+    } catch (error) {}
   }
 
   function ensureDrillQuickState() {

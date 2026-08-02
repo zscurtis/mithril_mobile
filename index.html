@@ -610,7 +610,9 @@ function draw(){
 function drawNow(){
   if(!ctx||$("appShell").style.display==="none")return;
   const r=wrap.getBoundingClientRect();
-  ctx.clearRect(0,0,r.width,r.height);ctx.fillStyle="#2e2e2e";ctx.fillRect(0,0,r.width,r.height);
+  // Keep the workspace transparent so the selected canvas theme remains
+  // visible on iPad Safari as well as desktop browsers.
+  ctx.clearRect(0,0,r.width,r.height);
   const safeScale=Math.max(view.scale,.0001);
   const viewport={left:(-view.x)/safeScale,top:(-view.y)/safeScale,right:(r.width-view.x)/safeScale,bottom:(r.height-view.y)/safeScale};
   ctx.save();ctx.translate(view.x,view.y);ctx.scale(view.scale,view.scale);
@@ -962,7 +964,7 @@ window.MITHRIL_UPDATE_CONFIG = {
 };
 </script>
 <script src="./mithril-update.js?v=38.8"></script>
-<script src="./mithril-menu-m397.js?v=40.9.6.2"></script>
-<script src="./mithril-core-m400.js?v=40.9.6.2"></script>
+<script src="./mithril-menu-m397.js?v=40.9.6.3"></script>
+<script src="./mithril-core-m400.js?v=40.9.6.3"></script>
 </body>
 </html>
