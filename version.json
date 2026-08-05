@@ -1,11 +1,11 @@
 {
-  "version": "m40.9.6.9.2",
-  "title": "Shot Diagram Startup Hotfix",
+  "version": "m40.9.6.9.3",
+  "title": "Pending Account Home Loop Hotfix",
   "released": "2026-08-05",
-  "minimumOfflineVersion": "m40.9.6.9.1",
+  "minimumOfflineVersion": "m40.9.6.9.2",
   "notes": [
-    "Restores Shot Diagram startup by leaving the inner drawing engine unmodified.",
-    "Loads Shared Cloud into the Shot Diagram only after the iframe drawing page has initialized.",
-    "Preserves the landing-panel stability fix, shared company cloud, creator ownership controls, Firebase rules, local documents, exports, calculations, keypad behavior, and themes."
+    "Stops Pending accounts from entering a Home-screen restriction-dialog redirect loop.",
+    "Keeps Pending users on MITHRIL Home with field templates disabled until an Administrator assigns a role.",
+    "Preserves the shared Trinity cloud, creator ownership controls, migrated documents, Shot Diagram startup fix, local data, exports, calculations, keypad behavior, and Firebase rules."
   ]
 }

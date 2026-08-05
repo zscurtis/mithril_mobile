@@ -1,12 +1,13 @@
-const CACHE_NAME = "mithril-mobile-m40-9-6-9-2-shot-diagram-startup-hotfix-v1";
+const CACHE_NAME = "mithril-mobile-m40-9-6-9-3-pending-home-loop-hotfix-v1";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./shot_diagram_m38.html",
-  "./shot_diagram_m34.html?v=40.9.6.9.2",
+  "./shot_diagram_m34.html?v=40.9.6.9.3",
   "./mithril-menu-m397.js",
   "./mithril-core-m400.js",
   "./mithril-company-cloud-m40969.js",
+  "./mithril-pending-home-hotfix-m409693.js",
   "./mithril-update.js",
   "./manifest.webmanifest",
   "./icons/mithril-192.png",
@@ -45,7 +46,6 @@ self.addEventListener("message", event => {
   if (event.data && event.data.type === "SKIP_WAITING") self.skipWaiting();
 });
 
-
 function shouldPatchCore(requestUrl) {
   return requestUrl.pathname.endsWith("/mithril-core-m400.js");
 }
@@ -54,8 +54,8 @@ function patchCoreResponse(response) {
   if (!response) return Promise.resolve(response);
   return response.text().then(source => {
     let patched = source
-      .replace('var RELEASE_VERSION = "m40.9.6.8";', 'var RELEASE_VERSION = "m40.9.6.9.2";')
-      .replace('var CHILD_SCRIPT_SRC = "./mithril-core-m400.js?rev=40966-frame";', 'var CHILD_SCRIPT_SRC = "./mithril-core-m400.js?rev=409692-frame";')
+      .replace('var RELEASE_VERSION = "m40.9.6.8";', 'var RELEASE_VERSION = "m40.9.6.9.3";')
+      .replace('var CHILD_SCRIPT_SRC = "./mithril-core-m400.js?rev=40966-frame";', 'var CHILD_SCRIPT_SRC = "./mithril-core-m400.js?rev=409693-frame";')
       .replace('blaster:       { drill: true, shot: true, edit: true, convert: true, export: true, cloudRead: true, cloudWrite: true, cloudDelete: true, userAdmin: false }',
         'blaster:       { drill: true, shot: true, edit: true, convert: true, export: true, cloudRead: true, cloudWrite: true, cloudDelete: false, userAdmin: false }')
       .replace('driller:       { drill: true, shot: false, edit: true, convert: false, export: true, cloudRead: true, cloudWrite: true, cloudDelete: true, userAdmin: false }',
@@ -64,7 +64,8 @@ function patchCoreResponse(response) {
         'driver:        { drill: false, shot: true, edit: true, convert: false, export: true, cloudRead: true, cloudWrite: true, cloudDelete: false, userAdmin: false }')
       .replace('member:        { drill: true, shot: true, edit: true, convert: true, export: true, cloudRead: true, cloudWrite: true, cloudDelete: true, userAdmin: false }',
         'member:        { drill: false, shot: false, edit: false, convert: false, export: false, cloudRead: false, cloudWrite: false, cloudDelete: false, userAdmin: false }')
-      .replace('member: "Member"', 'member: "Pending"');
+      .replace('member: "Member"', 'member: "Pending"')
+      .replace('if (isDrill() || isShot()) bootDocumentAccess();', 'if ((isDrill() || isShot()) && !byId("templateStart")) bootDocumentAccess();');
 
     const headers = new Headers(response.headers);
     headers.set("Content-Type", "application/javascript; charset=utf-8");
@@ -91,12 +92,14 @@ function patchHTMLResponse(response, requestUrl) {
       .replace(/<script[^>]+mithril-menu-m398\.js[^>]*><\/script>/gi, "")
       .replace(/<script[^>]+mithril-menu-m399\.js[^>]*><\/script>/gi, "")
       .replace(/<script[^>]+mithril-core-m400\.js[^>]*><\/script>/gi, "")
-      .replace(/<script[^>]+mithril-company-cloud-m40969\.js[^>]*><\/script>/gi, "");
+      .replace(/<script[^>]+mithril-company-cloud-m40969\.js[^>]*><\/script>/gi, "")
+      .replace(/<script[^>]+mithril-pending-home-hotfix-m409693\.js[^>]*><\/script>/gi, "");
 
     const scriptTags = [
-      '<script src="./mithril-menu-m397.js?v=40.9.6.9.2"></script>',
-      '<script src="./mithril-core-m400.js?v=40.9.6.9.2"></script>',
-      '<script src="./mithril-company-cloud-m40969.js?v=40.9.6.9.2"></script>'
+      '<script src="./mithril-menu-m397.js?v=40.9.6.9.3"></script>',
+      '<script src="./mithril-core-m400.js?v=40.9.6.9.3"></script>',
+      '<script src="./mithril-company-cloud-m40969.js?v=40.9.6.9.3"></script>',
+      '<script src="./mithril-pending-home-hotfix-m409693.js?v=40.9.6.9.3"></script>'
     ].join("");
 
     if (/<\/body>/i.test(patched)) patched = patched.replace(/<\/body>/i, scriptTags + "</body>");
