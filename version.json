@@ -1,20 +1,16 @@
 {
-  "version": "m40.9.6.8",
-  "title": "iPad Keypad Reliability and Field Entry",
-  "released": "2026-08-02",
-  "minimumOfflineVersion": "m39.6.3",
+  "version": "m40.9.6.9",
+  "title": "Shared Company Cloud and Creator Ownership",
+  "released": "2026-08-05",
+  "minimumOfflineVersion": "m40.9.6.8",
   "notes": [
-    "Replaces the Shot Diagram's 800 ms keypad lockout with protection against only the exact opening touch, so an immediate first number tap is accepted.",
-    "Runs keypad actions on pointerup and suppresses duplicate synthetic clicks for reliable iPad entry.",
-    "Uses larger 54 px touch targets, immediate pressed feedback, and a centered three-column calculator layout in both templates.",
-    "Shows A, D, and Space only for explosive-load fields and keeps numeric fields uncluttered.",
-    "Changes the final normal entry action to Save + Next Hole while preserving the established field order.",
-    "Removes delayed smooth scrolling and nested focus timers from Shot Diagram hole entry.",
-    "Preserves the m40.9.6.7 live-viewport landscape bottom-edge repair for device verification.",
-    "Preserves all 12 approved 2560 x 1440 widescreen canvas backgrounds.",
-    "Preserves the m40.9.6.4 iPad orientation and zoom rendering fix.",
-    "Refreshes the offline cache so the corrected Shot Diagram wrapper reaches every device.",
-    "Does not change templates, document data, calculations, exports, cloud sync, storage keys, or document formats.",
-    "Preserves Report Readiness, standardized PDF summaries, loading configurations, configurable Auto ANFO, inferred timing, Page Order / Renumber, iPad entry layout, and desktop interaction behavior."
+    "Adds a Trinity-wide operational cloud for shared Drill Logs and Shot Diagrams.",
+    "Administrators and Blasters can view and edit all shared operational records.",
+    "Drillers can view shared Drill Logs but can upload changes only to Drill Logs they created.",
+    "Drivers can view shared Shot Diagrams but can upload changes only to Shot Diagrams they created.",
+    "Creator identity is immutable after a shared record is created, preventing field users from taking ownership of another user's file.",
+    "Only Administrators can permanently delete shared records, manage users, or migrate private cloud records.",
+    "Pending Member accounts have no field-template or cloud permissions until an Administrator assigns a role.",
+    "Preserves the m40.9.6.8 document engine, keypad fixes, exports, calculations, backgrounds, and local device data."
   ]
 }
