@@ -4,7 +4,7 @@
   if (window.__mithrilCompanyCloudM40969Installed) return;
   window.__mithrilCompanyCloudM40969Installed = true;
 
-  var RELEASE_VERSION = "m40.9.6.9.1";
+  var RELEASE_VERSION = "m40.9.6.9.2";
   var FIREBASE_VERSION = "12.16.0";
   var ORGANIZATION_ID = "trinity";
   var ORGANIZATION_NAME = "Trinity";
@@ -607,9 +607,45 @@
     });
   }
 
+
+
+  function installSharedCloudInShotFrame() {
+    var frame = byId("shotFrame");
+    if (!frame) return;
+
+    var attempts = 0;
+    function inject() {
+      attempts += 1;
+      try {
+        var doc = frame.contentDocument;
+        if (!doc || !doc.head) throw new Error("Shot Diagram document is not ready.");
+        if (doc.getElementById("mithrilCompanyCloudM409692ChildLoader")) return;
+
+        var script = doc.createElement("script");
+        script.id = "mithrilCompanyCloudM409692ChildLoader";
+        script.src = "./mithril-company-cloud-m40969.js?v=40.9.6.9.2-frame";
+        script.addEventListener("error", function () {
+          if (script.parentNode) script.parentNode.removeChild(script);
+          if (attempts < 20) setTimeout(inject, 250);
+        }, { once: true });
+        doc.head.appendChild(script);
+      } catch (error) {
+        if (attempts < 20) setTimeout(inject, 250);
+        else console.warn("MITHRIL could not attach Shared Cloud to the Shot Diagram.", error);
+      }
+    }
+
+    frame.addEventListener("load", function () {
+      attempts = 0;
+      setTimeout(inject, 180);
+    });
+    setTimeout(inject, 240);
+  }
+
   function boot() {
     ensureStyles();
     interceptOldCloudButtons();
+    installSharedCloudInShotFrame();
     bootAuth();
     window.addEventListener("mithril-document-ready", function () { enforcePendingRole(); setTimeout(consumePending, 80); });
     window.addEventListener("online", function () { refreshLandingSharedDocuments(true); });

@@ -1,11 +1,11 @@
 {
-  "version": "m40.9.6.9.1",
-  "title": "Shared Cloud Landing Panel Stability Hotfix",
+  "version": "m40.9.6.9.2",
+  "title": "Shot Diagram Startup Hotfix",
   "released": "2026-08-05",
-  "minimumOfflineVersion": "m40.9.6.9",
+  "minimumOfflineVersion": "m40.9.6.9.1",
   "notes": [
-    "Stops the Recent cloud documents panel from repeatedly switching between loading and empty states.",
-    "Replaces the self-triggering landing-panel MutationObserver with a bounded startup check.",
-    "Preserves shared company cloud access, creator ownership controls, Firebase rules, local documents, keypad fixes, exports, calculations, and backgrounds from m40.9.6.9."
+    "Restores Shot Diagram startup by leaving the inner drawing engine unmodified.",
+    "Loads Shared Cloud into the Shot Diagram only after the iframe drawing page has initialized.",
+    "Preserves the landing-panel stability fix, shared company cloud, creator ownership controls, Firebase rules, local documents, exports, calculations, keypad behavior, and themes."
   ]
 }
