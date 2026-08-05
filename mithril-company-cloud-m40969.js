@@ -4,7 +4,7 @@
   if (window.__mithrilCompanyCloudM40969Installed) return;
   window.__mithrilCompanyCloudM40969Installed = true;
 
-  var RELEASE_VERSION = "m40.9.6.9";
+  var RELEASE_VERSION = "m40.9.6.9.1";
   var FIREBASE_VERSION = "12.16.0";
   var ORGANIZATION_ID = "trinity";
   var ORGANIZATION_NAME = "Trinity";
@@ -616,10 +616,21 @@
     if (document.readyState === "loading") {
       document.addEventListener("DOMContentLoaded", function () { setTimeout(function () { enforcePendingRole(); refreshLandingSharedDocuments(true); }, 100); });
     } else setTimeout(function () { enforcePendingRole(); refreshLandingSharedDocuments(true); }, 100);
-    var observer = new MutationObserver(function () {
-      if (byId("m407CloudRecent") && currentUser && canReadShared()) refreshLandingSharedDocuments(false);
-    });
-    observer.observe(document.documentElement, { childList: true, subtree: true });
+    // The landing cloud panel is already present by DOMContentLoaded. Do not
+    // observe its subtree: rendering the panel changes its own children, and a
+    // subtree observer would treat each render as a reason to render again.
+    // A short, bounded retry covers unusually slow/cached page construction
+    // without creating a self-triggering refresh loop.
+    var landingHostAttempts = 0;
+    function findLandingHostOnce() {
+      landingHostAttempts += 1;
+      if (byId("m407CloudRecent")) {
+        if (currentUser && canReadShared()) refreshLandingSharedDocuments(true);
+        return;
+      }
+      if (landingHostAttempts < 20) setTimeout(findLandingHostOnce, 150);
+    }
+    findLandingHostOnce();
   }
 
   boot();

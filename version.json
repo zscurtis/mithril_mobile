@@ -1,16 +1,11 @@
 {
-  "version": "m40.9.6.9",
-  "title": "Shared Company Cloud and Creator Ownership",
+  "version": "m40.9.6.9.1",
+  "title": "Shared Cloud Landing Panel Stability Hotfix",
   "released": "2026-08-05",
-  "minimumOfflineVersion": "m40.9.6.8",
+  "minimumOfflineVersion": "m40.9.6.9",
   "notes": [
-    "Adds a Trinity-wide operational cloud for shared Drill Logs and Shot Diagrams.",
-    "Administrators and Blasters can view and edit all shared operational records.",
-    "Drillers can view shared Drill Logs but can upload changes only to Drill Logs they created.",
-    "Drivers can view shared Shot Diagrams but can upload changes only to Shot Diagrams they created.",
-    "Creator identity is immutable after a shared record is created, preventing field users from taking ownership of another user's file.",
-    "Only Administrators can permanently delete shared records, manage users, or migrate private cloud records.",
-    "Pending Member accounts have no field-template or cloud permissions until an Administrator assigns a role.",
-    "Preserves the m40.9.6.8 document engine, keypad fixes, exports, calculations, backgrounds, and local device data."
+    "Stops the Recent cloud documents panel from repeatedly switching between loading and empty states.",
+    "Replaces the self-triggering landing-panel MutationObserver with a bounded startup check.",
+    "Preserves shared company cloud access, creator ownership controls, Firebase rules, local documents, keypad fixes, exports, calculations, and backgrounds from m40.9.6.9."
   ]
 }
