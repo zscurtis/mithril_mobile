@@ -1,29 +1,16 @@
-const CACHE_NAME = "mithril-mobile-m40-9-6-9-3-pending-home-loop-hotfix-v1";
+const CACHE_NAME = "mithril-mobile-m41-0-jobs-database-v1";
+const JOBS_SCRIPT = "./mithril-jobs-m410.js?v=41.0.0";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./shot_diagram_m38.html",
-  "./shot_diagram_m34.html?v=40.9.6.9.3",
-  "./mithril-menu-m397.js",
-  "./mithril-core-m400.js",
-  "./mithril-company-cloud-m40969.js",
-  "./mithril-pending-home-hotfix-m409693.js",
+  "./shot_diagram_m34.html",
   "./mithril-update.js",
+  "./mithril-core-m400.js",
+  "./mithril-jobs-m410.js",
   "./manifest.webmanifest",
   "./icons/mithril-192.png",
-  "./icons/mithril-512.png",
-  "./theme_assets/dark-slate.webp",
-  "./theme_assets/blue-steel.webp",
-  "./theme_assets/subtle-grid.webp",
-  "./theme_assets/gradient-slate.webp",
-  "./theme_assets/dark-paper.webp",
-  "./theme_assets/soft-quarry-tan.webp",
-  "./theme_assets/blast-ember.webp",
-  "./theme_assets/electric-steel.webp",
-  "./theme_assets/blast-placard.webp",
-  "./theme_assets/copper-quarry.webp",
-  "./theme_assets/cobalt-topo.webp",
-  "./theme_assets/signal-red-slate.webp"
+  "./icons/mithril-512.png"
 ];
 
 self.addEventListener("install", event => {
@@ -46,105 +33,24 @@ self.addEventListener("message", event => {
   if (event.data && event.data.type === "SKIP_WAITING") self.skipWaiting();
 });
 
-function shouldPatchCore(requestUrl) {
-  return requestUrl.pathname.endsWith("/mithril-core-m400.js");
-}
-
-function patchCoreResponse(response) {
-  if (!response) return Promise.resolve(response);
-  return response.text().then(source => {
-    let patched = source
-      .replace('var RELEASE_VERSION = "m40.9.6.8";', 'var RELEASE_VERSION = "m40.9.6.9.3";')
-      .replace('var CHILD_SCRIPT_SRC = "./mithril-core-m400.js?rev=40966-frame";', 'var CHILD_SCRIPT_SRC = "./mithril-core-m400.js?rev=409693-frame";')
-      .replace('blaster:       { drill: true, shot: true, edit: true, convert: true, export: true, cloudRead: true, cloudWrite: true, cloudDelete: true, userAdmin: false }',
-        'blaster:       { drill: true, shot: true, edit: true, convert: true, export: true, cloudRead: true, cloudWrite: true, cloudDelete: false, userAdmin: false }')
-      .replace('driller:       { drill: true, shot: false, edit: true, convert: false, export: true, cloudRead: true, cloudWrite: true, cloudDelete: true, userAdmin: false }',
-        'driller:       { drill: true, shot: false, edit: true, convert: false, export: true, cloudRead: true, cloudWrite: true, cloudDelete: false, userAdmin: false }')
-      .replace('driver:        { drill: false, shot: false, edit: false, convert: false, export: false, cloudRead: false, cloudWrite: false, cloudDelete: false, userAdmin: false }',
-        'driver:        { drill: false, shot: true, edit: true, convert: false, export: true, cloudRead: true, cloudWrite: true, cloudDelete: false, userAdmin: false }')
-      .replace('member:        { drill: true, shot: true, edit: true, convert: true, export: true, cloudRead: true, cloudWrite: true, cloudDelete: true, userAdmin: false }',
-        'member:        { drill: false, shot: false, edit: false, convert: false, export: false, cloudRead: false, cloudWrite: false, cloudDelete: false, userAdmin: false }')
-      .replace('member: "Member"', 'member: "Pending"')
-      .replace('if (isDrill() || isShot()) bootDocumentAccess();', 'if ((isDrill() || isShot()) && !byId("templateStart")) bootDocumentAccess();');
-
-    const headers = new Headers(response.headers);
-    headers.set("Content-Type", "application/javascript; charset=utf-8");
-    headers.delete("Content-Length");
-    return new Response(patched, {
-      status: response.status,
-      statusText: response.statusText,
-      headers
-    });
-  });
-}
-
-function shouldPatchHTML(requestUrl) {
-  const path = requestUrl.pathname;
-  return path.endsWith("/") || path.endsWith("/index.html") || path.endsWith("/shot_diagram_m38.html");
-}
-
-function patchHTMLResponse(response, requestUrl) {
-  if (!response || !shouldPatchHTML(requestUrl)) return Promise.resolve(response);
-
+function injectJobsScript(response) {
+  const type = response.headers.get("content-type") || "";
+  if (!type.includes("text/html")) return Promise.resolve(response);
   return response.text().then(html => {
-    let patched = html
-      .replace(/<script[^>]+mithril-menu-m397\.js[^>]*><\/script>/gi, "")
-      .replace(/<script[^>]+mithril-menu-m398\.js[^>]*><\/script>/gi, "")
-      .replace(/<script[^>]+mithril-menu-m399\.js[^>]*><\/script>/gi, "")
-      .replace(/<script[^>]+mithril-core-m400\.js[^>]*><\/script>/gi, "")
-      .replace(/<script[^>]+mithril-company-cloud-m40969\.js[^>]*><\/script>/gi, "")
-      .replace(/<script[^>]+mithril-pending-home-hotfix-m409693\.js[^>]*><\/script>/gi, "");
-
-    const scriptTags = [
-      '<script src="./mithril-menu-m397.js?v=40.9.6.9.3"></script>',
-      '<script src="./mithril-core-m400.js?v=40.9.6.9.3"></script>',
-      '<script src="./mithril-company-cloud-m40969.js?v=40.9.6.9.3"></script>',
-      '<script src="./mithril-pending-home-hotfix-m409693.js?v=40.9.6.9.3"></script>'
-    ].join("");
-
-    if (/<\/body>/i.test(patched)) patched = patched.replace(/<\/body>/i, scriptTags + "</body>");
-    else patched += scriptTags;
-
+    if (html.includes("mithril-jobs-m410.js")) {
+      return new Response(html, { status: response.status, statusText: response.statusText, headers: response.headers });
+    }
+    const tag = '<script src="' + JOBS_SCRIPT + '"></script>';
+    const injected = /<\/body>/i.test(html) ? html.replace(/<\/body>/i, tag + "\n</body>") : html + tag;
     const headers = new Headers(response.headers);
-    headers.set("Content-Type", "text/html; charset=utf-8");
-    headers.delete("Content-Length");
-    return new Response(patched, {
-      status: response.status,
-      statusText: response.statusText,
-      headers
-    });
+    headers.delete("content-length");
+    return new Response(injected, { status: response.status, statusText: response.statusText, headers });
   });
-}
-
-function getNavigationResponse(request, requestUrl) {
-  return fetch(request)
-    .then(response => {
-      const copy = response.clone();
-      caches.open(CACHE_NAME).then(cache => cache.put(request, copy));
-      return patchHTMLResponse(response, requestUrl);
-    })
-    .catch(() => caches.match(request)
-      .then(cached => cached || caches.match("./index.html"))
-      .then(response => patchHTMLResponse(response, requestUrl))
-    );
 }
 
 self.addEventListener("fetch", event => {
   if (event.request.method !== "GET") return;
   const requestUrl = new URL(event.request.url);
-
-  if (shouldPatchCore(requestUrl)) {
-    event.respondWith(
-      fetch(event.request, { cache: "no-store" })
-        .then(response => {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
-          return patchCoreResponse(response);
-        })
-        .catch(() => caches.match(event.request).then(cached => cached || caches.match("./mithril-core-m400.js")).then(patchCoreResponse))
-    );
-    return;
-  }
 
   if (requestUrl.pathname.endsWith("/version.json")) {
     event.respondWith(
@@ -158,7 +64,17 @@ self.addEventListener("fetch", event => {
   }
 
   if (event.request.mode === "navigate") {
-    event.respondWith(getNavigationResponse(event.request, requestUrl));
+    event.respondWith(
+      fetch(event.request)
+        .then(response => {
+          const cacheCopy = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, cacheCopy));
+          return injectJobsScript(response);
+        })
+        .catch(() => caches.match(event.request)
+          .then(cached => cached || caches.match("./index.html"))
+          .then(injectJobsScript))
+    );
     return;
   }
 
