@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var RELEASE = "m41.0";
+  var RELEASE = "m41.0.1";
   var FIREBASE_VERSION = "12.16.0";
   var JOB_SCHEMA_VERSION = 1;
   var PROFILE_COLLECTION = "userProfiles";
@@ -64,8 +64,9 @@
     return profileActive(currentProfile) && normalize(currentProfile.role) === "administrator";
   }
   function organizationId() {
-    var value = text(currentProfile && currentProfile.organizationId);
-    return !value || value === "personal" ? FALLBACK_ORGANIZATION : value;
+    // MITHRIL currently uses one shared company cloud. Always use the same
+    // lowercase Firestore path as the operational cloud and security rules.
+    return FALLBACK_ORGANIZATION;
   }
   function jobCollection(fb) {
     return fb.storeMod.collection(fb.db, "organizations", organizationId(), "jobs");
