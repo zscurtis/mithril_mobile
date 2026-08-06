@@ -1359,7 +1359,7 @@ function drawHoleText(pageNum) {
       drawFieldText(d.Stemming, rect, fieldPos.stemming, "#000");
       drawFieldText(d.PrimaryLoad, rect, fieldPos.load, "#000");
       drawFieldText(d.Overburden, rect, fieldPos.overburden, "#000");
-      drawFieldText(d.Timing, rect, fieldPos.timing, "#d00000");
+      if (shouldDisplayHoleTiming(d)) drawFieldText(d.Timing, rect, fieldPos.timing, "#d00000");
       drawFieldText(d.SecondaryLoad, rect, fieldPos.special, "#000");
     }
   }
@@ -1580,6 +1580,12 @@ function normalizeLoadValue(value) {
 
 function yesNoToBool(value) {
   return value === true || String(value || "").toLowerCase() === "yes" || String(value || "").toLowerCase() === "true";
+}
+
+function shouldDisplayHoleTiming(record) {
+  const timingState = headerData && headerData.TimingSequence ? headerData.TimingSequence : {};
+  const hiddenCondition = record && (yesNoToBool(record.DirtHole) || yesNoToBool(record.BadHole));
+  return !(timingState.hideDirtBadTiming === true && hiddenCondition);
 }
 
 function boolToYesNo(value) {
@@ -3009,7 +3015,7 @@ function drawPageToContext(targetCtx, pageNum) {
       drawFieldToTarget(d.Stemming, rect, fieldPos.stemming, "#000");
       drawFieldToTarget(d.PrimaryLoad, rect, fieldPos.load, "#000");
       drawFieldToTarget(d.Overburden, rect, fieldPos.overburden, "#000");
-      drawFieldToTarget(d.Timing, rect, fieldPos.timing, "#d00000");
+      if (shouldDisplayHoleTiming(d)) drawFieldToTarget(d.Timing, rect, fieldPos.timing, "#d00000");
       drawFieldToTarget(d.SecondaryLoad, rect, fieldPos.special, "#000");
     }
   }

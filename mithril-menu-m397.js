@@ -1,8 +1,8 @@
 (function () {
   "use strict";
 
-  var RELEASE_VERSION = "m40.9.6.8";
-  var RELEASE_LABEL = "Shot Diagram Bottom Edge Repair";
+  var RELEASE_VERSION = "m40.9.6.9.10";
+  var RELEASE_LABEL = "Dirt and Bad Hole Timing Display";
   var THEME_STORAGE_KEY = "mithrilCanvasThemeV1";
   var THEME_CLASS_PREFIX = "m395-theme-";
   var THEME_OPTIONS = [
@@ -201,7 +201,7 @@
         var script = childDocument.createElement("script");
         script.id = "mithrilMenuM395ChildLoader";
         script.setAttribute("data-mithril-release", RELEASE_VERSION);
-        script.src = "./mithril-menu-m397.js?v=40.9.6.8-frame";
+        script.src = "./mithril-menu-m397.js?v=40.9.6.9.10-frame";
         (childDocument.head || childDocument.documentElement).appendChild(script);
         return true;
       } catch (error) {
@@ -8555,6 +8555,7 @@
       next: next,
       direction: m397NormalizeDirection(source.direction),
       overwrite: String(source.overwrite || "blank").toLowerCase() === "overwrite" ? "overwrite" : "blank",
+      hideDirtBadTiming: source.hideDirtBadTiming === true || String(source.hideDirtBadTiming || "").toLowerCase() === "true",
       active: source.active === true || String(source.active || "").toLowerCase() === "true"
     };
   }
@@ -8575,6 +8576,7 @@
       next: state.next,
       direction: state.direction,
       overwrite: state.overwrite,
+      hideDirtBadTiming: state.hideDirtBadTiming,
       active: state.active
     };
   }
@@ -8614,10 +8616,7 @@
   }
 
   function m397TimingRecordEligible(record) {
-    if (!record) return false;
-    var bad = record.BadHole === true || String(record.BadHole || "").toLowerCase() === "yes";
-    var dirt = record.DirtHole === true || String(record.DirtHole || "").toLowerCase() === "yes";
-    return !bad && !dirt;
+    return !!record;
   }
 
   function m397TimingLocationLabel(location) {
@@ -8757,8 +8756,8 @@
     var fillDirection = m397NormalizeDirection(direction || m397TimingState.direction);
     var ordered = m397TimingSortLocations(locations || [], fillDirection);
     if (!ordered.length) {
-      m397SetTimingHint("No eligible saved holes were found. Dirt and bad holes are skipped.");
-      if (typeof shotEditSetHint === "function" && typeof shotEditMode !== "undefined" && shotEditMode) shotEditSetHint("No eligible saved holes were found for timing.");
+      m397SetTimingHint("No saved holes were found for timing.");
+      if (typeof shotEditSetHint === "function" && typeof shotEditMode !== "undefined" && shotEditMode) shotEditSetHint("No saved holes were found for timing.");
       return { assigned: 0, skippedExisting: 0, skippedIneligible: 0 };
     }
 
@@ -8818,10 +8817,6 @@
       m397SetTimingHint("Hole " + m397TimingLocationLabel(hit) + " has no saved data. Timing Fill only applies to saved holes.");
       return;
     }
-    if (!m397TimingRecordEligible(record)) {
-      m397SetTimingHint("Hole " + m397TimingLocationLabel(hit) + " is marked dirt or bad and was skipped.");
-      return;
-    }
     if (String(record.Timing || "").trim() && m397TimingState.overwrite !== "overwrite") {
       m397SetTimingHint("Hole " + m397TimingLocationLabel(hit) + " already has timing. It was not changed and Next Time did not advance.");
       return;
@@ -8840,10 +8835,6 @@
     var record = m397RecordAt(hit);
     if (!record) {
       m397SetTimingHint("Hole " + m397TimingLocationLabel(hit) + " has no saved data. Choose a saved loaded hole as the origin.");
-      return false;
-    }
-    if (!m397TimingRecordEligible(record)) {
-      m397SetTimingHint("Hole " + m397TimingLocationLabel(hit) + " is marked dirt or bad. Choose a loaded hole as the origin.");
       return false;
     }
     m397TimingOrigin = { pageNum: Number(hit.pageNum), holeId: String(hit.holeId) };
@@ -8955,6 +8946,9 @@
       ".m397TimingDone{background:#1f6feb;color:#fff;border-color:#1f6feb}",
       ".m397TimingHint{min-height:17px;font-size:11px;line-height:1.25;font-weight:800;color:#444}",
       ".m397TimingHelp{font-size:13px;font-weight:750;line-height:1.4;color:#444;margin:0 0 12px}",
+      ".m397TimingVisibility{grid-column:1/-1;display:flex;align-items:center;gap:10px;padding:10px;border:1px solid #bbb;border-radius:9px;background:#f8f8f8}",
+      ".m397TimingVisibility input{width:26px!important;height:26px!important;min-height:26px!important;flex:0 0 auto}",
+      ".m397TimingVisibility span{font-size:14px;font-weight:900;line-height:1.3}",
       ".m397TimingEditRow{display:grid;grid-template-columns:1fr 1fr;gap:6px}",
       "@media(max-width:650px){.m397TimingActions{grid-template-columns:repeat(3,1fr)}.m397TimingStats{grid-template-columns:repeat(3,1fr)}.m397TimingActions button{font-size:11px}.m397TimingStat span{font-size:16px}}"
     ].join("");
@@ -8975,6 +8969,7 @@
       '    <label>Starting Time (ms)<input id="m397TimingStart" type="number" min="0" step="1" inputmode="decimal"></label>',
       '    <label>Interval (ms)<input id="m397TimingInterval" type="number" min="0.001" step="1" inputmode="decimal"></label>',
       '    <label>Existing Timing<select id="m397TimingOverwrite"><option value="blank">Keep existing timing</option><option value="overwrite">Overwrite existing timing</option></select></label>',
+      '    <label class="m397TimingVisibility"><input id="m397HideDirtBadTiming" type="checkbox"><span>Hide timing labels on dirt and bad holes<br><small>The timing stays saved and still advances the sequence.</small></span></label>',
       '  </div>',
       '  <div class="buttonGrid"><button type="button" class="primary" id="m397TimingActivate">Activate Timing Fill</button><button type="button" id="m397TimingCancel">Cancel</button></div>',
       '</div>'
@@ -8994,6 +8989,7 @@
     byId("m397TimingStart").value = m397FormatTiming(startValue);
     byId("m397TimingInterval").value = m397FormatTiming(m397TimingState.interval);
     byId("m397TimingOverwrite").value = m397TimingState.overwrite;
+    byId("m397HideDirtBadTiming").checked = !!m397TimingState.hideDirtBadTiming;
     byId("m397TimingModal").classList.add("show");
     window.setTimeout(function () {
       var input = byId("m397TimingStart");
@@ -9039,6 +9035,7 @@
     m397TimingState.next = start;
     m397TimingState.interval = interval;
     m397TimingState.overwrite = byId("m397TimingOverwrite").value === "overwrite" ? "overwrite" : "blank";
+    m397TimingState.hideDirtBadTiming = !!byId("m397HideDirtBadTiming").checked;
     m397TimingState.active = true;
     m397TimingOrigin = null;
     m397PersistTimingState();

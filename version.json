@@ -1,11 +1,11 @@
 {
-  "version": "m40.9.6.9.9",
-  "title": "Cloud First-Open Fix",
-  "released": "2026-08-05",
-  "minimumOfflineVersion": "m40.9.6.9.8",
+  "version": "m40.9.6.9.10",
+  "title": "Dirt and Bad Hole Timing Patch",
+  "released": "2026-08-06",
+  "minimumOfflineVersion": "m40.9.6.9.9",
   "notes": [
-    "Loads a selected cloud document on the first template open without requiring a browser refresh.",
-    "Retriggers pending cloud consumption when Drill Log opens within the existing Home page.",
-    "Uses a fresh Shot Diagram navigation for cloud selections to prevent restoration of the previous canvas state."
+    "Timing fills now assign and advance timing through saved dirt and bad holes.",
+    "Adds an option to hide dirt and bad hole timing labels without deleting their saved timing values.",
+    "Dirt and bad holes remain excluded from the shot-wide 8 ms holes-per-delay compliance check."
   ]
 }
