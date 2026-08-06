@@ -1,11 +1,11 @@
 {
-  "version": "m40.9.6.9.3",
-  "title": "Pending Account Home Loop Hotfix",
+  "version": "m40.9.6.9.4",
+  "title": "Jobs Database Service Worker Repair",
   "released": "2026-08-05",
-  "minimumOfflineVersion": "m40.9.6.9.2",
+  "minimumOfflineVersion": "m40.9.6.9.3",
   "notes": [
-    "Stops Pending accounts from entering a Home-screen restriction-dialog redirect loop.",
-    "Keeps Pending users on MITHRIL Home with field templates disabled until an Administrator assigns a role.",
-    "Preserves the shared Trinity cloud, creator ownership controls, migrated documents, Shot Diagram startup fix, local data, exports, calculations, keypad behavior, and Firebase rules."
+    "Restores the current MITHRIL interface and shared helper injection after the Jobs Database service worker regression.",
+    "Loads the standardized Jobs Database module on Home, Drill Log, and Shot Diagram.",
+    "Preserves shared Trinity cloud permissions, account roles, local data, exports, keypad behavior, canvas themes, and existing cloud documents."
   ]
 }
