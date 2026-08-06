@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var RELEASE = "m40.9.6.9.6";
+  var RELEASE = "m40.9.6.9.7";
   var FIREBASE_VERSION = "12.16.0";
   var JOB_SCHEMA_VERSION = 1;
   var PROFILE_COLLECTION = "userProfiles";
@@ -54,6 +54,49 @@
   function isDrill() { return !!byId("drillCanvas"); }
   function isShot() { return !!byId("shotCanvas"); }
   function isLanding() { return !!byId("templateStart"); }
+  function isShotWrapper() { return !!byId("shotFrame"); }
+
+  function installIntoShotFrame() {
+    var frame = byId("shotFrame");
+    if (!frame) return false;
+
+    function injectIntoChild() {
+      try {
+        var childWindow = frame.contentWindow;
+        var childDocument = frame.contentDocument;
+        if (!childWindow || !childDocument || !childDocument.documentElement) return false;
+        if (childWindow.__mithrilJobsM410Installed) return true;
+        if (childDocument.getElementById("m410JobsChildScript")) return true;
+
+        var script = childDocument.createElement("script");
+        script.id = "m410JobsChildScript";
+        script.src = new URL(
+          "./mithril-jobs-m410.js?v=40.9.6.9.7-child",
+          window.location.href
+        ).href;
+        script.async = false;
+        (childDocument.body || childDocument.head || childDocument.documentElement)
+          .appendChild(script);
+        return true;
+      } catch (error) {
+        return false;
+      }
+    }
+
+    if (!frame.__m410JobsLoadBridgeInstalled) {
+      frame.__m410JobsLoadBridgeInstalled = true;
+      frame.addEventListener("load", function () {
+        [0, 80, 250, 700].forEach(function (delay) {
+          window.setTimeout(injectIntoChild, delay);
+        });
+      });
+    }
+
+    [0, 80, 250, 700].forEach(function (delay) {
+      window.setTimeout(injectIntoChild, delay);
+    });
+    return true;
+  }
   function headerObject() {
     try { return typeof headerData !== "undefined" && headerData ? headerData : null; }
     catch (error) { return null; }
@@ -902,11 +945,13 @@
 
   function boot() {
     ensureJobStyles();
+    if (isShotWrapper()) installIntoShotFrame();
     loadFirebase().catch(function () {});
     var attempts = 0;
     var timer = window.setInterval(function () {
       attempts += 1;
       if (isLanding()) installLandingAdminButton();
+      if (isShotWrapper()) installIntoShotFrame();
       if (isDrill() || isShot()) {
         installJobSelector();
         wrapInfoFunctions();

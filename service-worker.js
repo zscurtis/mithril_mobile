@@ -1,14 +1,14 @@
-const CACHE_NAME = "mithril-mobile-m40-9-6-9-6-job-autocomplete-picker-v1";
+const CACHE_NAME = "mithril-mobile-m40-9-6-9-7-shot-iframe-job-picker-v1";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./shot_diagram_m38.html",
-  "./shot_diagram_m34.html?v=40.9.6.9.6",
+  "./shot_diagram_m34.html?v=40.9.6.9.7",
   "./mithril-menu-m397.js",
   "./mithril-core-m400.js",
   "./mithril-company-cloud-m40969.js",
   "./mithril-pending-home-hotfix-m409693.js",
-  "./mithril-jobs-m410.js?v=40.9.6.9.6",
+  "./mithril-jobs-m410.js?v=40.9.6.9.7",
   "./mithril-update.js",
   "./manifest.webmanifest",
   "./icons/mithril-192.png",
@@ -56,10 +56,10 @@ function patchCoreResponse(response) {
 
   return response.text().then(source => {
     let patched = source
-      .replace('var RELEASE_VERSION = "m40.9.6.8";', 'var RELEASE_VERSION = "m40.9.6.9.6";')
-      .replace('var RELEASE_VERSION = "m40.9.6.9.3";', 'var RELEASE_VERSION = "m40.9.6.9.6";')
-      .replace('var CHILD_SCRIPT_SRC = "./mithril-core-m400.js?rev=40966-frame";', 'var CHILD_SCRIPT_SRC = "./mithril-core-m400.js?rev=409696-frame";')
-      .replace('var CHILD_SCRIPT_SRC = "./mithril-core-m400.js?rev=409693-frame";', 'var CHILD_SCRIPT_SRC = "./mithril-core-m400.js?rev=409696-frame";')
+      .replace('var RELEASE_VERSION = "m40.9.6.8";', 'var RELEASE_VERSION = "m40.9.6.9.7";')
+      .replace('var RELEASE_VERSION = "m40.9.6.9.3";', 'var RELEASE_VERSION = "m40.9.6.9.7";')
+      .replace('var CHILD_SCRIPT_SRC = "./mithril-core-m400.js?rev=40966-frame";', 'var CHILD_SCRIPT_SRC = "./mithril-core-m400.js?rev=409697-frame";')
+      .replace('var CHILD_SCRIPT_SRC = "./mithril-core-m400.js?rev=409693-frame";', 'var CHILD_SCRIPT_SRC = "./mithril-core-m400.js?rev=409697-frame";')
       .replace(
         'blaster:       { drill: true, shot: true, edit: true, convert: true, export: true, cloudRead: true, cloudWrite: true, cloudDelete: true, userAdmin: false }',
         'blaster:       { drill: true, shot: true, edit: true, convert: true, export: true, cloudRead: true, cloudWrite: true, cloudDelete: false, userAdmin: false }'
@@ -115,11 +115,11 @@ function patchHTMLResponse(response, requestUrl) {
       .replace(/<script[^>]+mithril-jobs-m410\.js[^>]*><\/script>/gi, "");
 
     const scriptTags = [
-      '<script src="./mithril-menu-m397.js?v=40.9.6.9.6"></script>',
-      '<script src="./mithril-core-m400.js?v=40.9.6.9.6"></script>',
-      '<script src="./mithril-company-cloud-m40969.js?v=40.9.6.9.6"></script>',
-      '<script src="./mithril-pending-home-hotfix-m409693.js?v=40.9.6.9.6"></script>',
-      '<script src="./mithril-jobs-m410.js?v=40.9.6.9.6"></script>'
+      '<script src="./mithril-menu-m397.js?v=40.9.6.9.7"></script>',
+      '<script src="./mithril-core-m400.js?v=40.9.6.9.7"></script>',
+      '<script src="./mithril-company-cloud-m40969.js?v=40.9.6.9.7"></script>',
+      '<script src="./mithril-pending-home-hotfix-m409693.js?v=40.9.6.9.7"></script>',
+      '<script src="./mithril-jobs-m410.js?v=40.9.6.9.7"></script>'
     ].join("");
 
     if (/<\/body>/i.test(patched)) {

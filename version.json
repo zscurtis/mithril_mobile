@@ -1,11 +1,11 @@
 {
-  "version": "m40.9.6.9.6",
-  "title": "Searchable Job Picker",
+  "version": "m40.9.6.9.7",
+  "title": "Shot Diagram Job Picker Bridge",
   "released": "2026-08-05",
-  "minimumOfflineVersion": "m40.9.6.9.5",
+  "minimumOfflineVersion": "m40.9.6.9.6",
   "notes": [
-    "Replaces the unreliable browser datalist with a touch-friendly searchable official job picker.",
-    "Users can browse all official jobs or filter by official name, alias, code, or customer.",
-    "Manual temporary job names remain allowed when an Administrator has not added the job yet."
+    "Loads the searchable official job picker inside the Shot Diagram iframe where Shot Info actually runs.",
+    "Preserves the official job list, alias/code/customer filtering, and temporary manual job fallback.",
+    "Keeps the current Shot Diagram interface, shared cloud, local data, themes, and Firebase permissions unchanged."
   ]
 }
