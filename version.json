@@ -1,11 +1,11 @@
 {
-  "version": "m40.9.6.9.7",
-  "title": "Shot Diagram Job Picker Bridge",
+  "version": "m40.9.6.9.8",
+  "title": "Cloud Document Search",
   "released": "2026-08-05",
-  "minimumOfflineVersion": "m40.9.6.9.6",
+  "minimumOfflineVersion": "m40.9.6.9.7",
   "notes": [
-    "Loads the searchable official job picker inside the Shot Diagram iframe where Shot Info actually runs.",
-    "Preserves the official job list, alias/code/customer filtering, and temporary manual job fallback.",
-    "Keeps the current Shot Diagram interface, shared cloud, local data, themes, and Firebase permissions unchanged."
+    "Adds a full cloud document search view to the MITHRIL Home dashboard.",
+    "Searches jobs, aliases, Shot IDs, customers, creators, field dates, and document types.",
+    "Includes official-job and document-type filters while preserving recent documents and role-based access."
   ]
 }
