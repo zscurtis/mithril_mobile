@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var RELEASE = "m41.0.1";
+  var RELEASE = "m40.9.6.9.6";
   var FIREBASE_VERSION = "12.16.0";
   var JOB_SCHEMA_VERSION = 1;
   var PROFILE_COLLECTION = "userProfiles";
@@ -24,6 +24,8 @@
   var jobs = [];
   var jobsPromise = null;
   var selectedJobId = "";
+  var selectorOpen = false;
+  var selectorHighlightIndex = -1;
   var selectorInstalled = false;
   var adminInstalled = false;
 
@@ -260,6 +262,17 @@
       ".m410JobHint{margin-top:4px;padding:7px 9px;border:1px solid #aeb8c5;border-radius:7px;background:#f5f8fb;color:#425166;font:750 11px/1.35 Arial,sans-serif}",
       ".m410JobHint.linked{border-color:#69a879;background:#ebf8ee;color:#245c31}",
       ".m410JobHint.legacy{border-color:#c6a94c;background:#fff8dc;color:#644e00}",
+      ".m410JobPicker{position:relative;display:grid;grid-template-columns:minmax(0,1fr) 48px;gap:6px;align-items:stretch}",
+      ".m410JobPicker>input{min-width:0;margin:0}",
+      ".m410JobToggle{min-width:48px!important;width:48px!important;min-height:46px!important;margin:0!important;padding:0!important;border:1px solid #8794a3!important;border-radius:8px!important;background:#eef2f7!important;color:#17202a!important;font-size:20px!important;font-weight:950!important;line-height:1!important;touch-action:manipulation}",
+      ".m410JobToggle[aria-expanded=\"true\"]{border-color:#1f6feb!important;background:#e8f1ff!important}",
+      ".m410JobChoices{display:none;position:absolute;z-index:32050;left:0;right:0;top:calc(100% + 5px);max-height:min(330px,45vh);overflow:auto;-webkit-overflow-scrolling:touch;border:1px solid #7f8b99;border-radius:10px;background:#fff;box-shadow:0 12px 30px rgba(0,0,0,.28);padding:5px}",
+      ".m410JobChoices.show{display:grid;gap:4px}",
+      ".m410JobChoice{display:block;width:100%;min-height:52px!important;padding:9px 11px!important;border:1px solid transparent!important;border-radius:8px!important;background:#fff!important;color:#111!important;text-align:left!important;font-family:Arial,sans-serif!important;touch-action:manipulation}",
+      ".m410JobChoice:hover,.m410JobChoice.active{border-color:#4e86ca!important;background:#eaf3ff!important}",
+      ".m410JobChoiceName{display:block;font-size:15px;font-weight:950;line-height:1.2}",
+      ".m410JobChoiceMeta{display:block;margin-top:3px;color:#586779;font-size:11px;font-weight:800;line-height:1.3}",
+      ".m410JobNoMatch{padding:12px;border:1px dashed #a98b31;border-radius:8px;background:#fff8dc;color:#604b00;font-size:12px;font-weight:800;line-height:1.4}",
       ".m410AdminModal{display:none;position:fixed;inset:0;z-index:31000;background:rgba(0,0,0,.72);padding:12px;overflow:auto;font-family:Arial,sans-serif}",
       ".m410AdminModal.show{display:flex;align-items:flex-start;justify-content:center}",
       ".m410AdminBox{width:min(920px,100%);margin:auto;background:#fff;color:#111;border:2px solid #506b8a;border-radius:14px;box-shadow:0 14px 44px rgba(0,0,0,.45);overflow:hidden}",
@@ -293,28 +306,162 @@
         (job.customerName ? " · " + job.customerName : "");
     } else {
       hint.className = "m410JobHint " + (text(jobInput() && jobInput().value) ? "legacy" : "");
-      hint.textContent = message || "Select an official job from the company database.";
+      hint.textContent = message || "Choose an official job, or enter a temporary manual name.";
     }
+  }
+
+  function searchableJobText(job) {
+    return normalize([
+      job.name,
+      job.code,
+      job.customerName,
+      job.status,
+      job.aliases.join(" ")
+    ].filter(Boolean).join(" "));
+  }
+
+  function selectableJobs(query) {
+    var key = normalize(query);
+    var terms = key ? key.split(" ").filter(Boolean) : [];
+    var currentId = currentHeaderJobId();
+    var matches = jobs.filter(function (job) {
+      if (job.status === "archived" && currentId !== job.id) return false;
+      if (!terms.length) return true;
+      var haystack = searchableJobText(job);
+      return terms.every(function (term) { return haystack.indexOf(term) >= 0; });
+    });
+
+    matches.sort(function (a, b) {
+      if (!key) return a.name.localeCompare(b.name);
+      var aName = normalize(a.name);
+      var bName = normalize(b.name);
+      var aPrefix = aName.indexOf(key) === 0 ? 0 : 1;
+      var bPrefix = bName.indexOf(key) === 0 ? 0 : 1;
+      return aPrefix - bPrefix || a.name.localeCompare(b.name);
+    });
+
+    return matches.slice(0, 75);
+  }
+
+  function closeJobChoices() {
+    selectorOpen = false;
+    selectorHighlightIndex = -1;
+    var choices = byId("m410JobChoices");
+    var toggle = byId("m410JobToggle");
+    var input = jobInput();
+    if (choices) {
+      choices.classList.remove("show");
+      choices.setAttribute("aria-hidden", "true");
+    }
+    if (toggle) toggle.setAttribute("aria-expanded", "false");
+    if (input) input.setAttribute("aria-expanded", "false");
+  }
+
+  function setChoiceHighlight(index) {
+    var choices = byId("m410JobChoices");
+    if (!choices) return;
+    var buttons = Array.prototype.slice.call(choices.querySelectorAll(".m410JobChoice"));
+    if (!buttons.length) {
+      selectorHighlightIndex = -1;
+      return;
+    }
+    if (index < 0) index = buttons.length - 1;
+    if (index >= buttons.length) index = 0;
+    selectorHighlightIndex = index;
+    buttons.forEach(function (button, buttonIndex) {
+      button.classList.toggle("active", buttonIndex === index);
+    });
+    buttons[index].scrollIntoView({ block: "nearest" });
+  }
+
+  function selectOfficialJob(job) {
+    var input = jobInput();
+    if (!input || !job) return;
+    selectedJobId = job.id;
+    input.value = job.name;
+    setJobMetadata(job, job.name);
+    updateJobHint(job, "");
+    persistHeader();
+    closeJobChoices();
+    try {
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+    } catch (error) {}
+    input.focus();
+  }
+
+  function renderJobChoices(openAfterRender) {
+    var input = jobInput();
+    var choices = byId("m410JobChoices");
+    var toggle = byId("m410JobToggle");
+    if (!input || !choices) return;
+
+    var matches = selectableJobs(input.value);
+    choices.innerHTML = "";
+    selectorHighlightIndex = -1;
+
+    if (!matches.length) {
+      var empty = document.createElement("div");
+      empty.className = "m410JobNoMatch";
+      empty.textContent = text(input.value)
+        ? "No official job matches this entry. You may keep it as a temporary manual job name; an Administrator can add it later."
+        : "No official jobs are available yet. You may enter a temporary manual job name.";
+      choices.appendChild(empty);
+    } else {
+      matches.forEach(function (job) {
+        var button = document.createElement("button");
+        button.type = "button";
+        button.className = "m410JobChoice";
+        button.setAttribute("role", "option");
+        button.setAttribute("data-job-id", job.id);
+
+        var aliasNote = "";
+        var queryKey = normalize(input.value);
+        if (queryKey && job.normalizedName.indexOf(queryKey) < 0) {
+          var matchingAlias = job.aliases.filter(function (alias) {
+            return normalize(alias).indexOf(queryKey) >= 0;
+          })[0];
+          if (matchingAlias) aliasNote = "Alias: " + matchingAlias;
+        }
+
+        var meta = [job.code, job.customerName, aliasNote].filter(Boolean).join(" · ");
+        button.innerHTML =
+          '<span class="m410JobChoiceName">' + escapeHtml(job.name) + '</span>' +
+          (meta ? '<span class="m410JobChoiceMeta">' + escapeHtml(meta) + '</span>' : "");
+
+        // Keep the text field active long enough for touch/click selection.
+        button.addEventListener("pointerdown", function (event) {
+          event.preventDefault();
+        });
+        button.addEventListener("click", function (event) {
+          event.preventDefault();
+          event.stopPropagation();
+          selectOfficialJob(job);
+        });
+        choices.appendChild(button);
+      });
+    }
+
+    if (openAfterRender || selectorOpen) {
+      selectorOpen = true;
+      choices.classList.add("show");
+      choices.setAttribute("aria-hidden", "false");
+      input.setAttribute("aria-expanded", "true");
+      if (toggle) toggle.setAttribute("aria-expanded", "true");
+    }
+  }
+
+  function openJobChoices(showAll) {
+    var input = jobInput();
+    if (!input) return;
+    selectorOpen = true;
+    if (showAll && !text(input.value)) renderJobChoices(true);
+    else renderJobChoices(true);
   }
 
   function refreshJobSelector() {
     var input = jobInput();
-    var list = byId("m410JobsList");
-    if (!input || !list) return;
-    list.innerHTML = "";
-    jobs.forEach(function (job) {
-      if (job.status === "archived" && currentHeaderJobId() !== job.id) return;
-      var option = document.createElement("option");
-      option.value = job.name;
-      option.label = [job.code, job.customerName].filter(Boolean).join(" · ");
-      list.appendChild(option);
-      job.aliases.forEach(function (alias) {
-        var aliasOption = document.createElement("option");
-        aliasOption.value = alias;
-        aliasOption.label = "Use " + job.name;
-        list.appendChild(aliasOption);
-      });
-    });
+    if (!input) return;
+
     var linked = findJobById(currentHeaderJobId()) || findJob(input.value);
     if (linked) {
       selectedJobId = linked.id;
@@ -323,43 +470,143 @@
       updateJobHint(linked, "");
     } else {
       selectedJobId = "";
-      updateJobHint(null, text(input.value) ? "Legacy/unlinked job name. Select an official job when available." : "");
+      updateJobHint(
+        null,
+        text(input.value)
+          ? "Temporary manual job name. Choose an official result to link it when available."
+          : "Choose an official job, or enter a temporary manual name."
+      );
     }
+
+    if (selectorOpen) renderJobChoices(true);
   }
 
   function installJobSelector() {
     if (selectorInstalled) return true;
     var input = jobInput();
     if (!input) return false;
+
     selectorInstalled = true;
     ensureJobStyles();
-    input.setAttribute("list", "m410JobsList");
+
+    input.removeAttribute("list");
     input.setAttribute("autocomplete", "off");
-    input.placeholder = "Search official jobs";
-    var list = document.createElement("datalist");
-    list.id = "m410JobsList";
-    document.body.appendChild(list);
+    input.setAttribute("role", "combobox");
+    input.setAttribute("aria-autocomplete", "list");
+    input.setAttribute("aria-controls", "m410JobChoices");
+    input.setAttribute("aria-expanded", "false");
+    input.placeholder = "Type or choose an official job";
+
+    var picker = document.createElement("div");
+    picker.id = "m410JobPicker";
+    picker.className = "m410JobPicker";
+
+    var parent = input.parentNode;
+    parent.insertBefore(picker, input);
+    picker.appendChild(input);
+
+    var toggle = document.createElement("button");
+    toggle.id = "m410JobToggle";
+    toggle.className = "m410JobToggle";
+    toggle.type = "button";
+    toggle.setAttribute("aria-label", "Show official job list");
+    toggle.setAttribute("aria-expanded", "false");
+    toggle.textContent = "▾";
+    picker.appendChild(toggle);
+
+    var choices = document.createElement("div");
+    choices.id = "m410JobChoices";
+    choices.className = "m410JobChoices";
+    choices.setAttribute("role", "listbox");
+    choices.setAttribute("aria-hidden", "true");
+    picker.appendChild(choices);
+
     var hint = document.createElement("div");
     hint.id = "m410JobHint";
     hint.className = "m410JobHint";
-    input.insertAdjacentElement("afterend", hint);
+    picker.insertAdjacentElement("afterend", hint);
 
     input.addEventListener("input", function () {
-      var match = findJob(this.value);
-      selectedJobId = match ? match.id : "";
-      updateJobHint(match, match ? "" : (text(this.value) ? "No exact official match yet. Keep typing or select a result." : ""));
+      var exact = findJob(this.value);
+      selectedJobId = "";
+      if (exact) {
+        updateJobHint(exact, "");
+      } else {
+        updateJobHint(
+          null,
+          text(this.value)
+            ? "No official job selected yet. Choose a result, or keep this temporary manual name."
+            : "Choose an official job, or enter a temporary manual name."
+        );
+      }
+      openJobChoices(false);
     });
-    input.addEventListener("change", function () { resolveVisibleJob(); });
-    input.addEventListener("blur", function () { window.setTimeout(resolveVisibleJob, 0); });
+
     input.addEventListener("focus", function () {
-      loadJobs(false).then(refreshJobSelector).catch(function () {
-        updateJobHint(null, "The company jobs database could not be reached. The current job name remains usable.");
+      loadJobs(false).then(function () {
+        refreshJobSelector();
+        openJobChoices(false);
+      }).catch(function () {
+        updateJobHint(null, "The official job list could not be reached. Manual entry remains available.");
       });
     });
 
+    input.addEventListener("keydown", function (event) {
+      var buttons = choices.querySelectorAll(".m410JobChoice");
+      if (event.key === "ArrowDown") {
+        event.preventDefault();
+        if (!selectorOpen) openJobChoices(false);
+        setChoiceHighlight(selectorHighlightIndex + 1);
+      } else if (event.key === "ArrowUp") {
+        event.preventDefault();
+        if (!selectorOpen) openJobChoices(false);
+        setChoiceHighlight(selectorHighlightIndex - 1);
+      } else if (event.key === "Enter" && selectorOpen && selectorHighlightIndex >= 0 && buttons[selectorHighlightIndex]) {
+        event.preventDefault();
+        buttons[selectorHighlightIndex].click();
+      } else if (event.key === "Escape") {
+        closeJobChoices();
+      }
+    });
+
+    input.addEventListener("change", function () {
+      var exact = findJob(this.value);
+      if (exact) selectOfficialJob(exact);
+      else resolveVisibleJob();
+    });
+
+    input.addEventListener("blur", function () {
+      window.setTimeout(function () {
+        if (!picker.contains(document.activeElement)) {
+          resolveVisibleJob();
+          closeJobChoices();
+        }
+      }, 180);
+    });
+
+    toggle.addEventListener("click", function (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      if (selectorOpen) {
+        closeJobChoices();
+      } else {
+        loadJobs(false).then(function () {
+          refreshJobSelector();
+          openJobChoices(true);
+          input.focus();
+        }).catch(function () {
+          updateJobHint(null, "The official job list could not be reached. Manual entry remains available.");
+        });
+      }
+    });
+
+    document.addEventListener("pointerdown", function (event) {
+      if (selectorOpen && !picker.contains(event.target)) closeJobChoices();
+    }, true);
+
     wrapInfoFunctions();
     loadJobs(false).then(refreshJobSelector).catch(function () {
-      updateJobHint(null, "Sign in and connect to load the company jobs database.");
+      updateJobHint(null, "Sign in and connect to load official jobs. Manual entry remains available.");
     });
     return true;
   }

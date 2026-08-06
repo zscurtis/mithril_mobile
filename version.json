@@ -1,11 +1,11 @@
 {
-  "version": "m40.9.6.9.5",
-  "title": "Jobs Database Permission Path Fix",
+  "version": "m40.9.6.9.6",
+  "title": "Searchable Job Picker",
   "released": "2026-08-05",
-  "minimumOfflineVersion": "m40.9.6.9.4",
+  "minimumOfflineVersion": "m40.9.6.9.5",
   "notes": [
-    "Forces the Jobs Database to use the same lowercase organizations/trinity path as the shared operational cloud and Firestore rules.",
-    "Fixes Missing or insufficient permissions when an Administrator adds or loads standardized jobs.",
-    "Preserves the repaired current interface, shared cloud, account roles, local data, themes, exports, and existing documents."
+    "Replaces the unreliable browser datalist with a touch-friendly searchable official job picker.",
+    "Users can browse all official jobs or filter by official name, alias, code, or customer.",
+    "Manual temporary job names remain allowed when an Administrator has not added the job yet."
   ]
 }
