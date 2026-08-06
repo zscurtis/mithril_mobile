@@ -1,11 +1,11 @@
 {
-  "version": "m40.9.6.9.8",
-  "title": "Cloud Document Search",
+  "version": "m40.9.6.9.9",
+  "title": "Cloud First-Open Fix",
   "released": "2026-08-05",
-  "minimumOfflineVersion": "m40.9.6.9.7",
+  "minimumOfflineVersion": "m40.9.6.9.8",
   "notes": [
-    "Adds a full cloud document search view to the MITHRIL Home dashboard.",
-    "Searches jobs, aliases, Shot IDs, customers, creators, field dates, and document types.",
-    "Includes official-job and document-type filters while preserving recent documents and role-based access."
+    "Loads a selected cloud document on the first template open without requiring a browser refresh.",
+    "Retriggers pending cloud consumption when Drill Log opens within the existing Home page.",
+    "Uses a fresh Shot Diagram navigation for cloud selections to prevent restoration of the previous canvas state."
   ]
 }

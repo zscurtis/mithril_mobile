@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var RELEASE = "m40.9.6.9.8";
+  var RELEASE = "m40.9.6.9.9";
   var FIREBASE_VERSION = "12.16.0";
   var ORGANIZATION_ID = "trinity";
   var PROFILE_COLLECTION = "userProfiles";
@@ -456,6 +456,36 @@
     return output;
   }
 
+  function forceFreshShotNavigation(documentId) {
+    var href = String(window.location.href || "");
+    var openedFromDeviceStorage = href.indexOf("content:") === 0 || href.indexOf("file:") === 0;
+    var base = openedFromDeviceStorage
+      ? "https://zscurtis.github.io/mithril_mobile/shot_diagram_m38.html"
+      : "./shot_diagram_m38.html";
+    var query = [
+      "cloudOpen=" + encodeURIComponent(text(documentId)),
+      "refresh=" + Date.now()
+    ].join("&");
+    window.location.href = base + "?" + query;
+  }
+
+  function retriggerPendingDrillLoad() {
+    // Drill Log opens within the existing Home document rather than through a
+    // new page load. Re-dispatch the event already used by the shared-cloud
+    // module so it consumes the newly selected pending record immediately.
+    [0, 80, 250, 700].forEach(function (delay) {
+      window.setTimeout(function () {
+        try {
+          window.dispatchEvent(new CustomEvent("mithril-document-ready", {
+            detail: { source: "cloud-search", release: RELEASE }
+          }));
+        } catch (error) {
+          window.dispatchEvent(new Event("mithril-document-ready"));
+        }
+      }, delay);
+    });
+  }
+
   function openCloudDocument(item) {
     var data = item && item.data;
     if (!data || !canOpenType(data.type)) return;
@@ -476,12 +506,17 @@
       return;
     }
 
-    if (data.type === "shotDiagram" && typeof window.openStableShotDiagram === "function") {
-      window.openStableShotDiagram();
+    setStatus("Opening " + (data.title || docLabel(data.type)) + "…", "wait");
+
+    if (data.type === "shotDiagram") {
+      forceFreshShotNavigation(item.id);
       return;
     }
+
     if (data.type === "drillLog" && typeof window.openDrillLog === "function") {
+      closeSearch();
       window.openDrillLog();
+      retriggerPendingDrillLoad();
       return;
     }
 
