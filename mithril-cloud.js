@@ -4,7 +4,7 @@
   if (window.__mithrilCompanyCloudM40969Installed) return;
   window.__mithrilCompanyCloudM40969Installed = true;
 
-  var RELEASE_VERSION = "m40.9.6.9.2";
+  var RELEASE_VERSION = window.MITHRIL_CONFIG.version;
   var FIREBASE_VERSION = "12.16.0";
   var ORGANIZATION_ID = "trinity";
   var ORGANIZATION_NAME = "Trinity";
@@ -570,10 +570,22 @@
     var overlay = byId("m40969PendingOverlay");
     if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
   }
+  function homeIsVisible() {
+    var home = byId("templateStart");
+    if (!home) return false;
+    try {
+      var style = window.getComputedStyle(home);
+      if (style.display === "none" || style.visibility === "hidden") return false;
+      if (Number(style.opacity || 1) === 0) return false;
+      return home.getClientRects().length > 0;
+    } catch (error) {
+      return true;
+    }
+  }
   function enforcePendingRole() {
     if (!authReady || !currentProfile) return;
     var pending = currentRole() === "member" || !activeProfile();
-    if (pending && adapter()) showPendingOverlay();
+    if (pending && adapter() && !homeIsVisible()) showPendingOverlay();
     else removePendingOverlay();
     var cards = document.querySelectorAll(".templateCards button,#m407ContinueButton");
     Array.prototype.forEach.call(cards, function (button) {
@@ -623,7 +635,7 @@
 
         var script = doc.createElement("script");
         script.id = "mithrilCompanyCloudM409692ChildLoader";
-        script.src = "./mithril-company-cloud-m40969.js?v=40.9.6.9.2-frame";
+        script.src = "./mithril-cloud.js";
         script.addEventListener("error", function () {
           if (script.parentNode) script.parentNode.removeChild(script);
           if (attempts < 20) setTimeout(inject, 250);

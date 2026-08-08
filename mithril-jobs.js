@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var RELEASE = "m40.9.6.9.7";
+  var RELEASE = window.MITHRIL_CONFIG.version;
   var FIREBASE_VERSION = "12.16.0";
   var JOB_SCHEMA_VERSION = 1;
   var PROFILE_COLLECTION = "userProfiles";
@@ -71,7 +71,7 @@
         var script = childDocument.createElement("script");
         script.id = "m410JobsChildScript";
         script.src = new URL(
-          "./mithril-jobs-m410.js?v=40.9.6.9.7-child",
+          "./mithril-jobs.js",
           window.location.href
         ).href;
         script.async = false;

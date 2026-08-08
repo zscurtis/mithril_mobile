@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var RELEASE = "m40.9.6.9.9";
+  var RELEASE = window.MITHRIL_CONFIG.version;
   var FIREBASE_VERSION = "12.16.0";
   var ORGANIZATION_ID = "trinity";
   var PROFILE_COLLECTION = "userProfiles";

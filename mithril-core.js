@@ -1,9 +1,9 @@
 (function () {
   "use strict";
 
-  var RELEASE_VERSION = "m40.9.6.9.10";
+  var RELEASE_VERSION = window.MITHRIL_CONFIG.version;
   var CHILD_SCRIPT_ID = "mithrilCoreM400ChildLoader";
-  var CHILD_SCRIPT_SRC = "./mithril-core-m400.js?rev=4096910-frame";
+  var CHILD_SCRIPT_SRC = "./mithril-core.js";
   var TRANSFER_KEY = "mithrilDrillToShotTransferM400";
   var UNDO_KEY = "mithrilDrillToShotUndoM400";
   var LOAD_CALCULATOR_UNDO_KEY = "mithrilShotLoadCalculatorUndoM40932";
@@ -1275,7 +1275,7 @@
     modal.className = "m400Modal";
     modal.innerHTML = [
       '<div class="m400Box">',
-      '<div class="m400Head"><strong>Create Shot Diagram from Drill Log - m40.9.6.9.10</strong><button type="button" id="m400TransferClose">Close</button></div>',
+      '<div class="m400Head"><strong>Create Shot Diagram from Drill Log - ' + RELEASE_VERSION + '</strong><button type="button" id="m400TransferClose">Close</button></div>',
       '<div id="m400TransferStats" class="m400Stats"></div>',
       '<div class="m400Grid">',
       '<label class="m400Wide">Shot orientation<select id="m400Orientation"></select></label>',
@@ -1948,16 +1948,16 @@
     };
   }
   function roleLabel(role) {
-    var labels = { administrator: "Administrator", blaster: "Blaster", driller: "Driller", driver: "Driver", viewer: "Viewer", member: "Member" };
-    return labels[text(role).toLowerCase()] || "Member";
+    var labels = { administrator: "Administrator", blaster: "Blaster", driller: "Driller", driver: "Driver", viewer: "Viewer", member: "Pending" };
+    return labels[text(role).toLowerCase()] || "Pending";
   }
   var ROLE_PERMISSIONS = {
     administrator: { drill: true, shot: true, edit: true, convert: true, export: true, cloudRead: true, cloudWrite: true, cloudDelete: true, userAdmin: true },
-    blaster:       { drill: true, shot: true, edit: true, convert: true, export: true, cloudRead: true, cloudWrite: true, cloudDelete: true, userAdmin: false },
-    driller:       { drill: true, shot: false, edit: true, convert: false, export: true, cloudRead: true, cloudWrite: true, cloudDelete: true, userAdmin: false },
-    driver:        { drill: false, shot: false, edit: false, convert: false, export: false, cloudRead: false, cloudWrite: false, cloudDelete: false, userAdmin: false },
+    blaster:       { drill: true, shot: true, edit: true, convert: true, export: true, cloudRead: true, cloudWrite: true, cloudDelete: false, userAdmin: false },
+    driller:       { drill: true, shot: false, edit: true, convert: false, export: true, cloudRead: true, cloudWrite: true, cloudDelete: false, userAdmin: false },
+    driver:        { drill: false, shot: true, edit: true, convert: false, export: true, cloudRead: true, cloudWrite: true, cloudDelete: false, userAdmin: false },
     viewer:        { drill: true, shot: true, edit: false, convert: false, export: true, cloudRead: true, cloudWrite: false, cloudDelete: false, userAdmin: false },
-    member:        { drill: true, shot: true, edit: true, convert: true, export: true, cloudRead: true, cloudWrite: true, cloudDelete: true, userAdmin: false }
+    member:        { drill: false, shot: false, edit: false, convert: false, export: false, cloudRead: false, cloudWrite: false, cloudDelete: false, userAdmin: false }
   };
   function currentRole() {
     return text(currentProfile && currentProfile.role || "member").toLowerCase();
@@ -3603,7 +3603,7 @@
         script.id = CHILD_SCRIPT_ID;
         script.src = CHILD_SCRIPT_SRC;
         doc.head.appendChild(script);
-      } catch (error) { console.warn("MITHRIL m40.9.6.9.10 could not attach the document layer to the Shot Diagram.", error); }
+      } catch (error) { console.warn("MITHRIL " + RELEASE_VERSION + " could not attach the document layer to the Shot Diagram.", error); }
     }
     frame.addEventListener("load", function () { setTimeout(inject, 80); });
     setTimeout(inject, 120);
@@ -3664,7 +3664,7 @@
   updateVersionLabels();
   installVersionLabelGuard();
   if (byId("templateStart")) bootLandingAuth();
-  if (isDrill() || isShot()) bootDocumentAccess();
+  if ((isDrill() || isShot()) && !byId("templateStart")) bootDocumentAccess();
   if (isWrapper()) injectIntoShotFrame();
   if (isDrill() || isShot()) bootDocument();
 

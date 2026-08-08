@@ -1,11 +1,12 @@
 {
-  "version": "m40.9.6.9.10",
-  "title": "Dirt and Bad Hole Timing Patch",
-  "released": "2026-08-06",
-  "minimumOfflineVersion": "m40.9.6.9.9",
+  "version": "m40.9.6.9.11",
+  "title": "Repository Cleanup",
+  "released": "2026-08-08",
+  "minimumOfflineVersion": "m40.9.6.9.10",
   "notes": [
-    "Timing fills now assign and advance timing through saved dirt and bad holes.",
-    "Adds an option to hide dirt and bad hole timing labels without deleting their saved timing values.",
-    "Dirt and bad holes remain excluded from the shot-wide 8 ms holes-per-delay compliance check."
+    "Replaces version-numbered JavaScript filenames with stable module names.",
+    "Moves permissions, pending-user handling, version labels, and script loading into the source files.",
+    "Simplifies the service worker to offline caching and update handling.",
+    "Removes obsolete menus, test builds, duplicate theme assets, and outdated documentation."
   ]
 }
